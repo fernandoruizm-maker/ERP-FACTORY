@@ -43,7 +43,7 @@ lectura las opciones no secretas y los resultados de la prueba autorizada.
    clon. No ejecutar cambios con --global o --system ni cambiar GitHub Desktop.
 7. Configurar Git Credential Manager para este clon: reinicio local de la lista
    heredada de helpers con entrada vacia y helper manager; useHttpPath=true;
-   almacen Windows wincred y modo de token pat, si la version instalada los admite.
+   almacen Windows wincredman y modo de token pat, si la version instalada los admite.
    Asociar el usuario fernandocodex64-sudo al destino HTTPS de ERP-FACTORY mediante una
    seccion de credenciales acotada a ese destino. No crear opciones para otros
    repositorios ni usar el helper store (texto plano).
@@ -120,7 +120,7 @@ GitHub CLI no localizado en PATH en la comprobacion anterior; sin instalacion ni
 | user.email | Sin definir | 353061596+fernandocodex64-sudo@users.noreply.github.com |
 | credential.helper | Sin definir | Entrada vacia que reinicia herencia, seguida de manager |
 | credential.useHttpPath | Sin definir | true |
-| credential.credentialStore | Sin definir | wincred |
+| credential.credentialStore | Sin definir | wincredman |
 | credential.gitHubAuthModes | Sin definir | pat |
 | credential.https://github.com/fernandoruizm-maker/ERP-FACTORY.git.username | Sin definir | fernandocodex64-sudo |
 | remote.origin.pushurl | DISABLED | DISABLED |

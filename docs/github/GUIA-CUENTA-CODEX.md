@@ -87,6 +87,8 @@ permiso para resolverlo automaticamente.
 Fernando **no tiene que editar archivos ni ejecutar comandos**.
 Codex configuro solamente ERP-FACTORY-correcciones: nombre fernandocodex64-sudo,
 correo 353061596+fernandocodex64-sudo@users.noreply.github.com y opciones del gestor.
+El nombre correcto del almacen de Windows es **wincredman**; queda configurado
+solo en este clon. Este ajuste no guarda ningun token por si mismo.
 No cambio configuracion global ni leyo credenciales. Claude queda pendiente de
 verificar esta evidencia no secreta. Los resultados y limites estan descritos en
 [CONFIG-LOCAL-CODEX.md](CONFIG-LOCAL-CODEX.md).
