@@ -1,10 +1,10 @@
 {
-  "name": "Revision privada de ERP-FACTORY (borrador bloqueado)",
+  "name": "Revision privada V2 multiparte (bloqueada)",
   "on": {
     "workflow_dispatch": {
       "inputs": {
         "source_sha": {
-          "description": "SHA completo PUBLICO autorizado; nunca una rama",
+          "description": "SHA completo PUBLICO autorizado",
           "required": true,
           "type": "string"
         },
@@ -26,7 +26,7 @@
     "review": {
       "if": "${{ false && github.event.repository.private == true && github.repository == 'fernandoruizm-maker/ERP-FACTORY-revision' && github.ref == 'refs/heads/main' && github.actor_id == '342326625' && github.triggering_actor == 'fernandoruizm-maker' && github.run_attempt == 1 && inputs.authorize_anthropic == true }}",
       "runs-on": "ubuntu-24.04",
-      "timeout-minutes": 10,
+      "timeout-minutes": 120,
       "permissions": {
         "contents": "read"
       },
@@ -41,8 +41,9 @@
       },
       "steps": [
         {
-          "name": "Leer solo el validador privado fijado (referencia pendiente)",
+          "name": "Validador privado fijado, nunca checkout publico",
           "uses": "actions/checkout@11d5960a326750d5838078e36cf38b85af677262",
+          "timeout-minutes": 2,
           "with": {
             "repository": "fernandoruizm-maker/ERP-FACTORY-revision",
             "ref": "0000000000000000000000000000000000000000",
@@ -51,23 +52,65 @@
           }
         },
         {
-          "name": "Verificar identidad, privacidad, autorizacion y referencia",
-          "run": "python3 -I -B trusted/entrypoint.py preflight"
+          "id": "preflight",
+          "name": "Verificar bloqueos, procedencia y topes",
+          "timeout-minutes": 1,
+          "run": "python3 -I -B trusted/entrypoint.py mp-preflight"
         },
         {
-          "name": "Descargar archivo publico anonimo y leerlo solo como datos",
           "id": "prepare",
-          "run": "python3 -I -B trusted/entrypoint.py prepare"
+          "name": "Material publico solo como datos y presupuesto reservado",
+          "timeout-minutes": 3,
+          "run": "python3 -I -B trusted/entrypoint.py mp-init"
         },
         {
-          "name": "Revisar sin herramientas ni permiso de escritura",
-          "id": "claude",
+          "id": "upload_initial",
+          "name": "Conservar checkpoint privado upload_initial",
+          "if": "${{ always() && steps.prepare.outcome == 'success' }}",
+          "uses": "actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02",
+          "timeout-minutes": 1,
+          "with": {
+            "name": "review-${{ github.run_id }}-${{ github.run_attempt }}-upload_initial",
+            "path": "${{ runner.temp }}/private-review/checkpoints/initial/artifacts/",
+            "if-no-files-found": "error",
+            "retention-days": 7
+          }
+        },
+        {
+          "id": "select_1",
+          "name": "Preparar y reservar llamada 1",
+          "if": "${{ success() && steps.upload_initial.outcome == 'success' }}",
+          "timeout-minutes": 1,
+          "env": {
+            "STATE_FILE": "${{ steps.prepare.outputs.state_file }}",
+            "STATE_SHA256": "${{ steps.prepare.outputs.state_sha256 }}"
+          },
+          "run": "python3 -I -B trusted/entrypoint.py mp-select --slot 1"
+        },
+        {
+          "id": "upload_reserved_1",
+          "name": "Conservar checkpoint privado upload_reserved_1",
+          "if": "${{ always() && steps.select_1.outcome == 'success' }}",
+          "uses": "actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02",
+          "timeout-minutes": 1,
+          "with": {
+            "name": "review-${{ github.run_id }}-${{ github.run_attempt }}-upload_reserved_1",
+            "path": "${{ runner.temp }}/private-review/checkpoints/${{ steps.select_1.outputs.checkpoint }}/artifacts/",
+            "if-no-files-found": "error",
+            "retention-days": 7
+          }
+        },
+        {
+          "id": "claude_1",
+          "name": "Claude sin herramientas, llamada 1",
+          "if": "${{ success() && steps.select_1.outputs.ready == 'true' && steps.upload_reserved_1.outcome == 'success' }}",
+          "timeout-minutes": 6,
           "uses": "anthropics/claude-code-action@c0949c50a78c1ec8ce2647db36629b870e715d0c",
           "with": {
             "github_token": "${{ github.token }}",
             "claude_code_oauth_token": "${{ secrets.CLAUDE_CODE_OAUTH_TOKEN }}",
-            "prompt": "${{ steps.prepare.outputs.user_prompt }}",
-            "claude_args": "--safe-mode --disallowedTools \"*\" --max-turns 2 --max-budget-usd 2 --model sonnet --append-system-prompt-file ${{ runner.temp }}/private-review/input/system.txt",
+            "prompt": "${{ steps.select_1.outputs.user_prompt }}",
+            "claude_args": "--safe-mode --disallowedTools \"*\" --max-turns 2 --max-budget-usd ${{ steps.select_1.outputs.max_budget_usd }} --model sonnet --append-system-prompt-file ${{ runner.temp }}/private-review/input/system.txt",
             "show_full_output": "false",
             "display_report": "false",
             "classify_inline_comments": "false",
@@ -75,22 +118,686 @@
           }
         },
         {
-          "name": "Verificar huella y validar respuesta con codigo privado fijado",
-          "id": "validate",
-          "if": "${{ always() && steps.prepare.outcome == 'success' }}",
+          "id": "collect_1",
+          "name": "Validar y guardar inmediatamente llamada 1",
+          "if": "${{ always() && steps.select_1.outputs.ready == 'true' }}",
+          "timeout-minutes": 1,
           "env": {
-            "MATERIAL_SHA256": "${{ steps.prepare.outputs.material_sha256 }}",
-            "CLAUDE_CONCLUSION": "${{ steps.claude.outputs.conclusion }}"
+            "STATE_FILE": "${{ steps.select_1.outputs.state_file }}",
+            "STATE_SHA256": "${{ steps.select_1.outputs.state_sha256 }}",
+            "CLAUDE_CONCLUSION": "${{ steps.claude_1.outcome }}"
           },
-          "run": "python3 -I -B trusted/entrypoint.py collect"
+          "run": "python3 -I -B trusted/entrypoint.py mp-collect --slot 1"
         },
         {
-          "name": "Conservar solamente informes privados validados o diagnostico seguro",
-          "if": "${{ always() && steps.prepare.outcome == 'success' }}",
+          "id": "upload_result_1",
+          "name": "Conservar checkpoint privado upload_result_1",
+          "if": "${{ always() && steps.collect_1.outputs.checkpoint != '' }}",
           "uses": "actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02",
+          "timeout-minutes": 1,
           "with": {
-            "name": "private-review-${{ inputs.source_sha }}-${{ github.run_id }}-${{ github.run_attempt }}",
-            "path": "${{ runner.temp }}/private-review/artifacts/",
+            "name": "review-${{ github.run_id }}-${{ github.run_attempt }}-upload_result_1",
+            "path": "${{ runner.temp }}/private-review/checkpoints/${{ steps.collect_1.outputs.checkpoint }}/artifacts/",
+            "if-no-files-found": "error",
+            "retention-days": 7
+          }
+        },
+        {
+          "id": "select_2",
+          "name": "Preparar y reservar llamada 2",
+          "if": "${{ success() && steps.upload_result_1.outcome == 'success' && steps.collect_1.outputs.continue == 'true' }}",
+          "timeout-minutes": 1,
+          "env": {
+            "STATE_FILE": "${{ steps.collect_1.outputs.state_file }}",
+            "STATE_SHA256": "${{ steps.collect_1.outputs.state_sha256 }}"
+          },
+          "run": "python3 -I -B trusted/entrypoint.py mp-select --slot 2"
+        },
+        {
+          "id": "upload_reserved_2",
+          "name": "Conservar checkpoint privado upload_reserved_2",
+          "if": "${{ always() && steps.select_2.outcome == 'success' }}",
+          "uses": "actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02",
+          "timeout-minutes": 1,
+          "with": {
+            "name": "review-${{ github.run_id }}-${{ github.run_attempt }}-upload_reserved_2",
+            "path": "${{ runner.temp }}/private-review/checkpoints/${{ steps.select_2.outputs.checkpoint }}/artifacts/",
+            "if-no-files-found": "error",
+            "retention-days": 7
+          }
+        },
+        {
+          "id": "claude_2",
+          "name": "Claude sin herramientas, llamada 2",
+          "if": "${{ success() && steps.select_2.outputs.ready == 'true' && steps.upload_reserved_2.outcome == 'success' }}",
+          "timeout-minutes": 6,
+          "uses": "anthropics/claude-code-action@c0949c50a78c1ec8ce2647db36629b870e715d0c",
+          "with": {
+            "github_token": "${{ github.token }}",
+            "claude_code_oauth_token": "${{ secrets.CLAUDE_CODE_OAUTH_TOKEN }}",
+            "prompt": "${{ steps.select_2.outputs.user_prompt }}",
+            "claude_args": "--safe-mode --disallowedTools \"*\" --max-turns 2 --max-budget-usd ${{ steps.select_2.outputs.max_budget_usd }} --model sonnet --append-system-prompt-file ${{ runner.temp }}/private-review/input/system.txt",
+            "show_full_output": "false",
+            "display_report": "false",
+            "classify_inline_comments": "false",
+            "include_fix_links": "false"
+          }
+        },
+        {
+          "id": "collect_2",
+          "name": "Validar y guardar inmediatamente llamada 2",
+          "if": "${{ always() && steps.select_2.outputs.ready == 'true' }}",
+          "timeout-minutes": 1,
+          "env": {
+            "STATE_FILE": "${{ steps.select_2.outputs.state_file }}",
+            "STATE_SHA256": "${{ steps.select_2.outputs.state_sha256 }}",
+            "CLAUDE_CONCLUSION": "${{ steps.claude_2.outcome }}"
+          },
+          "run": "python3 -I -B trusted/entrypoint.py mp-collect --slot 2"
+        },
+        {
+          "id": "upload_result_2",
+          "name": "Conservar checkpoint privado upload_result_2",
+          "if": "${{ always() && steps.collect_2.outputs.checkpoint != '' }}",
+          "uses": "actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02",
+          "timeout-minutes": 1,
+          "with": {
+            "name": "review-${{ github.run_id }}-${{ github.run_attempt }}-upload_result_2",
+            "path": "${{ runner.temp }}/private-review/checkpoints/${{ steps.collect_2.outputs.checkpoint }}/artifacts/",
+            "if-no-files-found": "error",
+            "retention-days": 7
+          }
+        },
+        {
+          "id": "select_3",
+          "name": "Preparar y reservar llamada 3",
+          "if": "${{ success() && steps.upload_result_2.outcome == 'success' && steps.collect_2.outputs.continue == 'true' }}",
+          "timeout-minutes": 1,
+          "env": {
+            "STATE_FILE": "${{ steps.collect_2.outputs.state_file }}",
+            "STATE_SHA256": "${{ steps.collect_2.outputs.state_sha256 }}"
+          },
+          "run": "python3 -I -B trusted/entrypoint.py mp-select --slot 3"
+        },
+        {
+          "id": "upload_reserved_3",
+          "name": "Conservar checkpoint privado upload_reserved_3",
+          "if": "${{ always() && steps.select_3.outcome == 'success' }}",
+          "uses": "actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02",
+          "timeout-minutes": 1,
+          "with": {
+            "name": "review-${{ github.run_id }}-${{ github.run_attempt }}-upload_reserved_3",
+            "path": "${{ runner.temp }}/private-review/checkpoints/${{ steps.select_3.outputs.checkpoint }}/artifacts/",
+            "if-no-files-found": "error",
+            "retention-days": 7
+          }
+        },
+        {
+          "id": "claude_3",
+          "name": "Claude sin herramientas, llamada 3",
+          "if": "${{ success() && steps.select_3.outputs.ready == 'true' && steps.upload_reserved_3.outcome == 'success' }}",
+          "timeout-minutes": 6,
+          "uses": "anthropics/claude-code-action@c0949c50a78c1ec8ce2647db36629b870e715d0c",
+          "with": {
+            "github_token": "${{ github.token }}",
+            "claude_code_oauth_token": "${{ secrets.CLAUDE_CODE_OAUTH_TOKEN }}",
+            "prompt": "${{ steps.select_3.outputs.user_prompt }}",
+            "claude_args": "--safe-mode --disallowedTools \"*\" --max-turns 2 --max-budget-usd ${{ steps.select_3.outputs.max_budget_usd }} --model sonnet --append-system-prompt-file ${{ runner.temp }}/private-review/input/system.txt",
+            "show_full_output": "false",
+            "display_report": "false",
+            "classify_inline_comments": "false",
+            "include_fix_links": "false"
+          }
+        },
+        {
+          "id": "collect_3",
+          "name": "Validar y guardar inmediatamente llamada 3",
+          "if": "${{ always() && steps.select_3.outputs.ready == 'true' }}",
+          "timeout-minutes": 1,
+          "env": {
+            "STATE_FILE": "${{ steps.select_3.outputs.state_file }}",
+            "STATE_SHA256": "${{ steps.select_3.outputs.state_sha256 }}",
+            "CLAUDE_CONCLUSION": "${{ steps.claude_3.outcome }}"
+          },
+          "run": "python3 -I -B trusted/entrypoint.py mp-collect --slot 3"
+        },
+        {
+          "id": "upload_result_3",
+          "name": "Conservar checkpoint privado upload_result_3",
+          "if": "${{ always() && steps.collect_3.outputs.checkpoint != '' }}",
+          "uses": "actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02",
+          "timeout-minutes": 1,
+          "with": {
+            "name": "review-${{ github.run_id }}-${{ github.run_attempt }}-upload_result_3",
+            "path": "${{ runner.temp }}/private-review/checkpoints/${{ steps.collect_3.outputs.checkpoint }}/artifacts/",
+            "if-no-files-found": "error",
+            "retention-days": 7
+          }
+        },
+        {
+          "id": "select_4",
+          "name": "Preparar y reservar llamada 4",
+          "if": "${{ success() && steps.upload_result_3.outcome == 'success' && steps.collect_3.outputs.continue == 'true' }}",
+          "timeout-minutes": 1,
+          "env": {
+            "STATE_FILE": "${{ steps.collect_3.outputs.state_file }}",
+            "STATE_SHA256": "${{ steps.collect_3.outputs.state_sha256 }}"
+          },
+          "run": "python3 -I -B trusted/entrypoint.py mp-select --slot 4"
+        },
+        {
+          "id": "upload_reserved_4",
+          "name": "Conservar checkpoint privado upload_reserved_4",
+          "if": "${{ always() && steps.select_4.outcome == 'success' }}",
+          "uses": "actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02",
+          "timeout-minutes": 1,
+          "with": {
+            "name": "review-${{ github.run_id }}-${{ github.run_attempt }}-upload_reserved_4",
+            "path": "${{ runner.temp }}/private-review/checkpoints/${{ steps.select_4.outputs.checkpoint }}/artifacts/",
+            "if-no-files-found": "error",
+            "retention-days": 7
+          }
+        },
+        {
+          "id": "claude_4",
+          "name": "Claude sin herramientas, llamada 4",
+          "if": "${{ success() && steps.select_4.outputs.ready == 'true' && steps.upload_reserved_4.outcome == 'success' }}",
+          "timeout-minutes": 6,
+          "uses": "anthropics/claude-code-action@c0949c50a78c1ec8ce2647db36629b870e715d0c",
+          "with": {
+            "github_token": "${{ github.token }}",
+            "claude_code_oauth_token": "${{ secrets.CLAUDE_CODE_OAUTH_TOKEN }}",
+            "prompt": "${{ steps.select_4.outputs.user_prompt }}",
+            "claude_args": "--safe-mode --disallowedTools \"*\" --max-turns 2 --max-budget-usd ${{ steps.select_4.outputs.max_budget_usd }} --model sonnet --append-system-prompt-file ${{ runner.temp }}/private-review/input/system.txt",
+            "show_full_output": "false",
+            "display_report": "false",
+            "classify_inline_comments": "false",
+            "include_fix_links": "false"
+          }
+        },
+        {
+          "id": "collect_4",
+          "name": "Validar y guardar inmediatamente llamada 4",
+          "if": "${{ always() && steps.select_4.outputs.ready == 'true' }}",
+          "timeout-minutes": 1,
+          "env": {
+            "STATE_FILE": "${{ steps.select_4.outputs.state_file }}",
+            "STATE_SHA256": "${{ steps.select_4.outputs.state_sha256 }}",
+            "CLAUDE_CONCLUSION": "${{ steps.claude_4.outcome }}"
+          },
+          "run": "python3 -I -B trusted/entrypoint.py mp-collect --slot 4"
+        },
+        {
+          "id": "upload_result_4",
+          "name": "Conservar checkpoint privado upload_result_4",
+          "if": "${{ always() && steps.collect_4.outputs.checkpoint != '' }}",
+          "uses": "actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02",
+          "timeout-minutes": 1,
+          "with": {
+            "name": "review-${{ github.run_id }}-${{ github.run_attempt }}-upload_result_4",
+            "path": "${{ runner.temp }}/private-review/checkpoints/${{ steps.collect_4.outputs.checkpoint }}/artifacts/",
+            "if-no-files-found": "error",
+            "retention-days": 7
+          }
+        },
+        {
+          "id": "select_5",
+          "name": "Preparar y reservar llamada 5",
+          "if": "${{ success() && steps.upload_result_4.outcome == 'success' && steps.collect_4.outputs.continue == 'true' }}",
+          "timeout-minutes": 1,
+          "env": {
+            "STATE_FILE": "${{ steps.collect_4.outputs.state_file }}",
+            "STATE_SHA256": "${{ steps.collect_4.outputs.state_sha256 }}"
+          },
+          "run": "python3 -I -B trusted/entrypoint.py mp-select --slot 5"
+        },
+        {
+          "id": "upload_reserved_5",
+          "name": "Conservar checkpoint privado upload_reserved_5",
+          "if": "${{ always() && steps.select_5.outcome == 'success' }}",
+          "uses": "actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02",
+          "timeout-minutes": 1,
+          "with": {
+            "name": "review-${{ github.run_id }}-${{ github.run_attempt }}-upload_reserved_5",
+            "path": "${{ runner.temp }}/private-review/checkpoints/${{ steps.select_5.outputs.checkpoint }}/artifacts/",
+            "if-no-files-found": "error",
+            "retention-days": 7
+          }
+        },
+        {
+          "id": "claude_5",
+          "name": "Claude sin herramientas, llamada 5",
+          "if": "${{ success() && steps.select_5.outputs.ready == 'true' && steps.upload_reserved_5.outcome == 'success' }}",
+          "timeout-minutes": 6,
+          "uses": "anthropics/claude-code-action@c0949c50a78c1ec8ce2647db36629b870e715d0c",
+          "with": {
+            "github_token": "${{ github.token }}",
+            "claude_code_oauth_token": "${{ secrets.CLAUDE_CODE_OAUTH_TOKEN }}",
+            "prompt": "${{ steps.select_5.outputs.user_prompt }}",
+            "claude_args": "--safe-mode --disallowedTools \"*\" --max-turns 2 --max-budget-usd ${{ steps.select_5.outputs.max_budget_usd }} --model sonnet --append-system-prompt-file ${{ runner.temp }}/private-review/input/system.txt",
+            "show_full_output": "false",
+            "display_report": "false",
+            "classify_inline_comments": "false",
+            "include_fix_links": "false"
+          }
+        },
+        {
+          "id": "collect_5",
+          "name": "Validar y guardar inmediatamente llamada 5",
+          "if": "${{ always() && steps.select_5.outputs.ready == 'true' }}",
+          "timeout-minutes": 1,
+          "env": {
+            "STATE_FILE": "${{ steps.select_5.outputs.state_file }}",
+            "STATE_SHA256": "${{ steps.select_5.outputs.state_sha256 }}",
+            "CLAUDE_CONCLUSION": "${{ steps.claude_5.outcome }}"
+          },
+          "run": "python3 -I -B trusted/entrypoint.py mp-collect --slot 5"
+        },
+        {
+          "id": "upload_result_5",
+          "name": "Conservar checkpoint privado upload_result_5",
+          "if": "${{ always() && steps.collect_5.outputs.checkpoint != '' }}",
+          "uses": "actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02",
+          "timeout-minutes": 1,
+          "with": {
+            "name": "review-${{ github.run_id }}-${{ github.run_attempt }}-upload_result_5",
+            "path": "${{ runner.temp }}/private-review/checkpoints/${{ steps.collect_5.outputs.checkpoint }}/artifacts/",
+            "if-no-files-found": "error",
+            "retention-days": 7
+          }
+        },
+        {
+          "id": "select_6",
+          "name": "Preparar y reservar llamada 6",
+          "if": "${{ success() && steps.upload_result_5.outcome == 'success' && steps.collect_5.outputs.continue == 'true' }}",
+          "timeout-minutes": 1,
+          "env": {
+            "STATE_FILE": "${{ steps.collect_5.outputs.state_file }}",
+            "STATE_SHA256": "${{ steps.collect_5.outputs.state_sha256 }}"
+          },
+          "run": "python3 -I -B trusted/entrypoint.py mp-select --slot 6"
+        },
+        {
+          "id": "upload_reserved_6",
+          "name": "Conservar checkpoint privado upload_reserved_6",
+          "if": "${{ always() && steps.select_6.outcome == 'success' }}",
+          "uses": "actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02",
+          "timeout-minutes": 1,
+          "with": {
+            "name": "review-${{ github.run_id }}-${{ github.run_attempt }}-upload_reserved_6",
+            "path": "${{ runner.temp }}/private-review/checkpoints/${{ steps.select_6.outputs.checkpoint }}/artifacts/",
+            "if-no-files-found": "error",
+            "retention-days": 7
+          }
+        },
+        {
+          "id": "claude_6",
+          "name": "Claude sin herramientas, llamada 6",
+          "if": "${{ success() && steps.select_6.outputs.ready == 'true' && steps.upload_reserved_6.outcome == 'success' }}",
+          "timeout-minutes": 6,
+          "uses": "anthropics/claude-code-action@c0949c50a78c1ec8ce2647db36629b870e715d0c",
+          "with": {
+            "github_token": "${{ github.token }}",
+            "claude_code_oauth_token": "${{ secrets.CLAUDE_CODE_OAUTH_TOKEN }}",
+            "prompt": "${{ steps.select_6.outputs.user_prompt }}",
+            "claude_args": "--safe-mode --disallowedTools \"*\" --max-turns 2 --max-budget-usd ${{ steps.select_6.outputs.max_budget_usd }} --model sonnet --append-system-prompt-file ${{ runner.temp }}/private-review/input/system.txt",
+            "show_full_output": "false",
+            "display_report": "false",
+            "classify_inline_comments": "false",
+            "include_fix_links": "false"
+          }
+        },
+        {
+          "id": "collect_6",
+          "name": "Validar y guardar inmediatamente llamada 6",
+          "if": "${{ always() && steps.select_6.outputs.ready == 'true' }}",
+          "timeout-minutes": 1,
+          "env": {
+            "STATE_FILE": "${{ steps.select_6.outputs.state_file }}",
+            "STATE_SHA256": "${{ steps.select_6.outputs.state_sha256 }}",
+            "CLAUDE_CONCLUSION": "${{ steps.claude_6.outcome }}"
+          },
+          "run": "python3 -I -B trusted/entrypoint.py mp-collect --slot 6"
+        },
+        {
+          "id": "upload_result_6",
+          "name": "Conservar checkpoint privado upload_result_6",
+          "if": "${{ always() && steps.collect_6.outputs.checkpoint != '' }}",
+          "uses": "actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02",
+          "timeout-minutes": 1,
+          "with": {
+            "name": "review-${{ github.run_id }}-${{ github.run_attempt }}-upload_result_6",
+            "path": "${{ runner.temp }}/private-review/checkpoints/${{ steps.collect_6.outputs.checkpoint }}/artifacts/",
+            "if-no-files-found": "error",
+            "retention-days": 7
+          }
+        },
+        {
+          "id": "select_7",
+          "name": "Preparar y reservar llamada 7",
+          "if": "${{ success() && steps.upload_result_6.outcome == 'success' && steps.collect_6.outputs.continue == 'true' }}",
+          "timeout-minutes": 1,
+          "env": {
+            "STATE_FILE": "${{ steps.collect_6.outputs.state_file }}",
+            "STATE_SHA256": "${{ steps.collect_6.outputs.state_sha256 }}"
+          },
+          "run": "python3 -I -B trusted/entrypoint.py mp-select --slot 7"
+        },
+        {
+          "id": "upload_reserved_7",
+          "name": "Conservar checkpoint privado upload_reserved_7",
+          "if": "${{ always() && steps.select_7.outcome == 'success' }}",
+          "uses": "actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02",
+          "timeout-minutes": 1,
+          "with": {
+            "name": "review-${{ github.run_id }}-${{ github.run_attempt }}-upload_reserved_7",
+            "path": "${{ runner.temp }}/private-review/checkpoints/${{ steps.select_7.outputs.checkpoint }}/artifacts/",
+            "if-no-files-found": "error",
+            "retention-days": 7
+          }
+        },
+        {
+          "id": "claude_7",
+          "name": "Claude sin herramientas, llamada 7",
+          "if": "${{ success() && steps.select_7.outputs.ready == 'true' && steps.upload_reserved_7.outcome == 'success' }}",
+          "timeout-minutes": 6,
+          "uses": "anthropics/claude-code-action@c0949c50a78c1ec8ce2647db36629b870e715d0c",
+          "with": {
+            "github_token": "${{ github.token }}",
+            "claude_code_oauth_token": "${{ secrets.CLAUDE_CODE_OAUTH_TOKEN }}",
+            "prompt": "${{ steps.select_7.outputs.user_prompt }}",
+            "claude_args": "--safe-mode --disallowedTools \"*\" --max-turns 2 --max-budget-usd ${{ steps.select_7.outputs.max_budget_usd }} --model sonnet --append-system-prompt-file ${{ runner.temp }}/private-review/input/system.txt",
+            "show_full_output": "false",
+            "display_report": "false",
+            "classify_inline_comments": "false",
+            "include_fix_links": "false"
+          }
+        },
+        {
+          "id": "collect_7",
+          "name": "Validar y guardar inmediatamente llamada 7",
+          "if": "${{ always() && steps.select_7.outputs.ready == 'true' }}",
+          "timeout-minutes": 1,
+          "env": {
+            "STATE_FILE": "${{ steps.select_7.outputs.state_file }}",
+            "STATE_SHA256": "${{ steps.select_7.outputs.state_sha256 }}",
+            "CLAUDE_CONCLUSION": "${{ steps.claude_7.outcome }}"
+          },
+          "run": "python3 -I -B trusted/entrypoint.py mp-collect --slot 7"
+        },
+        {
+          "id": "upload_result_7",
+          "name": "Conservar checkpoint privado upload_result_7",
+          "if": "${{ always() && steps.collect_7.outputs.checkpoint != '' }}",
+          "uses": "actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02",
+          "timeout-minutes": 1,
+          "with": {
+            "name": "review-${{ github.run_id }}-${{ github.run_attempt }}-upload_result_7",
+            "path": "${{ runner.temp }}/private-review/checkpoints/${{ steps.collect_7.outputs.checkpoint }}/artifacts/",
+            "if-no-files-found": "error",
+            "retention-days": 7
+          }
+        },
+        {
+          "id": "select_8",
+          "name": "Preparar y reservar llamada 8",
+          "if": "${{ success() && steps.upload_result_7.outcome == 'success' && steps.collect_7.outputs.continue == 'true' }}",
+          "timeout-minutes": 1,
+          "env": {
+            "STATE_FILE": "${{ steps.collect_7.outputs.state_file }}",
+            "STATE_SHA256": "${{ steps.collect_7.outputs.state_sha256 }}"
+          },
+          "run": "python3 -I -B trusted/entrypoint.py mp-select --slot 8"
+        },
+        {
+          "id": "upload_reserved_8",
+          "name": "Conservar checkpoint privado upload_reserved_8",
+          "if": "${{ always() && steps.select_8.outcome == 'success' }}",
+          "uses": "actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02",
+          "timeout-minutes": 1,
+          "with": {
+            "name": "review-${{ github.run_id }}-${{ github.run_attempt }}-upload_reserved_8",
+            "path": "${{ runner.temp }}/private-review/checkpoints/${{ steps.select_8.outputs.checkpoint }}/artifacts/",
+            "if-no-files-found": "error",
+            "retention-days": 7
+          }
+        },
+        {
+          "id": "claude_8",
+          "name": "Claude sin herramientas, llamada 8",
+          "if": "${{ success() && steps.select_8.outputs.ready == 'true' && steps.upload_reserved_8.outcome == 'success' }}",
+          "timeout-minutes": 6,
+          "uses": "anthropics/claude-code-action@c0949c50a78c1ec8ce2647db36629b870e715d0c",
+          "with": {
+            "github_token": "${{ github.token }}",
+            "claude_code_oauth_token": "${{ secrets.CLAUDE_CODE_OAUTH_TOKEN }}",
+            "prompt": "${{ steps.select_8.outputs.user_prompt }}",
+            "claude_args": "--safe-mode --disallowedTools \"*\" --max-turns 2 --max-budget-usd ${{ steps.select_8.outputs.max_budget_usd }} --model sonnet --append-system-prompt-file ${{ runner.temp }}/private-review/input/system.txt",
+            "show_full_output": "false",
+            "display_report": "false",
+            "classify_inline_comments": "false",
+            "include_fix_links": "false"
+          }
+        },
+        {
+          "id": "collect_8",
+          "name": "Validar y guardar inmediatamente llamada 8",
+          "if": "${{ always() && steps.select_8.outputs.ready == 'true' }}",
+          "timeout-minutes": 1,
+          "env": {
+            "STATE_FILE": "${{ steps.select_8.outputs.state_file }}",
+            "STATE_SHA256": "${{ steps.select_8.outputs.state_sha256 }}",
+            "CLAUDE_CONCLUSION": "${{ steps.claude_8.outcome }}"
+          },
+          "run": "python3 -I -B trusted/entrypoint.py mp-collect --slot 8"
+        },
+        {
+          "id": "upload_result_8",
+          "name": "Conservar checkpoint privado upload_result_8",
+          "if": "${{ always() && steps.collect_8.outputs.checkpoint != '' }}",
+          "uses": "actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02",
+          "timeout-minutes": 1,
+          "with": {
+            "name": "review-${{ github.run_id }}-${{ github.run_attempt }}-upload_result_8",
+            "path": "${{ runner.temp }}/private-review/checkpoints/${{ steps.collect_8.outputs.checkpoint }}/artifacts/",
+            "if-no-files-found": "error",
+            "retention-days": 7
+          }
+        },
+        {
+          "id": "select_9",
+          "name": "Preparar y reservar llamada 9",
+          "if": "${{ success() && steps.upload_result_8.outcome == 'success' && steps.collect_8.outputs.continue == 'true' }}",
+          "timeout-minutes": 1,
+          "env": {
+            "STATE_FILE": "${{ steps.collect_8.outputs.state_file }}",
+            "STATE_SHA256": "${{ steps.collect_8.outputs.state_sha256 }}"
+          },
+          "run": "python3 -I -B trusted/entrypoint.py mp-select --slot 9"
+        },
+        {
+          "id": "upload_reserved_9",
+          "name": "Conservar checkpoint privado upload_reserved_9",
+          "if": "${{ always() && steps.select_9.outcome == 'success' }}",
+          "uses": "actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02",
+          "timeout-minutes": 1,
+          "with": {
+            "name": "review-${{ github.run_id }}-${{ github.run_attempt }}-upload_reserved_9",
+            "path": "${{ runner.temp }}/private-review/checkpoints/${{ steps.select_9.outputs.checkpoint }}/artifacts/",
+            "if-no-files-found": "error",
+            "retention-days": 7
+          }
+        },
+        {
+          "id": "claude_9",
+          "name": "Claude sin herramientas, llamada 9",
+          "if": "${{ success() && steps.select_9.outputs.ready == 'true' && steps.upload_reserved_9.outcome == 'success' }}",
+          "timeout-minutes": 6,
+          "uses": "anthropics/claude-code-action@c0949c50a78c1ec8ce2647db36629b870e715d0c",
+          "with": {
+            "github_token": "${{ github.token }}",
+            "claude_code_oauth_token": "${{ secrets.CLAUDE_CODE_OAUTH_TOKEN }}",
+            "prompt": "${{ steps.select_9.outputs.user_prompt }}",
+            "claude_args": "--safe-mode --disallowedTools \"*\" --max-turns 2 --max-budget-usd ${{ steps.select_9.outputs.max_budget_usd }} --model sonnet --append-system-prompt-file ${{ runner.temp }}/private-review/input/system.txt",
+            "show_full_output": "false",
+            "display_report": "false",
+            "classify_inline_comments": "false",
+            "include_fix_links": "false"
+          }
+        },
+        {
+          "id": "collect_9",
+          "name": "Validar y guardar inmediatamente llamada 9",
+          "if": "${{ always() && steps.select_9.outputs.ready == 'true' }}",
+          "timeout-minutes": 1,
+          "env": {
+            "STATE_FILE": "${{ steps.select_9.outputs.state_file }}",
+            "STATE_SHA256": "${{ steps.select_9.outputs.state_sha256 }}",
+            "CLAUDE_CONCLUSION": "${{ steps.claude_9.outcome }}"
+          },
+          "run": "python3 -I -B trusted/entrypoint.py mp-collect --slot 9"
+        },
+        {
+          "id": "upload_result_9",
+          "name": "Conservar checkpoint privado upload_result_9",
+          "if": "${{ always() && steps.collect_9.outputs.checkpoint != '' }}",
+          "uses": "actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02",
+          "timeout-minutes": 1,
+          "with": {
+            "name": "review-${{ github.run_id }}-${{ github.run_attempt }}-upload_result_9",
+            "path": "${{ runner.temp }}/private-review/checkpoints/${{ steps.collect_9.outputs.checkpoint }}/artifacts/",
+            "if-no-files-found": "error",
+            "retention-days": 7
+          }
+        },
+        {
+          "id": "select_10",
+          "name": "Preparar y reservar llamada 10",
+          "if": "${{ success() && steps.upload_result_9.outcome == 'success' && steps.collect_9.outputs.continue == 'true' }}",
+          "timeout-minutes": 1,
+          "env": {
+            "STATE_FILE": "${{ steps.collect_9.outputs.state_file }}",
+            "STATE_SHA256": "${{ steps.collect_9.outputs.state_sha256 }}"
+          },
+          "run": "python3 -I -B trusted/entrypoint.py mp-select --slot 10"
+        },
+        {
+          "id": "upload_reserved_10",
+          "name": "Conservar checkpoint privado upload_reserved_10",
+          "if": "${{ always() && steps.select_10.outcome == 'success' }}",
+          "uses": "actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02",
+          "timeout-minutes": 1,
+          "with": {
+            "name": "review-${{ github.run_id }}-${{ github.run_attempt }}-upload_reserved_10",
+            "path": "${{ runner.temp }}/private-review/checkpoints/${{ steps.select_10.outputs.checkpoint }}/artifacts/",
+            "if-no-files-found": "error",
+            "retention-days": 7
+          }
+        },
+        {
+          "id": "claude_10",
+          "name": "Claude sin herramientas, llamada 10",
+          "if": "${{ success() && steps.select_10.outputs.ready == 'true' && steps.upload_reserved_10.outcome == 'success' }}",
+          "timeout-minutes": 6,
+          "uses": "anthropics/claude-code-action@c0949c50a78c1ec8ce2647db36629b870e715d0c",
+          "with": {
+            "github_token": "${{ github.token }}",
+            "claude_code_oauth_token": "${{ secrets.CLAUDE_CODE_OAUTH_TOKEN }}",
+            "prompt": "${{ steps.select_10.outputs.user_prompt }}",
+            "claude_args": "--safe-mode --disallowedTools \"*\" --max-turns 2 --max-budget-usd ${{ steps.select_10.outputs.max_budget_usd }} --model sonnet --append-system-prompt-file ${{ runner.temp }}/private-review/input/system.txt",
+            "show_full_output": "false",
+            "display_report": "false",
+            "classify_inline_comments": "false",
+            "include_fix_links": "false"
+          }
+        },
+        {
+          "id": "collect_10",
+          "name": "Validar y guardar inmediatamente llamada 10",
+          "if": "${{ always() && steps.select_10.outputs.ready == 'true' }}",
+          "timeout-minutes": 1,
+          "env": {
+            "STATE_FILE": "${{ steps.select_10.outputs.state_file }}",
+            "STATE_SHA256": "${{ steps.select_10.outputs.state_sha256 }}",
+            "CLAUDE_CONCLUSION": "${{ steps.claude_10.outcome }}"
+          },
+          "run": "python3 -I -B trusted/entrypoint.py mp-collect --slot 10"
+        },
+        {
+          "id": "upload_result_10",
+          "name": "Conservar checkpoint privado upload_result_10",
+          "if": "${{ always() && steps.collect_10.outputs.checkpoint != '' }}",
+          "uses": "actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02",
+          "timeout-minutes": 1,
+          "with": {
+            "name": "review-${{ github.run_id }}-${{ github.run_attempt }}-upload_result_10",
+            "path": "${{ runner.temp }}/private-review/checkpoints/${{ steps.collect_10.outputs.checkpoint }}/artifacts/",
+            "if-no-files-found": "error",
+            "retention-days": 7
+          }
+        },
+        {
+          "id": "select_11",
+          "name": "Preparar y reservar llamada 11",
+          "if": "${{ success() && steps.upload_result_10.outcome == 'success' && steps.collect_10.outputs.continue == 'true' }}",
+          "timeout-minutes": 1,
+          "env": {
+            "STATE_FILE": "${{ steps.collect_10.outputs.state_file }}",
+            "STATE_SHA256": "${{ steps.collect_10.outputs.state_sha256 }}"
+          },
+          "run": "python3 -I -B trusted/entrypoint.py mp-select --slot 11"
+        },
+        {
+          "id": "upload_reserved_11",
+          "name": "Conservar checkpoint privado upload_reserved_11",
+          "if": "${{ always() && steps.select_11.outcome == 'success' }}",
+          "uses": "actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02",
+          "timeout-minutes": 1,
+          "with": {
+            "name": "review-${{ github.run_id }}-${{ github.run_attempt }}-upload_reserved_11",
+            "path": "${{ runner.temp }}/private-review/checkpoints/${{ steps.select_11.outputs.checkpoint }}/artifacts/",
+            "if-no-files-found": "error",
+            "retention-days": 7
+          }
+        },
+        {
+          "id": "claude_11",
+          "name": "Claude sin herramientas, llamada 11",
+          "if": "${{ success() && steps.select_11.outputs.ready == 'true' && steps.upload_reserved_11.outcome == 'success' }}",
+          "timeout-minutes": 6,
+          "uses": "anthropics/claude-code-action@c0949c50a78c1ec8ce2647db36629b870e715d0c",
+          "with": {
+            "github_token": "${{ github.token }}",
+            "claude_code_oauth_token": "${{ secrets.CLAUDE_CODE_OAUTH_TOKEN }}",
+            "prompt": "${{ steps.select_11.outputs.user_prompt }}",
+            "claude_args": "--safe-mode --disallowedTools \"*\" --max-turns 2 --max-budget-usd ${{ steps.select_11.outputs.max_budget_usd }} --model sonnet --append-system-prompt-file ${{ runner.temp }}/private-review/input/system.txt",
+            "show_full_output": "false",
+            "display_report": "false",
+            "classify_inline_comments": "false",
+            "include_fix_links": "false"
+          }
+        },
+        {
+          "id": "collect_11",
+          "name": "Validar y guardar inmediatamente llamada 11",
+          "if": "${{ always() && steps.select_11.outputs.ready == 'true' }}",
+          "timeout-minutes": 1,
+          "env": {
+            "STATE_FILE": "${{ steps.select_11.outputs.state_file }}",
+            "STATE_SHA256": "${{ steps.select_11.outputs.state_sha256 }}",
+            "CLAUDE_CONCLUSION": "${{ steps.claude_11.outcome }}"
+          },
+          "run": "python3 -I -B trusted/entrypoint.py mp-collect --slot 11"
+        },
+        {
+          "id": "upload_result_11",
+          "name": "Conservar checkpoint privado upload_result_11",
+          "if": "${{ always() && steps.collect_11.outputs.checkpoint != '' }}",
+          "uses": "actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02",
+          "timeout-minutes": 1,
+          "with": {
+            "name": "review-${{ github.run_id }}-${{ github.run_attempt }}-upload_result_11",
+            "path": "${{ runner.temp }}/private-review/checkpoints/${{ steps.collect_11.outputs.checkpoint }}/artifacts/",
             "if-no-files-found": "error",
             "retention-days": 7
           }

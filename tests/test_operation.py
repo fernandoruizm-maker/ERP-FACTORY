@@ -181,6 +181,20 @@ class OperationalTests(unittest.TestCase):
             with self.assertRaises(Blocked):
                 self.store.import_factory_review(folder, receipt)
 
+    def test_multipart_budget_attachment_is_hashed_but_not_authentication(self):
+        folder, receipt = artifacts(self.root, run='124')
+        (folder / 'budget.json').write_bytes(canonical({'synthetic': True, 'billing_verified': False}).encode())
+        hashes = json.loads((folder / 'SHA256.json').read_bytes())
+        hashes['budget.json'] = hashlib.sha256((folder / 'budget.json').read_bytes()).hexdigest()
+        raw = canonical(hashes).encode()
+        (folder / 'SHA256.json').write_bytes(raw)
+        receipt['sha256_index'] = hashlib.sha256(raw).hexdigest()
+        imported = self.store.import_factory_review(folder, receipt)
+        self.assertFalse(imported['provenance_authenticated'])
+        self.assertEqual(self.outcome(factory_review=imported['review_id'])['status'], 'BLOCKED')
+        (folder / 'budget.json').write_bytes(b'{}')
+        with self.assertRaises(Blocked): self.store.import_factory_review(folder, receipt)
+
     def test_wrong_provenance_repository_validator_actor_attempt_or_sha_blocks(self):
         for i, (field, value) in enumerate((('repository', 'PUBLIC'), ('validator_sha', 'e'*40),
                 ('actor_id', '88'), ('run_attempt', 2), ('source_sha', 'e'*40), ('run_id', 'text'))):

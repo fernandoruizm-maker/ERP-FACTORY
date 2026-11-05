@@ -1,4 +1,17 @@
-# Estado actual: bloque 4 completado localmente, fabrica desactivada
+# Estado actual: bloque 5 multiparte preparado localmente y bloqueado
+
+Rama fix/bloque-5-multiparte desde 8ffb8115843fcb0f05b8c6a7c28adc0ce87c3934.
+Pasos privados secuenciales, checkpoints inmutables antes/despues de cada llamada,
+topes y sin reintentos. 0cb1882: 10 partes + cross, 11 llamadas ficticias probadas.
+Suites completas: 131 raiz + 113 privadas + 7 JS + 3 TS = 254, cero fallos,
+errores u omitidas. TS sin typecheck. Comandos y limites en docs/pr/bloque-5.md.
+Tres bloqueos intactos: if false, execution_enabled=false y pin cero. Importes null.
+Opciones de acumulado documentadas, ninguna elegida. Solo reserva/importacion local
+comun; falta adaptador al ledger real. No se opero GitHub ni Claude; no se publicaron
+archivos ni se toco la fabrica original. recover() real sigue sin coordinacion.
+No hay otro ZIP. Ejecucion real de Actions/eventos/coste/duracion NO VERIFICADOS.
+
+## Registro del bloque 4 (historico)
 
 Correccion posterior desde 992fcb1: literales SQL con comillas simples y prueba
 SQLite estricta (DQS_DML/DQS_DDL desactivados). Suites completas: 130 raiz,

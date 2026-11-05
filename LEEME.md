@@ -58,8 +58,9 @@ ejecucion y moneda USD; gasto por ejecucion y gasto acumulado siguen sin definir
 Los valores ausentes bloquean un intento pagado; no hay importes por defecto.
 Se conservan ademas los bloqueos de coordinacion y acceso.
 
-Antes de cualquier intento real faltan un workflow multiparte revisado, guardado
-inmediato de cada parte validada, topes efectivos, ausencia de reintentos,
+El bloque 5 prepara localmente el workflow multiparte con checkpoints y sin
+reintentos. Antes de cualquier intento real faltan su revision, la verificacion
+en GitHub, elegir/conectar el presupuesto acumulado, topes efectivos,
 procedencia autenticada, identidades reales y autorizacion expresa nueva.
 La pasada de interacciones recibe resultados e inventario, no el codigo completo.
 No operar las dos fabricas simultaneamente. No se autoriza aqui su transicion.

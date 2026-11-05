@@ -159,3 +159,39 @@ def packet(repository, commit, scope=None, limit=MAX_PART_BYTES):
         if isinstance(error, Blocked):
             raise
         raise Blocked('LOCAL_GIT_INVENTORY_FAILED') from None
+
+
+def archive_packets(material, scope=None):
+    """Inventory validated archive names with an isolated Git index, no checkout.
+
+    The exact SHA comes from the anonymous fixed-SHA archive, not from a fetched
+    Git commit object. This provenance distinction is recorded, never concealed.
+    Source bytes remain data; Git receives only an empty blob and validated names.
+    """
+    scope = default_scope() if scope is None else scope
+    names = sorted(material['files'])
+    classify(names, scope)
+    env = {k: v for k, v in os.environ.items() if k.upper() in ('PATH', 'SYSTEMROOT', 'TEMP', 'TMP')}
+    env.update(GIT_CONFIG_GLOBAL=os.devnull, GIT_CONFIG_NOSYSTEM='1', GIT_CONFIG_COUNT='0',
+               GIT_TERMINAL_PROMPT='0', GIT_NO_LAZY_FETCH='1')
+    try:
+        with tempfile.TemporaryDirectory(prefix='review-archive-index-') as temp:
+            def git(*args, data=None):
+                return subprocess.run(['git', '-c', 'protocol.allow=never', '-c', 'core.fsmonitor=false',
+                    '-c', 'core.hooksPath='+os.devnull, *args], cwd=temp, env=env, input=data,
+                    check=True, capture_output=True, timeout=30).stdout
+            git('init', '--bare', '--template=', '.')
+            env['GIT_INDEX_FILE'] = str(Path(temp) / 'inventory-index')
+            blob = git('hash-object', '-w', '--stdin', data=b'').decode().strip()
+            entries = ''.join('100644 '+blob+'\t'+name+'\n' for name in names).encode()
+            git('update-index', '--index-info', data=entries)
+            indexed = git('ls-files', '-z').decode('utf-8').strip('\0').split('\0')
+            if indexed != names:
+                raise Blocked('ARCHIVE_INDEX_MISMATCH')
+        manifest, parts = build_packets(material, scope)
+        manifest['inventory'] = {'method': 'git-ls-files-from-validated-archive',
+            'source_sha': material['source_sha'], 'tracked_count': len(indexed),
+            'archive_sha256': material['archive_sha256'], 'git_commit_object_verified': False}
+        return manifest, parts
+    except (OSError, subprocess.SubprocessError, UnicodeError):
+        raise Blocked('ARCHIVE_INDEX_FAILED') from None

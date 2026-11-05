@@ -48,12 +48,14 @@ unidad ficticia TST; no selecciona una moneda real ni es gasto medido. Los ejemp
 de tarifas del documento anterior eran historicos y no se usan para elegir topes
 o afirmar precios actuales; no se consultaron precios ni planes.
 
-Antes de cualquier intento real es obligatorio construir y revisar un workflow
-multiparte que llame en orden, guarde cada parte validada inmediatamente, preserve
-las anteriores ante fallos, aplique topes de llamadas y gasto por ejecucion y
-acumulado, y no reintente automaticamente. **No esta construido ni autorizado
-para ejecucion.** El registro local esta disenado para ese futuro coordinador,
-pero la integracion no se ha probado.
+El bloque 5 construye localmente el workflow; antes de cualquier intento real es
+obligatorio revisar y verificar en GitHub su funcionamiento. Su diseno exige
+llamadas en orden, guardar cada parte validada inmediatamente, preservar
+las anteriores ante fallos, aplicar topes de llamadas y gasto por ejecucion y
+acumulado, y no reintentar automaticamente. **No esta autorizado para ejecucion.**
+Los pasos secuenciales y checkpoints estan implementados y se prueban con dobles.
+La conexion del acumulado no esta elegida ni implementada: opciones y limites en
+docs/pr/bloque-5.md. No se ha probado la integracion real.
 
 ## Plan de retirada: etapa posterior autorizada
 

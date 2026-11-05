@@ -65,7 +65,8 @@ class PrivateReviewTests(unittest.TestCase):
         result = audit(self.workflow)
         self.assertEqual(result['structural_checks'], 'PASS')
         self.assertEqual(result['operational_readiness'], 'BLOCKED')
-        self.assertEqual(result['pending'], ['PENDING_REVIEWED_PRIVATE_COMMIT', 'EXECUTION_DISABLED'])
+        self.assertEqual(result['pending'], ['PENDING_REVIEWED_PRIVATE_COMMIT', 'EXECUTION_DISABLED',
+                                            'SPEND_CAPS_PENDING', 'CUMULATIVE_STRATEGY_PENDING'])
 
     def test_disabled_cli_stops_before_network_or_git(self):
         from reviewer.cli import main

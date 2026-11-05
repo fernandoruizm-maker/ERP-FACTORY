@@ -3,5 +3,10 @@
   "execution_enabled": false,
   "reviewed_validator_sha": null,
   "review_reference_status": "PENDING_PRIVATE_REPOSITORY_AND_REVIEW",
-  "artifact_retention_days": 7
+  "artifact_retention_days": 7,
+  "budget_currency": "USD",
+  "max_calls_per_execution": 11,
+  "max_spend_per_execution": null,
+  "max_budget_usd_per_call": null,
+  "cumulative_strategy": null
 }

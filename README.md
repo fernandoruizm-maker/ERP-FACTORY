@@ -20,6 +20,7 @@ real con proveedores ni Docker. Las revisiones simuladas nunca aprueban la fabri
 - [Estado actual e historial de pruebas](docs/ESTADO.md)
 - [Diseno de revision privada y requisitos pendientes](docs/CLAUDE-OPCIONES.md)
 - [Entrega del bloque 4 y sus dos mitades](docs/pr/bloque-4.md)
+- [Workflow multiparte bloqueado y decisiones del bloque 5](docs/pr/bloque-5.md)
 - [Recuperacion historica](docs/RECUPERACION.md): la recuperacion actual exige
   candado y coordinacion; la via real permanece bloqueada.
 
@@ -47,5 +48,6 @@ ni garantiza un limite impuesto por el proveedor. Ninguna funcion publica o acti
 `upstream/` es referencia intacta: no ejecutar su piloto. El adaptador de Codex se
 envuelve desde factory2/ con una lista blanca de entorno; su ejecucion real sigue
 sin conectar. El borrador `docs/actions/*.disabled` es **OBSOLETO** y no debe activarse.
-El workflow multiparte con guardado de cada resultado, topes y sin reintentos
-sigue siendo un requisito obligatorio pendiente, no una funcionalidad entregada.
+El workflow multiparte esta preparado localmente en el bloque 5, con guardado,
+topes y sin reintentos. Sigue bloqueado y no verificado en GitHub. Falta elegir
+como conectar el presupuesto acumulado local y autorizar todos los importes.

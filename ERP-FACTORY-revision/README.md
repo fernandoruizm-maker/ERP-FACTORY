@@ -1,14 +1,41 @@
 # ERP-FACTORY-revision: propuesta local de repositorio privado
 
 Esta carpeta es la futura raiz del repositorio privado. Hoy es solo una carpeta
-nueva versionada en las ramas locales de los bloques 2 y 3. No es un repositorio GitHub creado,
+nueva versionada en las ramas locales hasta el bloque 5. No es un repositorio GitHub creado,
 no tiene secretos y no ha ejecutado ninguna revision remota.
 
 El workflow esta en `.github/workflows/review.yml`. Esta escrito en el subconjunto
 JSON de YAML para analizar exactamente su estructura con la biblioteca estandar,
 sin descargar un parser. Esto no acredita que GitHub lo haya aceptado o ejecutado.
 
-## Protocolo local del bloque 3
+## Estado actual: bloque 5, sin activacion
+
+El YAML tiene 11 posiciones secuenciales: seleccionar/reservar, subir reserva,
+Claude (unico paso con su secreto), validar/guardar y subir resultado. No hay
+matriz ni reintento. Base 0cb1882: 10 partes + pasada final. Cada posicion recibe
+estado y SHA-256 del paso anterior; las salidas anteriores son inmutables.
+El siguiente paso requiere la subida anterior correcta. Una respuesta parcial,
+incierta, invalida o un tope detiene las llamadas; cross requiere todas las partes
+completas y mensaje de hasta 60.000 bytes. La cobertura la calcula contrato V2.
+
+mp-preflight/mp-init/mp-select/mp-collect son las nuevas fronteras CLI. Las llamadas
+las realiza exclusivamente la Action fijada, nunca codigo del checkout publico.
+Estado false, politica execution_enabled=false, pin cero e importes null siguen.
+El adaptador que aprovisione authorization.json no se ha elegido ni construido:
+cumulative_strategy=null impide arrancar. allowance.py solo reserva/importa localmente.
+No hay runner local instalado ni repositorio privado creado ni secreto configurado.
+
+6 minutos maximo por paso de Claude (incluye arranque de la Action); 120 por job.
+La anterior llamada de unos 280 s es solo referencia aportada por Fernando; no
+se ha medido esta version. Checkpoints ya subidos sobreviven a un fallo posterior;
+si GitHub mata el runner no se garantiza subir datos aun no enviados. Por eso
+tambien se sube la reserva antes de llamar y se conserva entera si hay incertidumbre.
+23 artefactos como maximo (inicial + 11 reservas + 11 resultados), retencion 7 dias.
+
+Diseno, alternativas de presupuesto, pruebas y NO VERIFICADO: ../docs/pr/bloque-5.md
+(ese documento acompana la entrega local; no es necesario para ejecutar el revisor).
+
+## Protocolo V2 del bloque 3 conservado
 
 `reviewer.packets.packet()` inventaria un commit LOCAL exacto con `git ls-files`
 y un indice temporal. Lee blobs mediante `cat-file`, sin checkout, filtros ni
@@ -16,8 +43,12 @@ ejecucion del candidato. Git tiene protocolos bloqueados y no usa configuracion
 global, credenciales ni descargas de objetos faltantes. `review-scope.json` enumera
 cada ruta admitida; una ruta nueva sin clasificar bloquea. Una exclusion requiere
 una razon explicita; no se lee su contenido. Los cambios sin commit no pertenecen
-al SHA pedido. El lector de tar se conserva solo como fixture y borrador previo;
-no acredita este inventario Git ni sustituye su comprobacion.
+al SHA pedido. Para el workflow futuro, el archivo anonimo de URL con SHA fijo se
+valida en memoria y sus nombres se inventarian con git ls-files en un indice
+temporal sin checkout. Ese indice usa blobs vacios solo para los nombres: no
+acredita un objeto commit Git remoto. Los bytes/rangos se ligan al archivo descargado
+y se registra git_commit_object_verified=false. Esta diferencia de procedencia
+con packet() es explicita; la integridad HTTPS/archivo remoto no se ha verificado.
 
 El constructor genera partes de hasta 60.000 bytes de mensaje de usuario, con
 lineas originales numeradas, huella por parte y manifiesto de rangos sin huecos
@@ -39,13 +70,13 @@ sin reintentos, y marca SIMULATED_NOT_PROVIDER_INTEGRATION. No contiene transpor
 de produccion. Si el contexto final excede 60.000 bytes bloquea, sin truncar. Los
 limites son controles locales de bytes, no una estimacion de tokens ni de coste.
 El colector heredado ensaya eventos ficticios y conserva su limite de 100.000 bytes
-por respuesta; no es un colector operativo de varias llamadas. Esa conexion queda
-pendiente junto con procedencia, presupuesto e identidades del bloque 4.
+por respuesta. multipart.py agrega la coleccion persistente por llamada y reutiliza
+las mismas validaciones/retencion privada. Procedencia real, presupuesto conectado
+e identidades siguen pendientes.
 
 El comando CLI `prepare` bloquea con MULTIPART_WORKFLOW_NOT_CONNECTED incluso
-si una prueba habilita ficticiamente la politica. El YAML antiguo de una llamada
-permanece desactivado; no se ha preparado otro intento de pago. Adaptar y verificar
-su secuencia real requiere una etapa posterior autorizada.
+si una prueba habilita ficticiamente la politica. Es una entrada obsoleta; el nuevo
+YAML usa comandos mp-*. No se ha ejecutado ni autorizado otro intento de pago.
 
 ## Diseno del bloque 2: un trabajo y dos fuentes separadas
 
@@ -158,8 +189,8 @@ El validador se deriva de la correccion local b0da873 (bloque 1), con diagnostic
 tipados y PARTIAL. Esta copia nueva aun requiere revision antes de fijar su commit
 privado. No usa/importa el validador del candidato publico.
 Partes, lineas y cobertura calculada estan implementadas y probadas localmente.
-La puerta operativa y el presupuesto acumulado del bloque 4 siguen pendientes.
-No hay orquestacion de pago por partes ni otro intento preparado para ejecutarse.
+La puerta operativa y el presupuesto acumulado conectado siguen pendientes.
+Hay orquestacion multiparte local bloqueada; no hay un intento autorizado a ejecutarse.
 La cobertura estructural no demuestra que un modelo haya comprendido el codigo;
 las pruebas tampoco acreditan calidad de una revision real. Los validadores
 publicos anteriores no se importan aqui y se retiraran en la migracion autorizada.

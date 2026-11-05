@@ -15,7 +15,7 @@ from .core import Blocked, canonical, digest
 PRIVATE_REPOSITORY = 'fernandoruizm-maker/ERP-FACTORY-revision'
 PROVENANCE_FIELDS = {'repository', 'source_sha', 'validator_sha', 'workflow_sha',
                      'run_id', 'run_attempt', 'actor_id'}
-ARTIFACT_NAMES = {'report.json', 'manifest.json', 'diagnostic.json', 'INFORME.txt', 'response.txt'}
+ARTIFACT_NAMES = {'report.json', 'manifest.json', 'diagnostic.json', 'INFORME.txt', 'response.txt', 'budget.json'}
 
 
 def private_contract():

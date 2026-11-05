@@ -10,7 +10,9 @@ from .runtime import collect_file, preflight
 
 def main():
     parser = argparse.ArgumentParser()
-    parser.add_argument('command', choices=('preflight', 'prepare', 'collect'))
+    parser.add_argument('command', choices=('preflight', 'prepare', 'collect',
+                                           'mp-preflight', 'mp-init', 'mp-select', 'mp-collect'))
+    parser.add_argument('--slot', type=int, choices=range(1, 12))
     args = parser.parse_args()
     trusted = Path(__file__).resolve().parent.parent
     try:
@@ -24,6 +26,11 @@ def main():
         checkout_sha = subprocess.run(['git', 'rev-parse', 'HEAD'], cwd=trusted,
             env=git_env, check=True, capture_output=True, text=True).stdout.strip()
         provenance = preflight(policy, os.environ, checkout_sha)
+        if args.command.startswith('mp-'):
+            from .multipart_cli import dispatch
+            if policy.get('reviewed_validator_sha') != checkout_sha:
+                raise Blocked('VALIDATOR_POLICY_REFERENCE_PENDING')
+            return dispatch(args.command, args.slot, policy, provenance, os.environ['REVIEW_WORKDIR'])
         if args.command == 'preflight':
             print('PRIVATE_REVIEW_PREFLIGHT_OK')
             return 0

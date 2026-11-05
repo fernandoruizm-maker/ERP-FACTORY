@@ -68,3 +68,13 @@ Suites finales 129 raiz + 87 privadas + 7 JS + 3 TS = 226, sin fallos/omitidas.
 Primer ensayo raiz: 2 fallos por orden alfabetico de perfiles; corregido y
 verificado con suites completas. Moneda y ambos topes monetarios siguen null.
 No se construye el workflow multiparte ni se activa infraestructura real.
+
+## Bloque 5 autorizado: workflow multiparte privado bloqueado
+
+Base 8ffb8115843fcb0f05b8c6a7c28adc0ce87c3934; rama fix/bloque-5-multiparte.
+Pasos fijos secuenciales, reserva/subida antes de llamar, validacion y subida
+inmediata posterior. Contrato V2 existente, sin reintentos ni codigo publico
+ejecutado. Tres bloqueos intactos; USD/11, importes null. Implementar solo comun
+local de reserva/importacion de autorizaciones; opcion acumulada pendiente de
+Fernando. Diseno y limites en docs/pr/bloque-5.md. Verificar suites completas,
+entregar SHA/diffs frente a 8ffb811 y 0cb1882. Sin red/publicacion/activacion.
