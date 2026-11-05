@@ -74,3 +74,14 @@ Se preparo una correccion local del diagnostico, sin relajar la validacion.
 Las 14 pruebas del modulo Actions pasan; no se hizo un sexto intento.
 Ver [evidencia, integridad del artefacto y limites](QUINTO-INTENTO.md).
 
+
+
+## Bloque 2: borrador privado local, sin ejecucion remota
+
+Carpeta nueva ERP-FACTORY-revision/, en rama local independiente desde 0cb1882.
+Un trabajo confiable privado; candidato publico leido como tar/JSON sin ejecutar.
+Workflow bloqueado, politica desactivada y pin privado revisado pendiente.
+23 pruebas privadas + 49 Python de base + 5 JS + 3 TS aprobadas (80, sin fallos ni
+omitidas). Ver comandos y limites en docs/pr/bloque-2.md. No verificados Actions,
+visibilidad de artefactos, minutos consumidos, proveedores o identidades. No se
+creo repositorio, no se movieron secretos, no se publico ni se activo la fabrica.

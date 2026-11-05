@@ -1,0 +1,101 @@
+{
+  "name": "Revision privada de ERP-FACTORY (borrador bloqueado)",
+  "on": {
+    "workflow_dispatch": {
+      "inputs": {
+        "source_sha": {
+          "description": "SHA completo PUBLICO autorizado; nunca una rama",
+          "required": true,
+          "type": "string"
+        },
+        "authorize_anthropic": {
+          "description": "Nueva autorizacion expresa de envio y coste",
+          "required": true,
+          "type": "boolean",
+          "default": false
+        }
+      }
+    }
+  },
+  "permissions": {},
+  "concurrency": {
+    "group": "private-factory-review",
+    "cancel-in-progress": false
+  },
+  "jobs": {
+    "review": {
+      "if": "${{ false && github.event.repository.private == true && github.repository == 'fernandoruizm-maker/ERP-FACTORY-revision' && github.ref == 'refs/heads/main' && github.actor_id == '342326625' && github.triggering_actor == 'fernandoruizm-maker' && github.run_attempt == 1 && inputs.authorize_anthropic == true }}",
+      "runs-on": "ubuntu-24.04",
+      "timeout-minutes": 10,
+      "permissions": {
+        "contents": "read"
+      },
+      "env": {
+        "TRUSTED_REVIEWER_SHA": "0000000000000000000000000000000000000000",
+        "INPUT_SOURCE_SHA": "${{ inputs.source_sha }}",
+        "REPOSITORY_PRIVATE": "${{ github.event.repository.private }}",
+        "TRIGGERING_ACTOR": "${{ github.triggering_actor }}",
+        "AUTHORIZE_ANTHROPIC": "${{ inputs.authorize_anthropic }}",
+        "WORKFLOW_SHA": "${{ github.workflow_sha }}",
+        "REVIEW_WORKDIR": "${{ runner.temp }}/private-review"
+      },
+      "steps": [
+        {
+          "name": "Leer solo el validador privado fijado (referencia pendiente)",
+          "uses": "actions/checkout@11d5960a326750d5838078e36cf38b85af677262",
+          "with": {
+            "repository": "fernandoruizm-maker/ERP-FACTORY-revision",
+            "ref": "0000000000000000000000000000000000000000",
+            "path": "trusted",
+            "persist-credentials": false
+          }
+        },
+        {
+          "name": "Verificar identidad, privacidad, autorizacion y referencia",
+          "run": "python3 -I -B trusted/entrypoint.py preflight"
+        },
+        {
+          "name": "Descargar archivo publico anonimo y leerlo solo como datos",
+          "id": "prepare",
+          "run": "python3 -I -B trusted/entrypoint.py prepare"
+        },
+        {
+          "name": "Revisar sin herramientas ni permiso de escritura",
+          "id": "claude",
+          "uses": "anthropics/claude-code-action@c0949c50a78c1ec8ce2647db36629b870e715d0c",
+          "with": {
+            "github_token": "${{ github.token }}",
+            "claude_code_oauth_token": "${{ secrets.CLAUDE_CODE_OAUTH_TOKEN }}",
+            "prompt": "${{ steps.prepare.outputs.user_prompt }}",
+            "claude_args": "--safe-mode --disallowedTools \"*\" --max-turns 2 --max-budget-usd 2 --model sonnet --append-system-prompt-file ${{ runner.temp }}/private-review/input/system.txt",
+            "show_full_output": "false",
+            "display_report": "false",
+            "classify_inline_comments": "false",
+            "include_fix_links": "false"
+          }
+        },
+        {
+          "name": "Verificar huella y validar respuesta con codigo privado fijado",
+          "id": "validate",
+          "if": "${{ always() && steps.prepare.outcome == 'success' }}",
+          "env": {
+            "MATERIAL_SHA256": "${{ steps.prepare.outputs.material_sha256 }}",
+            "CLAUDE_CONCLUSION": "${{ steps.claude.outputs.conclusion }}"
+          },
+          "run": "python3 -I -B trusted/entrypoint.py collect"
+        },
+        {
+          "name": "Conservar solamente informes privados validados o diagnostico seguro",
+          "if": "${{ always() && steps.prepare.outcome == 'success' }}",
+          "uses": "actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02",
+          "with": {
+            "name": "private-review-${{ inputs.source_sha }}-${{ github.run_id }}-${{ github.run_attempt }}",
+            "path": "${{ runner.temp }}/private-review/artifacts/",
+            "if-no-files-found": "error",
+            "retention-days": 7
+          }
+        }
+      ]
+    }
+  }
+}
