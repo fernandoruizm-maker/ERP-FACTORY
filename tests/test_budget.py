@@ -1,6 +1,7 @@
 from concurrent.futures import ThreadPoolExecutor
 import json
 from pathlib import Path
+import sqlite3
 import tempfile
 import time
 import unittest
@@ -175,6 +176,46 @@ class PaidProviderTests(unittest.TestCase):
         self.assertEqual(self.store.recover()['uncertain_paid_attempts'], 1)
         self.assertEqual(self.store.budget.summary()['conservative_charge_units'], 1000000)
         self.assertEqual(self.store.recover()['uncertain_paid_attempts'], 0)
+
+    @unittest.skipUnless(
+        hasattr(sqlite3.Connection, 'setconfig')
+        and hasattr(sqlite3, 'SQLITE_DBCONFIG_DQS_DML')
+        and hasattr(sqlite3, 'SQLITE_DBCONFIG_DQS_DDL'),
+        'Local Python/SQLite does not expose DQS_DML/DQS_DDL configuration')
+    def test_recovery_and_summaries_with_double_quoted_text_disabled(self):
+        original_connect = sqlite3.connect
+
+        def strict_connect(*args, **kwargs):
+            db = original_connect(*args, **kwargs)
+            try:
+                for option in (sqlite3.SQLITE_DBCONFIG_DQS_DML, sqlite3.SQLITE_DBCONFIG_DQS_DDL):
+                    db.setconfig(option, False)
+                    self.assertFalse(db.getconfig(option))
+                # Prove that this connection rejects double-quoted text.
+                with self.assertRaises(sqlite3.OperationalError):
+                    db.execute('SELECT "fictitious_missing_column"')
+                return db
+            except BaseException:
+                db.close()
+                raise
+
+        # Both modules use the same sqlite3 module; every new connection is strict.
+        with patch('sqlite3.connect', side_effect=strict_connect):
+            with self.store.worker():
+                self.store.reserve_paid_call('strict1', 'T', 'ficticio', 'hash', execution_id='run1',
+                                             source_sha=SOURCE, max_cost='1', output_limit=100)
+            recovered = self.store.recover()
+            self.assertEqual(recovered['uncertain_calls'], 1)
+            self.assertEqual(recovered['uncertain_paid_attempts'], 1)
+            self.assertEqual(recovered['retried'], 0)
+            self.assertEqual(self.store.summary()['uncertain'], 1)
+            self.assertEqual(self.store.budget.summary()['unknown'], 1)
+            self.assertEqual(self.store.budget.summary()['conservative_charge_units'], 1000000)
+            self.assertEqual(self.store.recover()['uncertain_paid_attempts'], 0)
+            self.store.budget.reserve('strict2', 'run1', 'ficticio', 'hash', SOURCE, '1', self.store.config())
+            self.store.budget.finish('strict2', 'COMPLETED', actual_cost='1.5')
+            with self.assertRaisesRegex(Blocked, 'BUDGET_RECONCILIATION_REQUIRED'):
+                self.store.budget.reserve('strict3', 'run1', 'ficticio', 'hash', SOURCE, '0.1', self.store.config())
 
 
 if __name__ == '__main__':

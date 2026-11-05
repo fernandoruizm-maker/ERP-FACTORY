@@ -94,7 +94,7 @@ class BudgetLedger:
         row = db.execute('SELECT * FROM paid_executions WHERE id=?', (execution,)).fetchone()
         if row is None or row['source_sha'] != source_sha or row['currency'] != currency:
             raise Blocked('EXECUTION_VERSION_OR_CURRENCY_MISMATCH')
-        if db.execute('SELECT 1 FROM paid_attempts WHERE status="OVER_BUDGET"').fetchone():
+        if db.execute("SELECT 1 FROM paid_attempts WHERE status='OVER_BUDGET'").fetchone():
             raise Blocked('BUDGET_RECONCILIATION_REQUIRED')
         if db.execute('SELECT 1 FROM paid_attempts WHERE id=?', (call_id,)).fetchone():
             raise Blocked('PAID_ATTEMPT_ALREADY_RECORDED_NO_RETRY')
@@ -135,6 +135,6 @@ class BudgetLedger:
         with self.connect() as db:
             currency = db.execute('SELECT currency FROM paid_executions LIMIT 1').fetchone()
             row = db.execute('SELECT count(*),coalesce(sum(charged_units),0),'
-                             'sum(CASE WHEN status="UNKNOWN" THEN 1 ELSE 0 END) FROM paid_attempts').fetchone()
+                             "sum(CASE WHEN status='UNKNOWN' THEN 1 ELSE 0 END) FROM paid_attempts").fetchone()
         return {'attempts': row[0], 'conservative_charge_units': row[1], 'unknown': row[2] or 0,
                 'unit_scale': 1_000_000, 'currency': currency[0] if currency else None, 'billing_verified': False}

@@ -1,5 +1,15 @@
 # Estado actual: bloque 4 completado localmente, fabrica desactivada
 
+Correccion posterior desde 992fcb1: literales SQL con comillas simples y prueba
+SQLite estricta (DQS_DML/DQS_DDL desactivados). Suites completas: 130 raiz,
+87 privadas, 7 JS y 3 TS; 227 aprobadas, cero fallos, errores u omitidas.
+Pendientes del bloque 5: almacenamiento/aplicacion del presupuesto acumulado en
+GitHub y coordinacion real con la fabrica original antes de poder usar recover().
+No se inicia el bloque 5. El ZIP de 992fcb1 no incluye esta correccion.
+SHA y detalle de entrega en docs/pr/bloque-4.md y acta local referenciada alli.
+
+### Registro de la entrega anterior
+
 Las dos mitades estan implementadas y probadas en fix/bloque-4-operacion. Base
 ad91cb3; primera mitad 84c5fe8. Suites finales: 129 raiz + 87 privadas + 7 JS +
 3 TS = 226, cero fallos, errores u omitidas. El primer ensayo de la segunda

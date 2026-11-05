@@ -156,7 +156,7 @@ class Store:
         with self.worker():
             with self.connect() as db:
                 db.execute('BEGIN IMMEDIATE')
-                paid = db.execute('UPDATE paid_attempts SET status="UNKNOWN" WHERE status="IN_FLIGHT"').rowcount
+                paid = db.execute("UPDATE paid_attempts SET status='UNKNOWN' WHERE status='IN_FLIGHT'").rowcount
                 count = db.execute("UPDATE calls SET status='UNKNOWN' WHERE status='IN_FLIGHT'").rowcount
         return {"uncertain_calls": count, "uncertain_paid_attempts": paid, "retried": 0,
                 "action": "Reconciliar manualmente; no reenviar ni liberar presupuesto automáticamente."}

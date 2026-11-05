@@ -2,15 +2,22 @@
 
 ## Estado actual de la entrega completa
 
-La primera mitad, puntos 1-4, se entrego en
-`84c5fe8af7488b5b6eef88ef82538ef79ab85283`. La segunda mitad, puntos 5-9,
-continua desde ese SHA en la misma rama local fix/bloque-4-operacion. La base del
-bloque completo sigue siendo ad91cb39609e589df72c8e0b01fc68c694fb4c83.
-El segundo SHA se entrega al confirmar el commit. Este documento cubre ambos
-commits; los detalles de la primera mitad se conservan como registro historico.
+Rama local fix/bloque-4-operacion; base ad91cb39609e589df72c8e0b01fc68c694fb4c83.
+Esta entrega comprende cuatro commits, no dos ni tres:
 
-Resultado final de las suites completas: 129 raiz + 87 privadas + 7 JS + 3 TS =
-226 casos, cero fallos, errores u omitidas. Sin red, proveedores, publicacion ni
+1. `84c5fe8af7488b5b6eef88ef82538ef79ab85283`: puntos 1-4.
+2. `d3d73190bf1502920088dae0ef3a6c17c5cc58e1`: puntos 5-9.
+3. `992fcb1b879bf6a656b29fd7aa6dcc1312db9e76`: decision de moneda USD; base de este arreglo.
+4. `Fix SQL literals for strict SQLite and record block 5 prerequisites`: este commit adicional.
+
+El SHA de un commit no puede escribirse dentro de su propio contenido sin cambiarlo.
+Su SHA final real se entrega en la respuesta y en el acta local fuera del repositorio
+`../entregas-locales/bloque-4-sql-entrega.txt`, junto con los diff --stat completos.
+Para cotejarlo, ejecutar `git rev-parse HEAD` y `git log --oneline ad91cb3..HEAD`.
+Los registros de las entregas anteriores se conservan abajo como historia.
+
+Resultado final de las suites completas: 130 raiz + 87 privadas + 7 JS + 3 TS =
+227 casos, cero fallos, errores u omitidas. Sin red, proveedores, publicacion ni
 activacion. La operacion real sigue bloqueada. Mas abajo se detallan comandos,
 el ensayo fallido corregido y los limites de la segunda mitad.
 
@@ -357,3 +364,71 @@ publication_enabled en false. limits(config) rechazo con BUDGET_AMOUNT_REQUIRED.
 Resultado: comprobacion aprobada, salida 0. No se repitieron las suites completas
 para este ajuste; las 226 pruebas arriba corresponden a d3d7319. No se verifico
 ninguna integracion real ni se ejecuto un intento de pago.
+
+## Correccion adicional: SQL estricto (desde 992fcb1)
+
+Todos los literales de texto dentro del SQL de state.py y budget.py usan comillas
+simples; los valores parametrizados siguen usando placeholders. Se corrigieron
+OVER_BUDGET en reserve_in, UNKNOWN en summary y UNKNOWN/IN_FLIGHT en recover.
+Las comillas exteriores de las cadenas Python no son delimitadores SQL.
+
+Prueba nueva: test_recovery_and_summaries_with_double_quoted_text_disabled.
+Python 3.12.14 / SQLite 3.53.1 permiten setconfig: DQS_DML y DQS_DDL se desactivan
+y verifican en cada conexion usada por la prueba. Una consulta de control con
+texto entre comillas dobles debe fallar. Despues se comprueban reserva, recover,
+ambos summary, conservacion del cargo, recuperacion repetida y bloqueo OVER_BUDGET.
+Solo datos ficticios y coordinacion simulada. La prueba no fue omitida. En otras
+versiones sin esa API, unittest registra skip con el motivo explicito.
+
+Ensayo dirigido antes del arreglo:
+
+```powershell
+& "$env:USERPROFILE\.cache\codex-runtimes\codex-primary-runtime\dependencies\python\python.exe" -B -m unittest tests.test_budget.PaidProviderTests.test_recovery_and_summaries_with_double_quoted_text_disabled -v
+```
+
+Primero el sandbox impidio crear/limpiar temporales: 1 prueba, 2 errores de entorno.
+Por la via de autorizacion del entorno se repitio: 1 prueba, 1 error SQL
+`no such column: "OVER_BUDGET"`, antes de la correccion. No son resultados finales.
+
+Tras el arreglo, suites completas ejecutadas (Python mediante la via autorizada
+para temporales, sin red ni proveedores):
+
+```powershell
+# Desde ERP-FACTORY-correcciones
+& "$env:USERPROFILE\.cache\codex-runtimes\codex-primary-runtime\dependencies\python\python.exe" -B -m unittest discover -s tests -v
+node --test --test-reporter=tap pilot-js/tests/bottles.test.mjs
+node --experimental-strip-types --test --test-reporter=tap pilot-js/tests/bottles.test.ts
+# Desde ERP-FACTORY-correcciones/ERP-FACTORY-revision
+& "$env:USERPROFILE\.cache\codex-runtimes\codex-primary-runtime\dependencies\python\python.exe" -B -m unittest discover -s tests -v
+```
+
+Resultados reales: raiz 130, privada 87, JS 7, TS 3; total 227, cero fallos,
+errores u omitidas. TS sigue sin comprobacion estatica de tipos. No se verificaron
+integraciones reales, GitHub, Docker, ERP, identidades ni eventos de proveedores.
+El ZIP de 992fcb1 es anterior a esta correccion y no representa el nuevo SHA.
+
+### Pendientes obligatorios del bloque 5 (sin implementar)
+
+- Definir donde persistira el registro acumulado de gasto para GitHub: almacen
+  privado duradero, compartido entre ejecuciones y con acceso autenticado. No
+  basta SQLite efimero del runner ni artefactos que expiran a los 7 dias.
+- Definir como aplicarlo: reserva atomica antes de cada llamada, serializacion de
+  ejecuciones concurrentes, conservacion de UNKNOWN, conciliacion manual y fallo
+  cerrado si no puede consultarse o persistirse el registro. El futuro workflow
+  debe usarlo junto con los topes por ejecucion; aun no esta conectado ni probado.
+- recover() no es utilizable en modo real hasta existir coordinacion verificable
+  con la fabrica original. El candado y marcador ficticios solo prueban el contrato
+  local; no acreditan exclusion mutua entre instalaciones reales.
+- USD y 11 llamadas permanecen configurados; ambos importes siguen null. No hay
+  autorizacion de pago, nueva ejecucion, publicacion ni activacion.
+
+### Resumen de git diff --stat de la entrega completa
+
+| Base | Archivos | Inserciones | Eliminaciones |
+|---|---:|---:|---:|
+| ad91cb3 | 29 | 2477 | 180 |
+| 0cb1882 | 52 | 5663 | 236 |
+
+Comandos: `git diff --stat ad91cb3 HEAD` y `git diff --stat 0cb1882 HEAD`.
+El acta local de entrega conserva la salida completa y el SHA calculado despues
+del commit. Esperar instrucciones de Fernando antes de comenzar el bloque 5.
