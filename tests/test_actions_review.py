@@ -173,8 +173,9 @@ class ActionsReviewTests(unittest.TestCase):
         with tempfile.TemporaryDirectory() as temp:
             store = Store(Path(temp) / 'state.sqlite3')
             version = store.put_task('FICTICIO', {'artifact_digest': 'artifact'})
-            store.accept('FICTICIO', version, 'persona-a', 'business')
-            store.accept('FICTICIO', version, 'persona-b', 'technical')
+            # Legacy acceptances lacking a private review/expiry are blocked too.
+            with self.assertRaises(Blocked):
+                store.accept('FICTICIO', version, 'persona-a', 'business')
             product = {'artifact_digest': 'artifact', 'verdict': 'PASS', 'summary_es': 'Ficticio', 'findings': []}
             tests = [{'status': 'PASS', 'test_count': 1, 'artifact_digest': 'artifact'}]
             for review in (partial, partial['review']):

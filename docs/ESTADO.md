@@ -165,3 +165,20 @@ ante fallos, topes autorizados de llamadas/gasto y sin reintentos automaticos.
 No se construyo ahora. error/errors sigue NO VERIFICADO frente a eventos reales.
 Solo documentacion y calculo local; suites no repetidas porque el codigo no cambia.
 Se espera instruccion de Fernando antes del bloque 4. Ver docs/pr/bloque-3.md.
+
+
+## Bloque 4, primera mitad: puntos 1-4
+
+Rama fix/bloque-4-operacion rehecha desde ad91cb39609e589df72c8e0b01fc68c694fb4c83.
+Aceptaciones normalizadas con version/run/caducidad, sin sustitucion silenciosa;
+importador V2 privado con integridad y autenticacion pendiente; candado local
+y marcador ficticio; comparacion solo mediante permiso acotado y datos ficticios.
+Gate permanece BLOCKED por autenticacion pendiente aun con fixtures completos.
+La coordinacion real con la original no se simula como resuelta y esta bloqueada.
+Fernando declaro las identidades negocio fernandoruizm-maker ID 342326625 y
+tecnica FERRUMTJA ID 352290329; no se autentico ninguna. Tope declarado: 11
+llamadas/ejecucion; ambos gastos siguen null. El registro monetario es del punto 7.
+Pruebas completas: 93 raiz + 87 privadas + 5 JS + 3 TS = 188; cero fallos,
+errores u omitidas. Sin red, credenciales, proveedores, publicacion o activacion.
+Original, factoria-2, upstream/ y main intactos. Ver comandos, limites y hallazgos
+parcialmente resueltos en docs/pr/bloque-4.md. Puntos 5-9 para la segunda mitad.

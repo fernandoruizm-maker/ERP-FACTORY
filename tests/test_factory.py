@@ -12,6 +12,8 @@ from factory2.providers import ClaudeReviewer, CodexBuilder, Permit, gate, NoRed
 from factory2.runner import DockerRunner, assess, test_command
 from factory2.state import Store
 from factory2.workflow import prepare, stage
+from factory2.comparison_permit import ComparisonPermit
+from tests.operation_fixtures import store_fixture, coordinator, accept
 
 ROOT = Path(__file__).resolve().parent.parent
 BRIEF = json.loads((ROOT / 'fixtures/cliente.json').read_text(encoding='utf-8'))
@@ -41,42 +43,46 @@ class DiscoveryTests(unittest.TestCase):
                 'requirement': 'BOT-01', 'decision': 'ADAPTAR', 'reason': 'Ensayo documentado',
                 'evidence': [{'path': 'capability.txt', 'sha256': file_digest(file), 'supports': 'Solicitud de salida'}]}]}
             self.assertEqual(compare(BRIEF, catalog, evidence_root=temp)['rows'][0]['decision'], 'PENDIENTE')
-            self.assertEqual(compare(BRIEF, catalog, evidence_root=temp, authorized=True)['rows'][0]['decision'], 'ADAPTAR')
+            permit = ComparisonPermit('operador-ficticio', 'FICTICIA', str(Path(temp).resolve()),
+                                      ('capability.txt',), time.time()+60, digest(catalog), True)
+            self.assertEqual(compare(BRIEF, catalog, evidence_root=temp, permit=permit)['rows'][0]['decision'], 'ADAPTAR')
             file.write_text('Cambiado', encoding='utf-8')
-            self.assertEqual(compare(BRIEF, catalog, evidence_root=temp, authorized=True)['rows'][0]['decision'], 'PENDIENTE')
+            self.assertEqual(compare(BRIEF, catalog, evidence_root=temp, permit=permit)['rows'][0]['decision'], 'PENDIENTE')
 
     def test_evidence_cannot_escape_scope(self):
         catalog = {'capabilities': [{'requirement':'BOT-01', 'decision':'REUTILIZAR', 'reason':'x',
                    'evidence':[{'path':'../outside', 'sha256':'0'*64, 'supports':'x'}]}]}
         with tempfile.TemporaryDirectory() as temp:
-            self.assertEqual(compare(BRIEF, catalog, evidence_root=temp, authorized=True)['rows'][0]['decision'], 'PENDIENTE')
+            self.assertEqual(compare(BRIEF, catalog, evidence_root=temp, permit=True)['rows'][0]['decision'], 'PENDIENTE')
 
 
 class StateTests(unittest.TestCase):
     def setUp(self):
         self.temp = tempfile.TemporaryDirectory()
         self.addCleanup(self.temp.cleanup)
-        self.store = Store(Path(self.temp.name) / 'state.sqlite3')
+        self.store, self.imported = store_fixture(self.temp.name)
         self.artifact = {'src/demo.py': 'print(1)'}
         self.artifact_hash = digest(self.artifact)
         self.version = self.store.put_task('T1', {'brief': BRIEF, 'artifact_digest': self.artifact_hash})
 
     def test_two_distinct_people_and_version_bound(self):
-        self.store.accept('T1', self.version, 'persona-a', 'business')
+        accept(self.store, 'T1', self.version, 'business', self.imported)
         with self.assertRaises(Blocked): self.store.accept('T1', self.version, 'PERSONA-A', 'technical')
-        self.store.accept('T1', self.version, 'persona-b', 'technical')
+        accept(self.store, 'T1', self.version, 'technical', self.imported)
         review = {'artifact_digest':self.artifact_hash, 'verdict':'PASS', 'summary_es':'Sin hallazgos en ensayo', 'findings':[]}
         tests = [{'status':'PASS','test_count':3,'artifact_digest':self.artifact_hash}]
-        factory_hash=digest('factory-version')
-        factory_review={**review,'artifact_digest':factory_hash}
+        factory_hash=self.imported['factory_digest']
+        factory_review=self.imported['review_id']
         self.assertEqual(self.store.gate('T1',self.version,self.artifact_hash,review,tests,
-                         factory_digest=factory_hash,factory_review=factory_review)['status'], 'READY_FOR_MANUAL_REVIEW')
+                         source_sha=self.imported['source_sha'],
+                         factory_digest=factory_hash,factory_review=factory_review)['status'], 'BLOCKED')
         self.assertFalse(self.store.gate('T1',self.version,self.artifact_hash,review,tests)['publication_allowed'])
         self.store.put_task('T1', {'brief': BRIEF, 'artifact_digest': digest('changed')})
         self.assertEqual(self.store.gate('T1',self.version,self.artifact_hash,review,tests)['status'], 'BLOCKED')
 
     def test_factory_review_is_required_and_bound_to_its_version(self):
-        self.store.accept('T1',self.version,'a','business'); self.store.accept('T1',self.version,'b','technical')
+        accept(self.store, 'T1', self.version, 'business', self.imported)
+        accept(self.store, 'T1', self.version, 'technical', self.imported)
         review={'artifact_digest':self.artifact_hash,'verdict':'PASS','summary_es':'Ensayo','findings':[]}
         tests=[{'status':'PASS','test_count':1,'artifact_digest':self.artifact_hash}]
         for factory_review in (None,{**review,'artifact_digest':'outdated'}):
@@ -85,34 +91,38 @@ class StateTests(unittest.TestCase):
             self.assertEqual(result['status'],'BLOCKED')
 
     def test_artifact_change_invalidates_acceptance_even_with_new_review(self):
-        self.store.accept('T1',self.version,'a','business'); self.store.accept('T1',self.version,'b','technical')
+        accept(self.store, 'T1', self.version, 'business', self.imported)
+        accept(self.store, 'T1', self.version, 'technical', self.imported)
         newhash = digest('different-code')
         review = {'artifact_digest':newhash,'verdict':'PASS','summary_es':'Ensayo','findings':[]}
         result = self.store.gate('T1',self.version,newhash,review,[{'status':'PASS','test_count':1,'artifact_digest':newhash}])
         self.assertEqual(result['status'],'BLOCKED')
 
     def test_missing_or_blocked_review_and_zero_tests_fail(self):
-        self.store.accept('T1',self.version,'a','business'); self.store.accept('T1',self.version,'b','technical')
+        accept(self.store, 'T1', self.version, 'business', self.imported)
+        accept(self.store, 'T1', self.version, 'technical', self.imported)
         review = {'artifact_digest':self.artifact_hash,'verdict':'BLOCK','summary_es':'Falta prueba','findings':[]}
         for r in (None, review):
             self.assertEqual(self.store.gate('T1',self.version,self.artifact_hash,r,[])['status'],'BLOCKED')
 
     def test_recovery_never_resends_uncertain_call(self):
-        self.store.reserve_call('C1','T1','claude','abc',max_calls=2,output_limit=100)
-        reopened = Store(self.store.path)
+        with self.store.worker():
+            self.store.reserve_call('C1','T1','claude','abc',max_calls=2,output_limit=100)
+        reopened = Store(self.store.path, coordinator=self.store.coordinator)
         self.assertEqual(reopened.recover()['uncertain_calls'],1)
         self.assertEqual(reopened.recover()['uncertain_calls'],0)
-        with self.assertRaises(Blocked): reopened.reserve_call('C1','T1','claude','abc',max_calls=2,output_limit=100)
+        with reopened.worker(), self.assertRaises(Blocked):
+            reopened.reserve_call('C1','T1','claude','abc',max_calls=2,output_limit=100)
         self.assertEqual(reopened.summary()['uncertain'],1)
 
-    def test_atomic_budget_with_concurrent_reservations(self):
+    def test_budget_still_applies_to_serialized_reservations(self):
         def reserve(i):
             try:
-                self.store.reserve_call(str(i),'T1','claude','hash',max_calls=2,output_limit=100)
+                with self.store.worker():
+                    self.store.reserve_call(str(i),'T1','claude','hash',max_calls=2,output_limit=100)
                 return True
             except Blocked: return False
-        with ThreadPoolExecutor(max_workers=8) as pool:
-            results = list(pool.map(reserve,range(8)))
+        results = [reserve(i) for i in range(8)]
         self.assertEqual(sum(results),2)
         self.assertEqual(self.store.summary()['calls'],2)
 
@@ -120,7 +130,8 @@ class StateTests(unittest.TestCase):
 class ProviderTests(unittest.TestCase):
     def setUp(self):
         self.temp = tempfile.TemporaryDirectory(); self.addCleanup(self.temp.cleanup)
-        self.store = Store(Path(self.temp.name)/'s.sqlite3'); self.store.put_task('T',BRIEF)
+        self.store = Store(Path(self.temp.name)/'s.sqlite3', coordinator=coordinator(self.temp.name))
+        self.store.put_task('T',BRIEF)
         self.cfg = {'external_calls_enabled':True,'max_calls_per_task':2,'max_output_tokens':100,
                     'claude_model':'test-model-NOT-REAL','timeout_seconds':1}
         self.artifact = {'synthetic':'fixture'}

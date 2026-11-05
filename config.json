@@ -7,6 +7,15 @@
   "builder": "codex",
   "reviewer": "claude",
   "human_approvals_required": 2,
+  "human_approvers": {
+    "business": {"login": "fernandoruizm-maker", "id": "342326625"},
+    "technical": {"login": "FERRUMTJA", "id": "352290329"}
+  },
+  "private_review_trust": null,
+  "coordination_directory": null,
+  "max_calls_per_execution": 11,
+  "max_spend_per_execution": null,
+  "max_spend_total": null,
   "max_calls_per_task": 2,
   "max_input_bytes": 100000,
   "max_output_tokens": 4096,

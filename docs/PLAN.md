@@ -38,3 +38,22 @@ Bloque 3 implementa protocolo privado por partes, lineas y cobertura calculada,
 con pruebas locales y dobles ficticios. No conecta la secuencia real a Actions.
 Pendientes: bloque 4 y migracion/configuracion/ejecucion posterior expresamente
 autorizada. No hay nuevo intento de pago preparado. Ver docs/pr/bloque-3.md.
+
+
+## Bloque 4 en dos entregas locales
+
+Rama fix/bloque-4-operacion rehecha desde ad91cb39609e589df72c8e0b01fc68c694fb4c83.
+La referencia anterior (0cb1882, sin cambios propios) se conserva como
+archive/bloque-4-base-anterior. Primera mitad: aceptaciones V2 con caducidad,
+importador unico privado con integridad comprobada y autenticacion pendiente,
+candado de trabajador/indicador solo simulado y permiso de comparacion por alcance.
+Segunda mitad, despues de entregar la primera: orquestador, envoltorio Codex,
+registro acumulado y topes, piloto y documentacion de migracion (puntos 5-9).
+No construir el workflow multiparte ni activar integraciones en ninguna mitad.
+Fernando declaro negocio fernandoruizm-maker ID 342326625 y tecnica FERRUMTJA
+ID 352290329; no se autentican en local. Autorizo 11 llamadas por ejecucion;
+gasto por ejecucion y gasto acumulado siguen null, sin valor por defecto.
+Faltan origen GitHub autenticado y coordinacion real con la original: fallar
+cerrado, no tratar fixtures o huellas locales como prueba de esas integraciones.
+Verificar suites privada/raiz/JS/TS, registrar evidencia y entregar commit y
+diffs contra ad91cb3 y 0cb1882 por cada mitad; no tocar main ni upstream/.

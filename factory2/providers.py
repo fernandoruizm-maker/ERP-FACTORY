@@ -61,6 +61,12 @@ class ClaudeReviewer:
         self.config, self.store, self.transport = config, store, transport
 
     def review(self, task, artifact, test_evidence, permit):
+        with self.store.worker():
+            if self.store.coordinator.simulation and self.transport is claude_http:
+                raise Blocked('REAL_TRANSPORT_FORBIDDEN_IN_SIMULATION')
+            return self._review(task, artifact, test_evidence, permit)
+
+    def _review(self, task, artifact, test_evidence, permit):
         payload = {"artifact": artifact, "artifact_digest": digest(artifact), "tests": test_evidence}
         limit = gate(self.config, permit, "claude", payload)
         model = self.config.get("claude_model")
@@ -109,6 +115,12 @@ class CodexBuilder:
         self.config, self.store, self.agent = config, store, agent
 
     def build(self, task, payload, permit):
+        with self.store.worker():
+            if self.store.coordinator.simulation and self.agent is None:
+                raise Blocked('REAL_TRANSPORT_FORBIDDEN_IN_SIMULATION')
+            return self._build(task, payload, permit)
+
+    def _build(self, task, payload, permit):
         limit = gate(self.config, permit, "codex", payload)
         if self.agent is None:
             # Reuse the verified adapter. No installation, login or config change here.
