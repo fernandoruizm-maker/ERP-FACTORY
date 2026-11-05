@@ -7,3 +7,4 @@ node_modules/
 outputs/
 *.pem
 *.key
+/docs/revisiones/*.local.md

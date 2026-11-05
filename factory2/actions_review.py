@@ -1,5 +1,6 @@
 """Prepare and validate static review evidence. Never calls a provider or approves work."""
 import argparse
+import hashlib
 import json
 import os
 from pathlib import Path
@@ -83,39 +84,82 @@ def nonempty(value, maximum=10000):
     return isinstance(value, str) and bool(value.strip()) and len(value) <= maximum
 
 
+class ReviewRejected(Blocked):
+    """Fixed machine code, independent of human-readable exception messages."""
+    def __init__(self, code, coverage=None):
+        super().__init__(code)
+        self.code = code
+        self.coverage = coverage
+
+
+def coverage_diagnostic(manifest, result):
+    reviewed = result.get('reviewed_files')
+    expected = set(manifest['files'])
+    codes = []
+    names = None
+    if not isinstance(reviewed, list):
+        codes.append('REVIEWED_NOT_LIST')
+    else:
+        names = [name for name in reviewed if isinstance(name, str)]
+        if len(names) != len(reviewed):
+            codes.append('REVIEWED_NOT_STRINGS')
+    duplicates = len(names) - len(set(names)) if names is not None else None
+    missing = sorted(expected - set(names)) if names is not None else None
+    extra = len(set(names) - expected) if names is not None else None
+    if duplicates:
+        codes.append('REVIEWED_DUPLICATES')
+    if missing:
+        codes.append('REVIEWED_MISSING')
+    if extra:
+        codes.append('REVIEWED_EXTRA')
+    coverage = result.get('coverage')
+    cross = result.get('cross_component_review')
+    if coverage != 'complete':
+        codes.append('COVERAGE_DECLARED_INCOMPLETE')
+    if cross is not True:
+        codes.append('CROSS_REVIEW_FALSE')
+    return {'codes': codes, 'expected_count': len(expected),
+            'reviewed_count': len(reviewed) if isinstance(reviewed, list) else None,
+            'missing_count': len(missing) if missing is not None else None,
+            'extra_count': extra, 'duplicate_count': duplicates, 'missing_files': missing,
+            # Invalid provider values are not allowed into diagnostics.
+            'coverage': coverage if coverage in ('complete', 'incomplete') else 'INVALID',
+            'cross_component_review': cross if type(cross) is bool else 'INVALID'}
+
+
 def validate_result(manifest, result):
     if not isinstance(result, dict) or set(result) != set(schema()['required']):
-        raise Blocked('Respuesta ausente o estructura incorrecta.')
+        raise ReviewRejected('REPORT_STRUCTURE')
     if len(canonical(result).encode('utf-8')) > MAX_RESULT_BYTES or SECRET_PATTERN.search(canonical(result)):
-        raise Blocked('Respuesta excesiva o con posible credencial; no se publica.')
+        raise ReviewRejected('OUTPUT_SAFETY_OR_SIZE')
     if result['source_sha'] != manifest['source_sha'] or result['factory_digest'] != manifest['factory_digest']:
-        raise Blocked('La respuesta corresponde a otra version.')
-    reviewed = result['reviewed_files']
-    if (not isinstance(reviewed, list) or not all(isinstance(x, str) for x in reviewed)
-            or len(reviewed) != len(set(reviewed)) or set(reviewed) != set(manifest['files'])
-            or result['coverage'] != 'complete' or result['cross_component_review'] is not True):
-        raise Blocked('Revision parcial o sin analisis de interacciones.')
+        raise ReviewRejected('VERSION_MISMATCH')
+    coverage = coverage_diagnostic(manifest, result)
+    if (any(code in coverage['codes'] for code in ('REVIEWED_NOT_LIST', 'REVIEWED_NOT_STRINGS'))
+            or coverage['coverage'] == 'INVALID' or coverage['cross_component_review'] == 'INVALID'):
+        raise ReviewRejected('COVERAGE_STRUCTURE', coverage)
     if result['verdict'] not in ('PASS', 'BLOCK') or not nonempty(result['summary_es']):
-        raise Blocked('Conclusion invalida.')
+        raise ReviewRejected('INVALID_VERDICT', coverage)
     limitations = result['limitations_es']
     if not isinstance(limitations, list) or not limitations or not all(nonempty(x) for x in limitations):
-        raise Blocked('Faltan limitaciones verificables.')
+        raise ReviewRejected('MISSING_LIMITATIONS', coverage)
     findings = result['findings']
     if not isinstance(findings, list) or len(findings) > 100:
-        raise Blocked('Hallazgos invalidos.')
+        raise ReviewRejected('INVALID_FINDINGS', coverage)
     for finding in findings:
         fields = schema()['properties']['findings']['items']['required']
         if not isinstance(finding, dict) or set(finding) != set(fields):
-            raise Blocked('Hallazgo sin evidencia completa.')
+            raise ReviewRejected('FINDING_STRUCTURE', coverage)
         if (finding['severity'] not in ('critical', 'high', 'medium', 'low')
                 or not isinstance(finding['file'], str) or finding['file'] not in manifest['files']
                 or type(finding['line']) is not int
                 or not 1 <= finding['line'] <= manifest['file_lines'][finding['file']]
                 or not all(nonempty(finding[k]) for k in ('evidence_es', 'impact_es', 'recommendation_es'))):
-            raise Blocked('Evidencia fuera del alcance o incompleta.')
+            raise ReviewRejected('INVALID_FINDING_EVIDENCE', coverage)
     if result['verdict'] == 'PASS' and any(f['severity'] in ('critical', 'high') for f in findings):
-        raise Blocked('PASS contradice los hallazgos bloqueantes.')
-    return {'status': 'NEEDS_HUMAN_REVIEW' if result['verdict'] == 'PASS' else 'BLOCKED',
+        raise ReviewRejected('CONTRADICTORY_PASS', coverage)
+    status = 'PARTIAL' if coverage['codes'] else ('NEEDS_HUMAN_REVIEW' if result['verdict'] == 'PASS' else 'BLOCKED')
+    return {'status': status, 'coverage_diagnostic': coverage,
             'publication_allowed': False, 'human_approvals': 0, 'review': result}
 
 
@@ -141,28 +185,28 @@ def prepare(root, destination, source_sha):
 def read_execution_events(environ):
     folder = environ.get('RUNNER_TEMP')
     if not folder:
-        raise Blocked('Falta el directorio temporal del job.')
+        raise ReviewRejected('EXECUTION_DIRECTORY_MISSING')
     path = Path(folder) / 'claude-execution-output.json'
     if path.is_symlink() or not path.is_file() or path.stat().st_size > 10_000_000:
-        raise Blocked('Archivo de ejecucion ausente o no admisible.')
+        raise ReviewRejected('EXECUTION_FILE_INVALID')
     events = json.loads(path.read_text(encoding='utf-8'))
     if not isinstance(events, list):
-        raise Blocked('Formato de ejecucion desconocido.')
+        raise ReviewRejected('EXECUTION_FORMAT')
     return events
 
 
 def text_result(events):
     results = [e for e in events if isinstance(e, dict) and e.get('type') == 'result']
     if len(results) != 1:
-        raise Blocked('Se requiere un unico resultado final.')
+        raise ReviewRejected('RESULT_EVENT_COUNT')
     event = results[0]
     if (event.get('subtype') != 'success' or event.get('is_error') is not False
             or type(event.get('num_turns')) is not int or not 1 <= event['num_turns'] <= 2
             or event.get('permission_denials') != []):
-        raise Blocked('Ejecucion fallida, con denegaciones o fuera del limite.')
+        raise ReviewRejected('RESULT_EXECUTION_INVALID')
     raw = event.get('result')
     if not isinstance(raw, str) or len(raw.encode('utf-8')) > MAX_RESULT_BYTES:
-        raise Blocked('Respuesta ausente o excesiva.')
+        raise ReviewRejected('RESULT_MISSING_OR_TOO_LARGE')
     return json.loads(raw)
 
 
@@ -181,12 +225,15 @@ def collect(destination, environ):
                 or not provenance['GITHUB_RUN_ID'].isdigit()
                 or provenance['GITHUB_RUN_ATTEMPT'] != '1'
                 or provenance['GITHUB_ACTOR'] != 'fernandoruizm-maker'):
-            raise Blocked('Procedencia del job no valida.')
+            raise ReviewRejected('PROVENANCE_INVALID')
         stage = 'ACTION_CONCLUSION'
         if environ.get('CLAUDE_CONCLUSION') != 'success':
-            raise Blocked('Claude no termino correctamente; no hay reintento automatico.')
+            raise ReviewRejected('ACTION_FAILED')
         stage = 'EXECUTION_FILE'
         events = read_execution_events(environ)
+        results = [e for e in events if isinstance(e, dict) and e.get('type') == 'result']
+        if len(results) == 1 and isinstance(results[0].get('result'), str):
+            report['response_sha256'] = hashlib.sha256(results[0]['result'].encode('utf-8')).hexdigest()
         stage = 'RESULT_JSON'
         result = text_result(events)
         stage = 'REPORT_VALIDATION'
@@ -196,38 +243,30 @@ def collect(destination, environ):
         # Do not echo provider content or parsing exceptions into public logs.
         report['reason'] = 'Resultado ausente, fallido, parcial o invalido. Requiere investigacion; no reintentar automaticamente.'
         report['failure_stage'] = stage
-        reasons = {
-            'Respuesta ausente o estructura incorrecta.': 'REPORT_STRUCTURE',
-            'Respuesta excesiva o con posible credencial; no se publica.': 'OUTPUT_SAFETY_OR_SIZE',
-            'La respuesta corresponde a otra version.': 'VERSION_MISMATCH',
-            'Revision parcial o sin analisis de interacciones.': 'COVERAGE_INCOMPLETE',
-            'Conclusion invalida.': 'INVALID_VERDICT',
-            'Faltan limitaciones verificables.': 'MISSING_LIMITATIONS',
-            'Hallazgos invalidos.': 'INVALID_FINDINGS',
-            'Hallazgo sin evidencia completa.': 'FINDING_STRUCTURE',
-            'Evidencia fuera del alcance o incompleta.': 'INVALID_FINDING_EVIDENCE',
-            'PASS contradice los hallazgos bloqueantes.': 'CONTRADICTORY_PASS',
-            'Se requiere un unico resultado final.': 'RESULT_EVENT_COUNT',
-            'Ejecucion fallida, con denegaciones o fuera del limite.': 'RESULT_EXECUTION_INVALID',
-            'Respuesta ausente o excesiva.': 'RESULT_MISSING_OR_TOO_LARGE',
-        }
         report['reason_code'] = ('INVALID_JSON' if isinstance(error, json.JSONDecodeError)
-                                 else reasons.get(str(error), 'REJECTED_AT_STAGE'))
-    (destination / 'report.json').write_text(json.dumps(report, ensure_ascii=False, indent=2), encoding='utf-8')
+                                 else error.code if isinstance(error, ReviewRejected) else 'REJECTED_AT_STAGE')
+        if isinstance(error, ReviewRejected) and error.coverage is not None:
+            report['coverage_diagnostic'] = error.coverage
+    # Full findings remain in a pending local file, excluded from the workflow's
+    # explicit upload paths. Fernando has not chosen a destination or retention.
+    pending = destination / 'review.pending.json'
+    if pending.exists():
+        raise ReviewRejected('PENDING_REPORT_ALREADY_EXISTS')
+    if 'review' in report:
+        pending.write_text(json.dumps(report, ensure_ascii=False, indent=2), encoding='utf-8')
+    public_report = {key: value for key, value in report.items() if key != 'review'}
+    public_report['findings_storage'] = 'PENDING_FERNANDO_DECISION'
+    (destination / 'report.json').write_text(json.dumps(public_report, ensure_ascii=False, indent=2), encoding='utf-8')
     # Text, not active Markdown/HTML: model output is untrusted review material.
     lines = ['INFORME DE REVISION DE LA FABRICA', 'Estado: ' + report['status'],
              'Commit: ' + manifest['source_sha'], 'No autoriza publicar ni sustituye dos aprobaciones humanas.']
-    if 'review' in report:
-        review = report['review']
-        lines += [review['summary_es']]
-        for finding in review['findings']:
-            lines.append(f"{finding['severity']} - {finding['file']}:{finding['line']}")
-            lines.extend(finding[k] for k in ('evidence_es', 'impact_es', 'recommendation_es'))
-        lines += ['LIMITACIONES', *review['limitations_es']]
-    else:
+    if 'review' not in report:
         lines.append(report['reason'])
         if 'failure_stage' in report:
             lines.append('Diagnostico: ' + report['failure_stage'] + ' / ' + report['reason_code'])
+    if 'coverage_diagnostic' in report:
+        lines.append('Cobertura: ' + canonical(report['coverage_diagnostic']))
+    lines.append('Conservacion de hallazgos pendiente de decision de Fernando.')
     (destination / 'INFORME.txt').write_text('\n\n'.join(lines) + '\n', encoding='utf-8')
     print(canonical({'status': report['status'], 'publication_allowed': False}))
     return 0 if report['status'] == 'NEEDS_HUMAN_REVIEW' else 1

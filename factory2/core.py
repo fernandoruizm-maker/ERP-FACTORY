@@ -90,7 +90,9 @@ def discover(brief):
             "requirements": requirements, "approved": False}
 
 
-def compare(brief, catalog=None, *, evidence_root=None, authorized=False):
+def compare(brief, catalog=None, *, evidence_root=None, permit=None):
+    from .comparison_permit import permitted
+    authorized = permitted(permit, catalog, evidence_root)
     discovery = discover(brief)
     rows = []
     for req in discovery["requirements"]:

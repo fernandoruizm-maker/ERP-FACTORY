@@ -1,3 +1,6 @@
+# OBSOLETO: no activar, copiar ni adaptar como workflow operativo.
+# Sustituido por ERP-FACTORY-revision/ y el futuro flujo multiparte.
+# Solo historia; ver docs/CLAUDE-OPCIONES.md para la migracion autorizada.
 # BORRADOR LOCAL. No colocar en .github/workflows hasta completar y aprobar
 # privacidad, credencial OAuth, modelo, presupuesto, pins e importador autenticado.
 # Destino elegido: fernandoruizm-maker/ERP-FACTORY (actualmente público).

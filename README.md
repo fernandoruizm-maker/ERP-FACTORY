@@ -1,29 +1,45 @@
-# ERP-FACTORY
+# ERP-FACTORY — revision manual, fabrica desactivada
 
-Segunda fábrica RDC, preparada localmente y **desactivada**.
+Claude revisa en el chat los cambios de cada PR. Antes de una entrega importante,
+revisa toda la fabrica en una conversacion nueva. Sus informes se registran en
+`docs/revisiones/`, como revision tecnica **no autenticada y nunca aprobacion humana**.
+No se afirma que Claude ya haya revisado esta version.
 
-Codex propone código; Claude revisará mediante GitHub Actions tanto los productos como la propia fábrica. La integración real de Claude está pendiente. No hay workflows activos, credenciales, colas históricas ni conexiones al ERP.
+Las dos personas aprobadoras son:
 
-## Empezar
+- **Negocio (business):** fernandoruizm-maker, ID 342326625.
+- **Contable y funcional (accounting):** FERRUMTJA, ID 352290329, contador con experiencia en ERP.
 
-- [Guía de uso](LEEME.md)
-- [Estado y pruebas ejecutadas](docs/ESTADO.md)
-- [Integración elegida: GitHub Actions](docs/CLAUDE-OPCIONES.md)
-- [Recuperación](docs/RECUPERACION.md)
-- [Primera revisión: alcance, activación y límites](docs/ACTIVAR-CLAUDE.md)
+Ninguna programa. Fernando acepta el riesgo de no tener una persona revisora
+tecnica. **Antes de usar datos reales de clientes o conectar el ERP se requiere
+una auditoria tecnica externa.** El contador y Claude no sustituyen esa auditoria.
 
-Con Python y Node disponibles:
+La puerta manual exige el SHA exacto de la revision y dos aceptaciones vigentes,
+ligadas a la revision, version y huella evaluadas. Su resultado puede quedar listo
+para revision manual, pero siempre declara provenance_authenticated=false y
+publication_allowed=false. Los registros locales no autentican personas.
+La via V2 privada se conserva, con sus controles, sin usarla como sustituto de la manual.
 
-```text
-python -B -m factory2 status
-python -B -m factory2 discover fixtures/cliente.json
-python -B -m factory2 pilot
-python -B -m unittest discover -s tests -v
-python -B -m factory2 prepare-factory-review
-```
+## Guias y evidencia
 
-Los informes y paquetes de revisión se generan localmente en `outputs/`; no se publican resultados simulados como revisiones reales de Claude. El piloto usa únicamente datos ficticios.
+- [Como aprobar negocio y contabilidad](docs/GUIA-APROBAR.md)
+- [Plantilla de revision](docs/revisiones/PLANTILLA.md) y [como registrar sin cambiar el SHA](docs/revisiones/README.md)
+- [Proteccion de main](docs/github/GUIA-PROTEGER-MAIN.md)
+- [Plan y permisos de publicacion](docs/PUBLICACION.md)
+- [Estado y pruebas](docs/ESTADO.md)
+- [Entrega del bloque 6](docs/pr/bloque-6.md)
+- [Guia local](LEEME.md)
 
-`upstream/` conserva los 53 archivos de referencia verificados. No ejecutar su piloto ni copiar credenciales del original. El borrador en `docs/actions/*.disabled` contiene marcadores pendientes, no está listo para activar y no se encuentra en `.github/workflows`.
+La revision automatica en GitHub esta **APARCADA**. ERP-FACTORY-revision/ se conserva
+localmente: no crear un repositorio privado ahora. Siguen if false,
+execution_enabled=false y el pin de ceros. El workflow publico historico tampoco
+se modifica ni ejecuta aqui. No se ha comprobado su estado remoto.
 
-La puesta en marcha necesita autenticación OAuth compatible, modelo, presupuesto, autorización de transmisión, validación real del workflow y dos aprobaciones humanas verificables. Esta versión no integra ni despliega automáticamente.
+Para una futura reactivacion se registran USD, 1.00 por llamada, 12.00 por ejecucion,
+13.00 acumulado, 11 llamadas y autorizacion manual (opcion 1). Son limites para
+cuando se autorice; no autorizan gasto. Falta conectar y revisar el adaptador.
+
+Trabajo actual exclusivamente local: sin red, publicacion ni activacion. Main,
+upstream/ y la fabrica original permanecen intactos. El repositorio es publico:
+nunca subir datos de clientes, credenciales ni informacion del ERP, tampoco a ramas.
+Hasta verificar la proteccion real de main, cada subida necesita autorizacion expresa.

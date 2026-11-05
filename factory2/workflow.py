@@ -6,9 +6,9 @@ from pathlib import Path
 from .core import Blocked, canonical, compare, contained, digest, discover, validate_edits
 
 
-def prepare(brief, catalog=None, *, evidence_root=None, authorized=False):
+def prepare(brief, catalog=None, *, evidence_root=None, permit=None):
     return {"discovery": discover(brief),
-            "comparison": compare(brief, catalog, evidence_root=evidence_root, authorized=authorized),
+            "comparison": compare(brief, catalog, evidence_root=evidence_root, permit=permit),
             "scope_approved": False, "next": "Revisar ficha, dudas y matriz antes de construir."}
 
 
