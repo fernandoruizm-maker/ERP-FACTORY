@@ -4,6 +4,18 @@ Una PR es una propuesta de cambios. Aprobar una propuesta no activa la fabrica
 ni autoriza usar datos reales. Claude revisa la parte tecnica en el chat; Fernando
 y FERRUMTJA comprueban que el resultado sirve para el negocio y la contabilidad.
 
+## Dos reglas que nunca se saltan
+
+- **La cuenta fernandocodex64-sudo NUNCA aprueba ni integra.** Puede abrir las PR.
+  fenando-codex es su nombre visible; no es la cuenta personal de Fernando.
+- **Nadie integra sin decision expresa de Fernando despues de la revision de
+  Claude del SHA vigente, aunque GitHub muestre el boton disponible.** Las dos
+  aprobaciones tampoco sustituyen esa decision. No activar integracion automatica.
+
+Si una propuesta dice NO INTEGRAR, se cierra sin integrar. La prueba de proteccion
+no es una entrega del producto. Ante una duda, no pulse el boton de integrar.
+Fernando decide con su cuenta personal; FERRUMTJA no integra por iniciativa propia.
+
 ## Fernando: revision de negocio
 
 - La propuesta explica que problema resuelve y que cambia para el usuario.
@@ -56,12 +68,15 @@ Cuando todo este claro, cada persona usa su propia cuenta: **Files changed >
 Review changes > Approve**. No comparta cuentas ni contraseñas. Si falta algo,
 seleccione **Request changes** o deje la propuesta pendiente. Nadie aprueba por Claude.
 
-Importante: el autor de una PR no puede contar como uno de sus propios aprobadores.
-Si la abre Fernando con su cuenta, faltara su aprobacion valida para llegar a dos.
-No reduzca el numero ni cree una excepcion. Antes de publicar el flujo habitual
-debe decidirse un autor distinto de ambas personas; no se crea aqui una cuenta
-ni una aplicacion para resolverlo. Ademas, dos aprobaciones cualquiera no prueban
-por si solas que sean estas dos personas: compruebe los nombres en la PR.
+El autor de una PR no puede ser uno de sus propios aprobadores. Para las PR de
+esta via, Fernando abre la propuesta desde la web con **fernandocodex64-sudo**.
+Para revisar y aprobar cambia a su cuenta personal **fernandoruizm-maker**;
+FERRUMTJA usa la suya. No aprobar ni integrar desde la sesion de la cuenta de maquina.
+Comprueben los nombres de las dos personas en la PR: dos aprobaciones cualquiera
+no prueban que sean negocio y contabilidad. No reducir el numero ni crear excepciones.
 
-Integrar en main es un paso separado: siempre necesita autorizacion expresa de
-Fernando y solo lo realiza una de las dos personas aprobadoras, nunca Codex.
+Antes de integrar, Fernando debe dejar una decision expresa para esa PR y su SHA
+completo, despues de la revision de Claude y con ambas aprobaciones vigentes.
+Solo entonces Fernando o FERRUMTJA, desde su cuenta personal, puede integrar.
+Si cambia el SHA, detenerse: nueva revision y nueva decision. Codex nunca integra.
+La disponibilidad del boton de GitHub no es una instruccion ni una autorizacion.

@@ -1,191 +1,231 @@
-# Plan de publicacion — no ejecutado
+# Plan de publicacion tras la PR de prueba integrada
 
-ERP-FACTORY es publico. No subir datos reales de clientes, credenciales ni informacion
-del ERP, ni siquiera a una rama, un informe, un comentario, una PR o un artefacto.
-Revisar tambien el historial que se vaya a enviar. Borrar un dato del ultimo archivo
-no lo borra de los commits anteriores. Ante una duda, detener la subida.
+Este documento es un plan, no una autorizacion para ejecutar sus pasos futuros.
+Solo se ha subido la rama de retirada indicada abajo. No se abrio, aprobo ni integro
+ninguna PR desde Codex. El envio vuelve a DISABLED despues de cada subida autorizada.
+El repositorio fernandoruizm-maker/ERP-FACTORY sigue siendo PUBLICO.
 
-Decision vigente del bloque 7: usuario **fernandocodex64-sudo**, ID **353061596**;
-**fenando-codex** es solo su nombre visible. Fernando comunica cuenta creada,
-con dos pasos e invitacion
-aceptada. Fernando y FERRUMTJA aprueban con sus propias cuentas. El repositorio
-sigue siendo PUBLICO y propiedad de fernandoruizm-maker. El token NO esta creado.
-Via intermedia: Fernando abrira la PR de prueba y la del bloque 1 desde la web,
-con la sesion de fernandocodex64-sudo. Codex prepara titulo/texto y solo sube las ramas
-cuando se autorice. Abrir PR con gh queda para una etapa posterior autorizada.
+## Reglas obligatorias para todas las PR
 
-Fernando informa que el ruleset **main - dos aprobaciones sin excepciones**,
-ID **26650549**, esta activo. Segun su informe, Claude comprobo por la API publica:
-PR obligatoria, dos aprobaciones, invalidacion de aprobaciones antiguas, aprobacion
-del ultimo cambio por otra persona, conversaciones resueltas y prohibicion de borrar
-y force push. Bypass no visible sin credenciales: Fernando debe comprobar en pantalla
-que la lista esta vacia. Codex registra lo comunicado, sin comprobacion de red propia.
-La prueba funcional de la PR sigue pendiente; estos avances no autorizan envios.
+1. **La cuenta fernandocodex64-sudo NUNCA aprueba ni integra.** ID 353061596;
+   fenando-codex es solo su nombre visible. Puede ser autora de las PR.
+2. **Nadie integra sin decision expresa de Fernando despues de la revision de
+   Claude del SHA vigente, aunque GitHub muestre el boton disponible.** Las dos
+   aprobaciones no sustituyen esa decision. No usar integracion automatica.
+3. Solo Fernando (fernandoruizm-maker, negocio) y FERRUMTJA (contabilidad/funcional)
+   aprueban con sus cuentas personales. Tras la decision de Fernando, solo una
+   de esas dos personas realiza la integracion. Codex nunca lo hace.
+4. Si cambia un archivo o el SHA, Claude debe revisar la version nueva y las
+   personas deben comprobar de nuevo sus aprobaciones. Una PR de prueba marcada
+   NO INTEGRAR se cierra sin integrar, incluso si parece lista.
+5. Cada subida continua necesitando autorizacion expresa. El incidente no acredita
+   que las reglas fallen tecnicamente, ni que el permiso permanente condicionado
+   este cumplido: falta revisar evidencia de proteccion y la lista de excepciones.
 
-## Permisos de Fernando
+No subir datos reales de clientes, credenciales, informacion del ERP ni informes
+sensibles, tampoco a ramas. Revisar archivos e historial antes de cada envio.
+No tocar el ERP, upstream/, la fabrica original, secretos, reglas o configuracion
+remota. Activar workflows, gastar dinero, crear repositorios o cambiar permisos
+requiere una autorizacion nueva y especifica. La fabrica sigue desactivada.
 
-| Accion | Permiso aplicable |
-|---|---|
-| Trabajo local, pruebas ficticias y borradores | Dentro del alcance autorizado de cada tarea |
-| Subir una rama antes de verificar la proteccion de main | Autorizacion expresa para cada subida |
-| Subir ramas y abrir PR en ERP-FACTORY despues de que Claude verifique la proteccion | Permiso permanente condicionado a esa verificacion documentada |
-| Integrar en main | Siempre autorizacion expresa; solo Fernando o FERRUMTJA realizan la integracion, nunca Codex |
-| Crear repositorios; cambiar configuracion, permisos, protecciones o secretos | Siempre autorizacion expresa para la accion concreta |
-| Activar workflows o gastar dinero | Siempre autorizacion expresa nueva; los limites registrados no son permiso para gastar |
-| Cualquier accion sobre el ERP o la fabrica original | Siempre autorizacion expresa; antes de datos reales/conexion se exige auditoria tecnica externa |
+## Situacion verificada y evidencia comunicada
 
-**La condicion para el permiso permanente todavia NO se ha cumplido.** Esta tarea
-no consulta ni configura GitHub. El permiso futuro no incluye integrar, auto-merge,
-desactivar reglas, enviar informes sensibles o operar repositorios diferentes.
-Si la proteccion cambia, deja de aplicarse o su estado es incierto, suspender el
-uso de ese permiso y volver a comprobarla con Fernando. No usar una revision local
-de JSON como sustituto de la verificacion real de Claude.
+- Fernando informa que FERRUMTJA integro por error la PR #7 y abrio la #8 para
+  revertirla; Fernando cerro la #8. No se consultaron esas PR por API o navegador.
+- Un unico fetch HTTPS anonimo autorizado trajo origin/main a
+  **930528e2aad40aace0903311fc997c3d34024bd6**. El commit es el merge de la PR #7,
+  con padres 0cb1882548fc141f4b764e82ff2e5154cfae2762 y
+  97940f524d077169579ddb0f47fb4f34f34a45d1.
+- Frente a 0cb1882, su unico cambio es docs/PRUEBA-PROTECCION.md (cinco lineas).
+- Rama creada y subida: **revert/prueba-proteccion**,
+  **63c37154efb91de7152e10815f355a2fa7a018bf**, hija directa de 930528e.
+  Solo elimina ese archivo; su arbol es identico al de 0cb1882. No borra el merge
+  del historial. No se ha integrado esa retirada en main.
+- El push autorizado termino con exito usando la credencial ya guardada, con
+  interaccion deshabilitada. No se leyo ni mostro el token. Envio restaurado a DISABLED.
+- Usuario correcto fernandocodex64-sudo; opciones de Git locales y wincredman.
+  No afirmar que los scopes del token, el aislamiento de Windows o las reglas de
+  GitHub quedaron certificados por conseguir subir una rama.
+- Ruleset 26650549 activo segun Fernando, con las condiciones ya comunicadas por
+  Claude. No se verifico su estado remoto en esta tarea. Bypass debe comprobarse
+  en pantalla por Fernando; disponibilidad del boton no es permiso empresarial.
 
-## Orden previo obligatorio: a, b, c y d
+## PR inmediata: retirar el archivo de prueba
 
-### a) Fernando crea el token clasico justo antes de la configuracion
+Fernando abre desde la web, con la sesion fernandocodex64-sudo, una PR nueva:
+base main, rama revert/prueba-proteccion. No reabrir ni modificar la #8 aqui.
 
-- Cuenta e invitacion ya realizadas segun Fernando. Seguir
-  [GUIA-CUENTA-CODEX.md](github/GUIA-CUENTA-CODEX.md) desde fernandocodex64-sudo:
-  token CLASICO, solo public_repo, 30 dias; sin workflow ni otros permisos.
-- Se sustituye el token de grano fino por la incompatibilidad que Fernando comunica
-  verificada por Claude en documentacion oficial. Codex no la contrasto por red aqui.
-- public_repo no tiene seleccion por repositorio: la escritura en repositorios
-  ajenos depende de las colaboraciones de la cuenta, actualmente solo ERP-FACTORY
-  segun Fernando. Otros accesos futuros ampliarian sus posibilidades. La proteccion
-  de main limita esa rama, no convierte el token en uno de alcance por repositorio.
-- Fernando introduce el token solo en la ventana segura de credenciales durante
-  la prueba autorizada. Nunca lo muestra a Codex/Claude ni lo pega en otro sitio.
-- Como deshacer: Fernando revoca el token clasico; no ampliar permisos ni sustituirlo
-  por el token personal. Este paso no rehabilita el envio: sigue DISABLED.
+Titulo propuesto: **Retirar el archivo de prueba integrado por error**.
 
-### b) Configuracion local aplicada: pendiente de verificacion por Claude
+Texto propuesto:
 
-- Seguir [CONFIG-LOCAL-CODEX.md](github/CONFIG-LOCAL-CODEX.md). Fernando no edita
-  archivos ni ejecuta comandos. Codex configuro solo ERP-FACTORY-correcciones:
-  nombre fernandocodex64-sudo, noreply proporcionado y opciones del gestor, sin
-  tocar configuracion global. Autenticacion y almacenamiento real no verificados.
-- La autorizacion actual cubre solo los pasos 1 a 10, sin red ni token. Correo:
-  353061596+fernandocodex64-sudo@users.noreply.github.com. Identidad y opciones
-  locales verificadas; huella del archivo global sin cambios. Envio DISABLED.
-- Claude verifica en lectura los ajustes no secretos y su alcance. La configuracion
-  no acredita aun una autenticacion remota. No se rehabilita el envio en este paso.
-- La regla de main ya esta creada segun Fernando; no recrearla ni cambiarla. La
-  [GUIA-PROTEGER-MAIN.md](github/GUIA-PROTEGER-MAIN.md) queda como referencia.
-  Antes de la prueba, Fernando confirma en pantalla que bypass esta vacio. No dar
-  acceso de excepcion a fernandocodex64-sudo ni rebajar aprobaciones para continuar.
-- Como deshacer: con autorizacion, reponer solo las opciones locales cambiadas y
-  retirar solo la credencial de maquina identificada, sin borrar las de Fernando.
+> Elimina unicamente docs/PRUEBA-PROTECCION.md, incorporado por la PR #7
+> (merge 930528e). No modifica codigo, configuracion ni workflows.
+>
+> Base revisada: 930528e2aad40aace0903311fc997c3d34024bd6.
+> SHA propuesto: 63c37154efb91de7152e10815f355a2fa7a018bf.
+> Comprobacion local: un archivo eliminado, cinco lineas; el arbol resultante
+> coincide con 0cb1882. No se ejecutaron suites porque solo se retira un aviso.
+>
+> Claude debe revisar este SHA. Fernando y FERRUMTJA revisan con sus cuentas.
+> Nadie integra sin decision expresa posterior de Fernando, aunque el boton
+> este disponible. La cuenta fernandocodex64-sudo nunca aprueba ni integra.
 
-### c) Prueba ficticia con autorizacion expresa
+Como deshacer: antes de integrar, cerrar la PR con autorizacion. Si despues se
+necesitara restaurar el aviso, proponer otro commit y PR, nunca reescribir main.
+No restaurarlo automaticamente al preparar bloques posteriores.
 
-- Fernando autoriza concretamente rehabilitar el envio de ESTE clon solo hacia
-  https://github.com/fernandoruizm-maker/ERP-FACTORY.git y subir una rama ficticia.
-  Fernando abre la PR desde la web con la sesion de fernandocodex64-sudo y la cierra
-  despues SIN integrarla; Codex prepara su titulo y texto para copiar y pegar.
-  Esta documentacion no ejecuta ni concede por si sola esa autorizacion.
-- Solo entonces Codex puede efectuar los cambios de envio autorizados, comprobar
-  que no hay otro destino de push y subir la rama de prueba. Nunca incluir el token
-  en una URL. La autenticacion se introduce por Fernando en el gestor seguro.
-- Fernando comprueba la cuenta en el navegador antes de abrir la PR.
-  La PR debe aparecer abierta por la cuenta de maquina. El nombre/correo de un
-  commit no bastan para demostrarlo. Fernando y FERRUMTJA usan sus cuentas personales.
-- Claude verifica en lectura repositorio, regla efectiva y estados de la PR:
-  sin aprobaciones bloqueada, con una aun bloqueada, conversaciones abiertas
-  bloquean y un cambio nuevo invalida las aprobaciones previas; se exige ademas
-  aprobacion del ultimo cambio por otra persona. La prueba debe
-  incluir ese cambio ficticio autorizado. Se inspeccionan las prohibiciones de
-  force push/borrado sin intentar ejecutarlos. No integrar ni pulsar auto-merge.
-- Documentar evidencia, SHA, cuenta autora y lo que no pudo verificarse. Un token
-  que falla, una regla que no bloquea o un cambio de identidad inesperado detienen
-  la prueba; no ampliar permisos ni eludir la regla.
-- Al terminar, cerrar la PR sin integrarla. No borrar ramas ni cambiar mas remotos
-  fuera de la autorizacion. Si falla la prueba, Fernando autoriza volver a DISABLED;
-  entretanto, no hacer mas envios. Reabrir acceso o corregir permisos requiere permiso.
-- Solo cuando Claude haya verificado el funcionamiento se cumple la condicion del
-  permiso permanente limitado a subir ramas y abrir PR. No incluye integrar ni
-  cambiar configuraciones, secretos o protecciones.
+## Por que no subir las ramas de bloques directamente
 
-### d) Publicar el bloque 1 con autorizacion expresa
+Las ramas guardan desarrollo acumulado; sus nombres no delimitan el contenido
+que llegaria a GitHub. La rama del bloque 7 incluye ancestros de los bloques 3 a 6,
+y estos incluyen el revisor privado. Subirla publicaria tambien ese historial.
 
-- Despues de a, b y c, Fernando autoriza expresamente la publicacion del bloque 1.
-  Esta primera publicacion conserva ese requisito aunque la prueba anterior haya
-  cumplido la condicion del permiso permanente para trabajo posterior.
-- Seguir el paso siguiente, con el SHA exacto y la cuenta nueva; no publicar de
-  golpe las ramas acumuladas de los bloques 4, 5, 6 o 7.
+Hay una excepcion al apilado lineal: fix/bloque-2-aislamiento no contiene el commit
+b0da873 de la rama final del bloque 1; conserva la version anterior 9109e05.
+La base fa650d7 del bloque 3 combina el bloque 1 final y el bloque 2. No tratar
+las siete ramas como siete PR independientes listas para integrar.
 
-## Paso 1. Publicar y revisar el bloque 1
+Referencias locales comprobadas (fuentes para seleccionar contenido, NO para push):
 
-- Fernando autoriza expresamente esta subida del bloque 1, conforme al paso d.
-- Codex prepara una rama de publicacion desde la base real vigente, con el contenido
-  del bloque 1 (referencia local b0da873), su texto de PR y pruebas correspondientes.
-  Revisa los archivos y el historial por datos que no deban publicarse. Antes de subir,
-  entrega el SHA exacto; resolver cambios de base o conflictos genera otro SHA y
-  requiere pruebas y revision de ese nuevo resultado. No empujar la rama del bloque 6.
-- Codex entrega el titulo y texto propuestos de la PR del bloque 1. Fernando
-  los pega y abre la PR desde la web con fernandocodex64-sudo; Codex no usa gh ni API
-  para crearla en esta etapa.
-- Claude revisa solo el diff de esa PR respecto a su base y registra el SHA completo.
-  Codex transcribe el informe recibido en docs/revisiones/*.local.md, sin agregarlo
-  al commit revisado. No afirma que Claude ya reviso un SHA distinto.
-- Fernando y FERRUMTJA aplican GUIA-APROBAR.md; ambos deben aprobar la version vigente.
-  Integrar requiere otra autorizacion expresa y lo hace una de esas dos personas.
-- Como deshacer: antes de integrar, cerrar la PR (con autorizacion); despues, preparar
-  una PR de reversion del cambio, revisarla y aprobarla igual. No reescribir main.
+| Bloque | Rama fuente | SHA de referencia | Destino previsto |
+|---|---|---|---|
+| 1 | fix/bloque-1-diagnostico | b0da873 | PR publica 1 |
+| 2 | fix/bloque-2-aislamiento | f288441 | Revisor privado aparcado |
+| 3 | fix/bloque-3-cobertura | ad91cb3 | Revisor privado aparcado |
+| 4 | fix/bloque-4-operacion | 8ffb811 | Seleccion operativa en PR publica 2 |
+| 5 | fix/bloque-5-multiparte | 5507300 | Multiparte aparcado; revisar dependencia publica indicada abajo |
+| 6 | fix/bloque-6-revision-manual | 31abe68 | Via manual/configuracion en PR publica 2 |
+| 7 | fix/bloque-7-cuenta-codex | 7650098 mas este commit documental | Guias seleccionadas en PR publica 3 |
 
-## Paso 2. Publicar la parte operativa del bloque 4 y el bloque 6
+## Orden propuesto de PR de los bloques 1 a 7
 
-- Fernando confirma que el bloque 1 esta integrado y autoriza las subidas que aun
-  requieran permiso individual. No autoriza con ello activar la fabrica.
-- Codex prepara una nueva rama desde ese main con **factory2/ del bloque 4 y los
-  cambios del bloque 6**, junto con config, pruebas y guias necesarias para entenderlos.
-  No integrar ni hacer cherry-pick ciego de las ramas completas: incluirian el revisor
-  automatico aparcado. No incluir ERP-FACTORY-revision/ ni activar/cambiar workflows.
-- La seleccion necesita comprobar dependencias antes de publicar: actualmente algunas
-  pruebas V2 de tests/operation_fixtures.py y el importador V2 usan la carpeta privada.
-  La via manual no debe necesitarla. Resolver la distribucion de esas pruebas y la
-  referencia V2 opcional es un requisito previo de la futura PR, no una excepcion
-  para publicar pruebas rotas, marcar como verificada una suite no ejecutada o subir
-  el revisor privado. Cualquier ajuste de codigo exige otro SHA y nueva revision.
-- Codex ejecuta las suites aplicables sobre la seleccion exacta. No reutiliza sin
-  comprobar los resultados de esta rama local, que aun contiene el codigo privado.
-- Claude revisa el diff y las dependencias. Para una entrega importante, ademas abre
-  una conversacion nueva y revisa toda la fabrica resultante, declarando su cobertura.
-- Fernando y FERRUMTJA comprueban la propuesta y la version; solo una de esas personas
-  integra con autorizacion expresa. Los limites de gasto y el informe de Claude no
-  son una aprobacion humana ni permiten conectar sistemas.
-- Como deshacer: cerrar la propuesta antes de integrar; despues, PR de reversion con
-  pruebas y dos aprobaciones. Conservar los registros anteriores como historia.
+Primero terminar la retirada anterior: revision de Claude, dos aprobaciones,
+decision expresa de Fernando e integracion humana. Despues se obtiene, solo con
+otra autorizacion de red, el main real resultante. No asumir que su SHA sera
+63c3715: depende de como se integre la PR y de si hubo otros cambios.
 
-## Paso 3. Mantener aparcada la automatizacion
+No se han creado las ramas de publicacion propuestas en esta tabla. Cada una
+nacera del main actualizado DESPUES de integrar la PR anterior, no de las ramas
+apiladas. Todas tendran main como destino. Antes de cada push: permiso para la
+rama y SHA concretos, destino unico ERP-FACTORY, y retorno a DISABLED.
 
-- ERP-FACTORY-revision/ permanece solo en las ramas locales de desarrollo. No crear
-  un repositorio privado por ahora ni incluir esa carpeta en los envios anteriores.
-- Codex mantiene if false, execution_enabled=false y el pin de ceros; no lee secretos.
-- Se registran para una posible reactivacion: USD, 1.00 por llamada, 12.00 por ejecucion,
-  13.00 acumulado, 11 llamadas y opcion 1 (autorizacion manual). No hay ticket emitido,
-  saldo real importado ni adaptador conectado. La opcion esta elegida, no instalada.
-- Claude puede revisar el diseño local; usar Actions para un hito importante requiere
-  que Fernando autorice especificamente repositorio, configuracion y gasto. Hace falta
-  revisar el adaptador pendiente y fijar el validador antes de cambiar los bloqueos.
-- Como deshacer una futura reactivacion: con autorizacion, deshabilitar su ejecucion,
-  conservar reservas inciertas y evidencias privadas; nunca repetir una llamada incierta
-  ni borrar el registro de gasto para aparentar saldo disponible.
+| Orden | PR / rama nueva propuesta | Base y fuente | Contenido y exclusiones |
+|---|---|---|---|
+| 1 | Diagnostico seguro y revisiones parciales / publicar/bloque-1 | Main tras retirada; contenido del commit b0da873 | factory2/actions_review.py, tests/test_actions_review.py, docs/pr/bloque-1.md y registro acotado en docs/PLAN.md y docs/ESTADO.md. No carpeta privada ni cambios de workflows. |
+| 2 | Operacion local y revision manual / publicar/bloques-4-6 | Main tras PR 1; seleccion de 8ffb811 y estado final publico de 31abe68 | factory2/ operativo del bloque 4 con correcciones del 6, config.json del modelo manual, pruebas raiz/JS/TS pertinentes, .gitignore para informes locales, README, LEEME, docs/CLAUDE-OPCIONES.md, docs/revisiones/, guias de aprobacion/proteccion y sus referencias. Sin ERP-FACTORY-revision/. No cambiar workflows activos; borrador .disabled solo marcado obsoleto. |
+| 3 | Guias de cuenta, publicacion y reglas humanas / publicar/bloque-7 | Main tras PR 2; documentos vigentes de fix/bloque-7-cuenta-codex | docs/github/GUIA-CUENTA-CODEX.md, docs/github/CONFIG-LOCAL-CODEX.md, docs/PUBLICACION.md, actualizacion acotada de docs/ESTADO.md y reglas vigentes de docs/GUIA-APROBAR.md. Nunca .git/config, registros de credenciales ni datos de entregas-locales. |
 
-## Antes de datos reales
+### PR 1: preparacion y comprobacion futura
 
-Riesgo aceptado por Fernando: ninguna de las dos personas aprobadoras programa ni
-hay revisor tecnico humano. Claude no esta autenticado y puede omitir errores.
-**Auditoria tecnica externa obligatoria antes de usar datos reales de clientes o
-conectar el ERP.** Tambien hacen falta las autorizaciones y controles de acceso y
-coordinacion pendientes. La revision de un contador no sustituye esa auditoria.
+Codex prepara una rama nueva con el cambio aislado de b0da873, conservando el
+estado actual de main. Un cherry-pick de ese commit puede servir si su diff e
+historial siguen limitados a los cinco archivos indicados; no aplicar commits
+adicionales de otras ramas. Registrar nuevo SHA y revisar el diff base/candidato.
+Ejecutar la suite raiz Python y las pruebas JS/TS aplicables sobre esa seleccion,
+con los comandos del bloque 1; no reutilizar como resultado los numeros historicos.
+No ejecutar Actions ni proveedores. Un informe PARTIAL nunca aprueba ni publica.
 
-## GitHub CLI posterior: no ejecutado
+Codex entrega SHA, pruebas reales, titulo y texto. Fernando abre la PR en la web
+como fernandocodex64-sudo. Claude revisa solo ese diff y el SHA exacto. Las dos
+personas aprueban con sus cuentas; Fernando decide expresamente si integrar.
+Para deshacer: cerrar antes de integrar o una PR de reversion revisada despues.
 
-La consulta local no encontro gh instalado/accesible en PATH; no hay version
-verificada. No instalarlo ni autenticarlo ahora. El plan de GH_CONFIG_DIR exclusivo
-fuera del repositorio, entrada oculta por Fernando, verificacion y revocacion esta
-en [CONFIG-LOCAL-CODEX.md](github/CONFIG-LOCAL-CODEX.md). gh debe aceptar solo
-public_repo; si exige mas, detenerse y mantener la via web. Prohibido mostrar el
-token (incluido gh auth token) o extraerlo del gestor. La autorizacion de configurar
-Git localmente no autoriza gh, conexiones, subidas ni nuevas PR.
+### PR 2: dependencia que debe resolverse antes de publicar
+
+No copiar factory2/ a ciegas ni hacer cherry-pick de los bloques completos.
+El estado publico final de 31abe68 incluye un ajuste del bloque 5 en
+factory2/review_import.py y tests/test_operation.py. Revisarlo como dependencia
+V2 del bloque operativo; no es permiso para publicar el workflow multiparte.
+Mantener el importador V2 bloqueado si no dispone de su contrato privado; no
+sustituirlo por un informe aceptado ni rebajar comprobaciones.
+
+Bloqueo concreto de la seleccion actual: factory2/review_import.py carga
+ERP-FACTORY-revision/reviewer y tests/operation_fixtures.py construye artefactos
+usando ese contrato. tests/test_operation.py y otras pruebas reutilizan esas
+fixtures. Aunque la via manual tiene una prueba de independencia, la suite completa
+seleccionada NO esta verificada sin esa carpeta. Antes de publicar hay que separar
+las fixtures de la via manual y las pruebas privadas de contrato, conservando
+pruebas publicas de rechazo cuando V2 no esta disponible. Esa adaptacion es trabajo
+futuro con nuevo SHA y revision, NO se implementa en este plan.
+No ocultar fallos omitiendo pruebas en silencio ni subir la carpeta privada para
+hacerlas pasar. Si la separacion exige otro diseno, presentar la decision a Fernando.
+
+Seleccionar las versiones finales de state/core/providers/runner/workflow, permisos,
+candado, presupuesto, adaptador, orquestador, piloto y manual_review con sus pruebas.
+Conservar los roles business/accounting, los interruptores desactivados y los
+limites registrados, que no autorizan gasto. No editar upstream/. docs/ESTADO.md
+y docs/PLAN.md se concilian por secciones: conservar incidentes de main y el bloque
+1, y agregar evidencia del nuevo candidato; no sobrescribirlos con una version vieja.
+
+Ejecutar suites completas de la seleccion: Python raiz, JS y TS (sin presentar la
+ejecucion TS como typecheck). La suite privada queda en su rama local aparcada;
+no afirmar que paso sobre una PR que no contiene esos archivos. Datos ficticios,
+sin Docker/proveedores/ERP reales. Registrar fallos, omisiones y limites exactos.
+Claude revisa diff y dependencias y, por ser entrega importante, toda la fabrica
+en una conversacion nueva. Dos aprobaciones y decision de Fernando antes de integrar.
+Para deshacer, PR de reversion; sin migraciones, activacion ni despliegue automatico.
+
+### PR 3: documentacion y continuidad
+
+Seleccionar solo las guias publicables desde la rama documental. Las dos reglas
+humanas ya rigen desde esta decision: no esperar a publicar PR 3 para cumplirlas.
+Incluirlas tambien en la GUIA-APROBAR de PR 2, evitando que se publique una guia
+anterior que aun deja pendiente la cuenta autora. PR 3 no debe deshacerlas.
+Conservar los resultados de PR 1 y 2 en ESTADO, distinguiendo historia de estado
+actual. Revisar enlaces, nombres/ID, pasos de reversion y que ningun texto afirme
+que Claude o GitHub verificaron algo no comprobado. Una guia no activa sus pasos.
+Codex prepara texto; Fernando abre desde la web salvo autorizacion posterior para
+gh. Revision de Claude, dos aprobaciones y decision expresa de Fernando.
+Para deshacer, reversion documental por PR; nunca revertir permisos por automatismo.
+
+## ERP-FACTORY-revision/: bloques 2, 3 y 5 aparcados
+
+No hay PR publica para esos bloques ahora. Conservar codigo, tests y artefactos de
+desarrollo en sus ramas locales. No subir esas ramas ni crear repositorio privado.
+No copiar sus archivos en otra carpeta publica para evitar esta restriccion.
+Tampoco publicar commits ancestros que los contengan aunque luego se borren.
+
+Siguen los tres bloqueos: condicion false, execution_enabled=false y pin de ceros.
+USD 1.00/llamada, 12.00/ejecucion, 13.00/acumulado y 11 llamadas son limites
+registrados, no autorizacion. Si Fernando reactiva esta linea, sera otro plan y
+otra autorizacion para repositorio privado, validacion, credenciales y gasto.
+El workflow publico historico y factory2/actions_review.py no se retiran ahora;
+la retirada coordinada se revisara cuando exista sustituto activo autorizado.
+
+## Conflictos con main: resultado y limites
+
+Analisis local sin cambiar ramas ni hacer merges: git merge-tree --write-tree
+origin/main <rama> para las siete ramas fuente anteriores. Los siete terminaron
+con codigo 0, sin conflictos textuales frente a 930528e. No se ejecutaron sus
+arboles calculados ni se adoptaron como candidatos de publicacion.
+
+La razon es que main solo anadio el archivo de prueba, que esas ramas no cambian.
+Esto NO significa que convenga integrarlas: incluirian contenido aparcado. Ademas,
+un merge directo conservaria el aviso de prueba mientras la retirada no se integre.
+El arbol de 63c3715 coincide exactamente con 0cb1882, pero el historial ya avanzo.
+
+Los conflictos futuros entre selecciones de documentos y dependencias de pruebas
+no se han resuelto ni simulado. Especial cuidado con docs/ESTADO.md, docs/PLAN.md,
+config.json y state.py: integrar el estado final deliberadamente, no elegir todo
+"nuestro" o todo "suyo". Volver a calcular diff y pruebas si cambia main; un nuevo
+SHA exige nueva revision. No inventar que las suites anteriores cubren la seleccion.
+
+## Verificacion de esta entrega y limites
+
+Ejecutado: un fetch de main, comparacion de arboles/nombres de archivos, commit de
+retirada, un push de esa rama y restauracion DISABLED; siete analisis merge-tree,
+inspeccion de dependencias, enlaces locales y git diff --check de documentos.
+No suites de proyecto: retirada de un aviso y plan documental, sin codigo cambiado.
+No se abrieron PR ni se inspeccionaron por red #7/#8; no se aprobaron ni integraron.
+No se preparo ni publico ninguna rama de los bloques. No verificados reglas actuales,
+identidad remota autenticada via API, selecciones finales, conflictos futuros,
+suites sobre esas selecciones, workflows, coste, ERP, Docker ni auditoria externa.
+
+La falta de revisor tecnico humano sigue siendo un riesgo aceptado: Claude no
+esta autenticado como persona aprobadora. Se requiere auditoria tecnica externa
+antes de usar datos reales de clientes o conectar el ERP.
+
+GitHub CLI sigue fuera de esta tarea. Para su etapa futura ver
+[CONFIG-LOCAL-CODEX.md](github/CONFIG-LOCAL-CODEX.md): directorio exclusivo, entrada
+oculta por Fernando, no mostrar tokens y detenerse si public_repo no basta.
