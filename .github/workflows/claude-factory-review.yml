@@ -60,6 +60,10 @@ jobs:
           classify_inline_comments: 'false'
           include_fix_links: 'false'
 
+      - name: Conservar diagnostico sin texto del proveedor
+        if: ${{ always() && steps.prepare.outcome == 'success' }}
+        run: python3 -B -m factory2.actions_review diagnose
+
       - name: Validar cobertura y guardar informe
         if: ${{ always() && steps.prepare.outcome == 'success' }}
         env:
@@ -76,5 +80,6 @@ jobs:
             outputs/claude-review/manifest.json
             outputs/claude-review/report.json
             outputs/claude-review/INFORME.txt
+            outputs/claude-review/diagnostic.json
           if-no-files-found: error
           retention-days: 7
