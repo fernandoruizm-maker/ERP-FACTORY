@@ -4,7 +4,7 @@ import tempfile
 import unittest
 from unittest.mock import patch
 
-from factory2.actions_review import build_request, collect, prepare, safe_diagnostic, validate_result
+from factory2.actions_review import build_request, collect, prepare, safe_diagnostic, text_result, validate_result
 from factory2.core import Blocked, canonical
 
 
@@ -26,6 +26,16 @@ class ActionsReviewTests(unittest.TestCase):
         self.assertNotIn('num_turns', result)
         self.assertEqual(safe_diagnostic([])['status'], 'NO_RESULT_EVENT')
 
+    def test_turn_and_permission_diagnostics_do_not_publish_tool_inputs(self):
+        result = safe_diagnostic([{'type': 'result', 'subtype': 'error_max_turns',
+            'permission_denials': [{'tool_name': 'StructuredOutput', 'tool_input': 'PRIVATE'},
+                                  {'tool_name': 'PRIVATE-NAME'}]}])
+        self.assertIn('TURN_LIMIT', result['categories'])
+        self.assertIn('TOOL_PERMISSION_DENIED', result['categories'])
+        self.assertTrue(result['structured_output_denied'])
+        self.assertEqual(result['permission_denials_count'], 2)
+        self.assertNotIn('PRIVATE', canonical(result))
+
     def setUp(self):
         self.manifest = {'source_sha': 'a' * 40, 'factory_digest': 'digest-a',
                          'files': {'factory2/a.py': 'hash-a'}, 'file_lines': {'factory2/a.py': 3}}
@@ -38,6 +48,30 @@ class ActionsReviewTests(unittest.TestCase):
                     'GITHUB_SHA': 'a' * 40, 'GITHUB_RUN_ID': '123', 'GITHUB_RUN_ATTEMPT': '1',
                     'GITHUB_ACTOR': 'fernandoruizm-maker', 'CLAUDE_CONCLUSION': 'success',
                     'CLAUDE_RESULT': canonical(self.result)}
+        self.event = {'type': 'result', 'subtype': 'success', 'is_error': False,
+                      'num_turns': 1, 'permission_denials': [], 'result': canonical(self.result)}
+
+    def write_execution(self, dest, raw=None):
+        event = {**self.event, 'result': raw if raw is not None else canonical(self.result)}
+        (dest / 'claude-execution-output.json').write_text(canonical([event]), encoding='utf-8')
+
+    def test_plain_json_result_rejects_errors_denials_turn_overruns_and_ambiguous_output(self):
+        self.assertEqual(text_result([self.event]), self.result)
+        for change in ({'subtype': 'error_max_turns'}, {'is_error': True}, {'num_turns': 3},
+                       {'num_turns': True}, {'permission_denials': [{}]},
+                       {'permission_denials': None}, {'result': '```json\n{}\n```'},
+                       {'result': 'x' * 100001}):
+            with self.subTest(change=change), self.assertRaises((Blocked, ValueError)):
+                text_result([{**self.event, **change}])
+        for events in ([], [self.event, self.event]):
+            with self.assertRaises(Blocked):
+                text_result(events)
+
+    def test_collection_without_execution_file_stays_blocked(self):
+        with tempfile.TemporaryDirectory() as temp:
+            dest = Path(temp)
+            (dest / 'manifest.json').write_text(canonical(self.manifest), encoding='utf-8')
+            self.assertEqual(collect(dest, {**self.env, 'RUNNER_TEMP': temp}), 1)
 
     def test_complete_review_never_grants_approval(self):
         result = validate_result(self.manifest, self.result)
@@ -75,7 +109,8 @@ class ActionsReviewTests(unittest.TestCase):
             with self.subTest(changes=changes), tempfile.TemporaryDirectory() as temp:
                 dest = Path(temp)
                 (dest / 'manifest.json').write_text(canonical(self.manifest), encoding='utf-8')
-                self.assertEqual(collect(dest, {**self.env, **changes}), 1)
+                self.write_execution(dest, changes.get('CLAUDE_RESULT'))
+                self.assertEqual(collect(dest, {**self.env, **changes, 'RUNNER_TEMP': temp}), 1)
                 report = (dest / 'report.json').read_text(encoding='utf-8')
                 self.assertNotIn('not-json-sensitive-fixture', report)
                 self.assertEqual(json.loads(report)['status'], 'BLOCKED')
@@ -84,7 +119,8 @@ class ActionsReviewTests(unittest.TestCase):
         with tempfile.TemporaryDirectory() as temp:
             dest = Path(temp)
             (dest / 'manifest.json').write_text(canonical(self.manifest), encoding='utf-8')
-            self.assertEqual(collect(dest, self.env), 0)
+            self.write_execution(dest)
+            self.assertEqual(collect(dest, {**self.env, 'RUNNER_TEMP': temp}), 0)
             report = json.loads((dest / 'report.json').read_text(encoding='utf-8'))
             self.assertEqual(report['provenance']['GITHUB_RUN_ID'], '123')
             self.assertFalse(report['publication_allowed'])
@@ -113,6 +149,8 @@ class ActionsReviewTests(unittest.TestCase):
             self.assertIn('--disallowedTools "*"', args)
             self.assertNotIn('--tools ""', args)
             self.assertIn('--append-system-prompt-file', args)
+            self.assertNotIn('--json-schema', args)
+            self.assertIn('ESQUEMA DEL INFORME:', request)
             with patch('factory2.actions_review.MAX_REQUEST_BYTES', 10), self.assertRaises(Blocked):
                 build_request(root, 'a' * 40)
 

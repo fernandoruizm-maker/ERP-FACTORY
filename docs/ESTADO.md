@@ -51,3 +51,15 @@ La ejecución autorizada reveló conexiones SQLite que no se cerraban explícita
 ## Continuidad
 
 La implementación local y sus pruebas están entregadas. La conexión elegida es GitHub Actions, empezando por una revisión de la propia fábrica en ERP-FACTORY mediante suscripción Claude. La publicación pública está autorizada; falta completar autenticación. No se necesita tocar el ERP para esa revisión. Cualquier autorización futura debe delimitar los archivos enviados, proveedor/modelo, costo y destino; los paquetes permiten revisar el alcance antes de transmitir.
+## Actualizacion: cuarto intento y correccion de entrega del informe
+
+OAuth ya funciono en el run 41995251713. Claude proceso la solicitud pero termino
+por limite de turnos, sin informe aceptable. No existe aun revision completa
+acreditada. Registro: 3 turnos frente a 2 configurados, una denegacion y costo
+estimado USD 1.039741. No se afirma que ese importe fuera facturado.
+
+Se preparo una correccion que recibe JSON textual y conserva todas las
+herramientas denegadas. Las 12 pruebas locales del modulo Actions pasan.
+No se ejecuto un quinto intento. Ver [evidencia y limites](CORRECCION-INFORME.md).
+Las entradas siguientes son historicas y no sustituyen este estado actual.
+
