@@ -1,5 +1,18 @@
 # Estado de la segunda fábrica · 5 de noviembre de 2026
 
+## Actualizacion: conexion mediante Actions preparada
+
+Fernando confirma que guardo `CLAUDE_CODE_OAUTH_TOKEN` en GitHub. Su valor no se
+leyo. Se preparo un workflow manual con referencias fijas, autorizacion por SHA,
+revision estatica sin herramientas y validador de cobertura/informe. Las 42
+pruebas Python actuales pasan, incluidas siete nuevas de la integracion.
+No se ejecuto Claude ni se probo aun la autenticacion real. Ver
+[pasos y limites](ACTIVAR-CLAUDE.md). La consulta a GitHub muestra `main` del
+repositorio nuevo sin proteccion; no se modifico. La doble aprobacion operativa
+en ese repositorio todavia no esta acreditada. El estado anterior se conserva
+abajo como registro de la entrega inicial; el secreto ya no esta pendiente
+segun la confirmacion de Fernando.
+
 ## Entrega
 
 Instalación local en `C:\Users\ferna\Documents\Codex\2026-11-05\task\factoria-2`.

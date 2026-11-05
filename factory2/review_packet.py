@@ -4,6 +4,22 @@ from pathlib import Path
 from .core import Blocked, canonical, contained, digest, file_digest
 
 
+def review_path(root, name):
+    """Only these fixed hidden control files join the review scope."""
+    root = Path(root).resolve()
+    if name == '.gitignore':
+        path = root / name
+        if path.is_symlink() or (hasattr(path, 'is_junction') and path.is_junction()):
+            raise Blocked('No se revisan enlaces.')
+        return path
+    if name == '.github/workflows/claude-factory-review.yml':
+        folder = root / '.github'
+        if folder.is_symlink() or (hasattr(folder, 'is_junction') and folder.is_junction()):
+            raise Blocked('No se revisan enlaces.')
+        return contained(folder, 'workflows/claude-factory-review.yml')
+    return contained(root, name)
+
+
 CHECKS = [
     "Aislamiento: no acceso al ERP, secretos, red o publicación sin autorización.",
     "Codex no modifica sus pruebas, permisos ni reglas de aprobación.",
@@ -25,11 +41,11 @@ def packet(root, limit=60000):
                 name = path.relative_to(root).as_posix()
                 safe = contained(root, name)
                 files[name] = safe.read_text(encoding="utf-8-sig")
-    for name in ("config.json", "ORIGEN.json", "AGENTS.md", "README.md", "LEEME.md", "VER_ESTADO.cmd", "PROBAR_PILOTO.cmd"):
-        path = contained(root, name)
+    for name in ("config.json", "ORIGEN.json", "AGENTS.md", "README.md", "LEEME.md", "VER_ESTADO.cmd", "PROBAR_PILOTO.cmd", '.gitignore', '.github/workflows/claude-factory-review.yml'):
+        path = review_path(root, name)
         if path.is_file():
             files[name] = path.read_text(encoding="utf-8-sig")
-    hashes = {name: file_digest(contained(root,name)) for name in files}
+    hashes = {name: file_digest(review_path(root,name)) for name in files}
     factory_hash = digest(hashes)
     chunks, current = [], {}
     for name, body in files.items():
