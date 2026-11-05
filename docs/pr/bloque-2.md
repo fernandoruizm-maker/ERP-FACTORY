@@ -217,6 +217,25 @@ entrega al confirmar el commit y se registra en la nota de integracion de la ram
 3. Puede consultarse localmente con `git rev-parse fix/bloque-2-aislamiento`.
 No se incluye un SHA autorreferente imposible dentro de su propio commit.
 
+## Nota de integracion local antes de desarrollar el bloque 3
+
+Commit nuevo del bloque 2: f28844123d62cf0a491875c713cdc3fc8fce3d05.
+Incluye a8cfa18680e238dbae3ba2f6283e82589e6eb5dd y el bloque 2 inicial.
+En fix/bloque-3-cobertura se incorpora ese bloque 2 completo y se fusiona localmente
+b0da873b1dc3ff37bbafdf93eb6b8027d911885e (bloque 1), sin tocar main ni publicar.
+Git combino docs/ESTADO.md sin conflicto textual; se verifico que conserva ambos
+registros y sus resultados historicos. No se sustituyo uno por el otro.
+
+Verificacion sobre esa base combinada, ANTES de añadir codigo del bloque 3:
+suite privada completa 57 pruebas; suite raiz completa 60; JavaScript 5;
+TypeScript 3. Total 125, cero fallos, errores u omitidas. Se ejecutaron los mismos
+comandos completos documentados arriba, en sus respectivos directorios.
+El codigo privado coincide con f288441 y el codigo/pruebas del diagnostico publico
+con b0da873. Solo se añaden estas notas de evidencia a la documentacion combinada.
+La implementacion de partes, lineas numeradas y cobertura calculada NO ha comenzado.
+El SHA del commit de partida combinado se entrega en la respuesta, tras confirmar
+la fusion; no confundirlo con el SHA de la rama independiente del bloque 2.
+
 ## Entrega y comprobacion futura
 
 Commit y diff --stat respecto a 0cb1882 se entregan junto a este documento, fuera

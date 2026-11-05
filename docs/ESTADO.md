@@ -2,6 +2,13 @@
 
 ## Actualizacion: conexion mediante Actions preparada
 
+Nota posterior: en el clon ERP-FACTORY-correcciones se trabaja sobre la base
+0cb1882, exclusivamente en ramas locales y con push deshabilitado. Bloque 1:
+diagnostico tipado, SHA-256 y PARTIAL sin aprobacion; 60 pruebas Python, 5 JS
+y 3 TS correctas, sin omitidas. GitHub y proveedores reales no verificados.
+Ver docs/pr/bloque-1.md. Las entradas historicas siguientes no describen una
+activacion actual ni autorizan conexiones. Factoria original y factoria-2 intactas.
+
 Fernando confirma que guardo `CLAUDE_CODE_OAUTH_TOKEN` en GitHub. Su valor no se
 leyo. Se preparo un workflow manual con referencias fijas, autorizacion por SHA,
 revision estatica sin herramientas y validador de cobertura/informe. Las 42
@@ -107,3 +114,12 @@ sigue BLOCKED y no incluye el texto. Sin revalidacion ni reintento automaticos.
 57 pruebas privadas + 49 Python de base + 5 JS + 3 TS = 114 aprobadas, sin fallos
 ni omitidas. La futura base local del bloque 3 debe contener tambien el bloque 1
 y pasar sus suites completas antes de añadir funcionalidad de revision por partes.
+
+### Base combinada verificada para iniciar el bloque 3
+
+Bloque 1: b0da873b1dc3ff37bbafdf93eb6b8027d911885e.
+Bloque 2 completo: f28844123d62cf0a491875c713cdc3fc8fce3d05, incluido a8cfa18.
+Integracion solo local en fix/bloque-3-cobertura, conservando ambos registros de
+estado. Sin cambios nuevos de codigo: suites completas 57 privadas + 60 raiz +
+5 JS + 3 TS = 125 aprobadas, sin fallos, errores u omitidas. No hubo red,
+proveedores, publicacion o activacion. La implementacion del bloque 3 sigue pendiente.

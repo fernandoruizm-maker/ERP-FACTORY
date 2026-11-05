@@ -1,11 +1,18 @@
 import json
+import hashlib
+import io
+import os
+import subprocess
+import zipfile
 from pathlib import Path
 import tempfile
 import unittest
 from unittest.mock import patch
 
-from factory2.actions_review import build_request, collect, prepare, safe_diagnostic, text_result, validate_result
+from factory2.actions_review import build_request, collect, coverage_diagnostic, prepare, safe_diagnostic, text_result, validate_result
 from factory2.core import Blocked, canonical
+from factory2.review_packet import packet
+from factory2.state import Store
 
 
 class ActionsReviewTests(unittest.TestCase):
@@ -51,8 +58,7 @@ class ActionsReviewTests(unittest.TestCase):
                        'findings': [], 'limitations_es': ['No se ejecutaron pruebas ni llamadas reales.']}
         self.env = {'GITHUB_REPOSITORY': 'fernandoruizm-maker/ERP-FACTORY',
                     'GITHUB_SHA': 'a' * 40, 'GITHUB_RUN_ID': '123', 'GITHUB_RUN_ATTEMPT': '1',
-                    'GITHUB_ACTOR': 'fernandoruizm-maker', 'CLAUDE_CONCLUSION': 'success',
-                    'CLAUDE_RESULT': canonical(self.result)}
+                    'GITHUB_ACTOR': 'fernandoruizm-maker', 'CLAUDE_CONCLUSION': 'success'}
         self.event = {'type': 'result', 'subtype': 'success', 'is_error': False,
                       'num_turns': 1, 'permission_denials': [], 'result': canonical(self.result)}
 
@@ -82,8 +88,7 @@ class ActionsReviewTests(unittest.TestCase):
 
     def test_rejection_diagnostic_distinguishes_json_version_and_coverage_without_raw_text(self):
         cases = [('SECRET-RAW', 'RESULT_JSON', 'INVALID_JSON'),
-                 (canonical({**self.result, 'source_sha': 'b' * 40}), 'REPORT_VALIDATION', 'VERSION_MISMATCH'),
-                 (canonical({**self.result, 'coverage': 'incomplete'}), 'REPORT_VALIDATION', 'COVERAGE_INCOMPLETE')]
+                 (canonical({**self.result, 'source_sha': 'b' * 40}), 'REPORT_VALIDATION', 'VERSION_MISMATCH')]
         for raw, stage, reason in cases:
             with self.subTest(reason=reason), tempfile.TemporaryDirectory() as temp:
                 dest = Path(temp)
@@ -102,11 +107,110 @@ class ActionsReviewTests(unittest.TestCase):
         self.assertFalse(result['publication_allowed'])
 
     def test_stale_partial_duplicate_and_missing_cross_review_block(self):
-        for changes in ({'source_sha': 'b' * 40}, {'factory_digest': 'old'},
-                        {'reviewed_files': []}, {'reviewed_files': ['factory2/a.py'] * 2},
-                        {'coverage': 'incomplete'}, {'cross_component_review': False}):
+        for changes in ({'source_sha': 'b' * 40}, {'factory_digest': 'old'}):
             with self.subTest(changes=changes), self.assertRaises(Blocked):
                 validate_result(self.manifest, {**self.result, **changes})
+
+    def test_reviewed_not_list(self):
+        data = {**self.result, 'reviewed_files': 'PRIVATE'}
+        self.assertEqual(coverage_diagnostic(self.manifest, data)['codes'], ['REVIEWED_NOT_LIST'])
+        with self.assertRaises(Blocked): validate_result(self.manifest, data)
+
+    def test_reviewed_not_strings(self):
+        data = {**self.result, 'reviewed_files': ['factory2/a.py', {'secret': 'PRIVATE'}]}
+        self.assertEqual(coverage_diagnostic(self.manifest, data)['codes'], ['REVIEWED_NOT_STRINGS'])
+        with self.assertRaises(Blocked): validate_result(self.manifest, data)
+
+    def assert_partial(self, changes, code):
+        value = validate_result(self.manifest, {**self.result, **changes})
+        self.assertEqual(value['status'], 'PARTIAL')
+        self.assertEqual(value['coverage_diagnostic']['codes'], [code])
+        return value['coverage_diagnostic']
+
+    def test_reviewed_duplicates(self):
+        d = self.assert_partial({'reviewed_files': ['factory2/a.py'] * 2}, 'REVIEWED_DUPLICATES')
+        self.assertEqual(d['duplicate_count'], 1)
+
+    def test_reviewed_missing(self):
+        d = self.assert_partial({'reviewed_files': []}, 'REVIEWED_MISSING')
+        self.assertEqual(d['missing_count'], 1)
+        self.assertEqual(d['missing_files'], ['factory2/a.py'])
+
+    def test_reviewed_extra(self):
+        d = self.assert_partial({'reviewed_files': ['factory2/a.py', 'PRIVATE-EXTRA']}, 'REVIEWED_EXTRA')
+        self.assertEqual(d['extra_count'], 1)
+        self.assertNotIn('PRIVATE', canonical(d))
+
+    def test_coverage_declared_incomplete(self):
+        d = self.assert_partial({'coverage': 'incomplete'}, 'COVERAGE_DECLARED_INCOMPLETE')
+        self.assertEqual(d['coverage'], 'incomplete')
+
+    def test_cross_review_false(self):
+        d = self.assert_partial({'cross_component_review': False}, 'CROSS_REVIEW_FALSE')
+        self.assertIs(d['cross_component_review'], False)
+
+    def test_all_applicable_causes_and_safe_values(self):
+        data = {**self.result, 'reviewed_files': ['PRIVATE', 'PRIVATE', None],
+                'coverage': 'PRIVATE-COVERAGE', 'cross_component_review': 'PRIVATE-CROSS'}
+        d = coverage_diagnostic(self.manifest, data)
+        self.assertEqual(d['codes'], ['REVIEWED_NOT_STRINGS', 'REVIEWED_DUPLICATES',
+            'REVIEWED_MISSING', 'REVIEWED_EXTRA', 'COVERAGE_DECLARED_INCOMPLETE', 'CROSS_REVIEW_FALSE'])
+        self.assertEqual((d['reviewed_count'], d['missing_count'], d['extra_count'], d['duplicate_count']), (3, 1, 1, 1))
+        self.assertEqual(d['coverage'], 'INVALID')
+        self.assertEqual(d['cross_component_review'], 'INVALID')
+        self.assertNotIn('PRIVATE', canonical(d))
+
+    def test_partial_validates_findings_and_never_satisfies_gate(self):
+        finding = {'severity': 'medium', 'file': 'factory2/a.py', 'line': 2,
+                   'evidence_es': 'FICTICIO', 'impact_es': 'FICTICIO', 'recommendation_es': 'FICTICIO'}
+        partial = validate_result(self.manifest, {**self.result, 'coverage': 'incomplete', 'findings': [finding]})
+        self.assertFalse(partial['publication_allowed'])
+        self.assertEqual(partial['human_approvals'], 0)
+        self.assertEqual(partial['review']['findings'], [finding])
+        for change in ({'line': 4}, {'file': '../outside'}, {'severity': 'invalid'}):
+            with self.assertRaises(Blocked):
+                validate_result(self.manifest, {**self.result, 'coverage': 'incomplete', 'findings': [{**finding, **change}]})
+        with tempfile.TemporaryDirectory() as temp:
+            store = Store(Path(temp) / 'state.sqlite3')
+            version = store.put_task('FICTICIO', {'artifact_digest': 'artifact'})
+            store.accept('FICTICIO', version, 'persona-a', 'business')
+            store.accept('FICTICIO', version, 'persona-b', 'technical')
+            product = {'artifact_digest': 'artifact', 'verdict': 'PASS', 'summary_es': 'Ficticio', 'findings': []}
+            tests = [{'status': 'PASS', 'test_count': 1, 'artifact_digest': 'artifact'}]
+            for review in (partial, partial['review']):
+                outcome = store.gate('FICTICIO', version, 'artifact', product, tests,
+                                     factory_digest='digest-a', factory_review=review)
+                self.assertEqual(outcome['status'], 'BLOCKED')
+                self.assertFalse(outcome['publication_allowed'])
+
+    def test_real_base_packet_91_files_and_missing_empty_test_file(self):
+        root = Path(__file__).resolve().parent.parent
+        env = {k: v for k, v in os.environ.items() if k.upper() in ('PATH', 'SYSTEMROOT', 'TEMP', 'TMP')}
+        env.update(GIT_CONFIG_GLOBAL=os.devnull, GIT_CONFIG_NOSYSTEM='1', GIT_CONFIG_COUNT='0')
+        # Local Git object database only; no checkout, hooks, fetch or provider.
+        archive = subprocess.run(['git', 'archive', '--format=zip',
+            '0cb1882548fc141f4b764e82ff2e5154cfae2762'], cwd=root, env=env,
+            check=True, capture_output=True).stdout
+        with tempfile.TemporaryDirectory() as temp, zipfile.ZipFile(io.BytesIO(archive)) as files:
+            base = Path(temp)
+            for info in files.infolist():
+                if info.is_dir(): continue
+                target = base / info.filename
+                self.assertTrue(target.resolve().is_relative_to(base.resolve()))
+                target.parent.mkdir(parents=True, exist_ok=True)
+                target.write_bytes(files.read(info))
+            manifest, parts = packet(base)
+            self.assertEqual(len(manifest['files']), 91)
+            manifest['source_sha'] = '0cb1882548fc141f4b764e82ff2e5154cfae2762'
+            manifest['file_lines'] = {name: max(1, len(body.splitlines())) for part in parts for name, body in part['files'].items()}
+            response = {**self.result, 'source_sha': manifest['source_sha'], 'factory_digest': manifest['factory_digest'],
+                        'reviewed_files': list(manifest['files'])}
+            self.assertEqual(validate_result(manifest, response)['status'], 'NEEDS_HUMAN_REVIEW')
+            response['reviewed_files'].remove('tests/__init__.py')
+            result = validate_result(manifest, response)
+            self.assertEqual(result['status'], 'PARTIAL')
+            self.assertEqual(result['coverage_diagnostic']['missing_files'], ['tests/__init__.py'])
+            self.assertEqual(result['coverage_diagnostic']['missing_count'], 1)
 
     def test_bad_evidence_and_contradictory_pass_block(self):
         finding = {'severity': 'high', 'file': 'factory2/a.py', 'line': 2,
@@ -125,13 +229,13 @@ class ActionsReviewTests(unittest.TestCase):
                 validate_result(self.manifest, {**self.result, **changes})
 
     def test_collection_failure_leaves_blocked_report_without_raw_content(self):
-        for changes in ({'CLAUDE_RESULT': 'not-json-sensitive-fixture'},
+        for changes in ({'raw_fixture': 'not-json-sensitive-fixture'},
                         {'CLAUDE_CONCLUSION': 'failure'}, {'GITHUB_RUN_ATTEMPT': '2'},
                         {'GITHUB_SHA': 'b' * 40}, {'GITHUB_ACTOR': 'someone-else'}):
             with self.subTest(changes=changes), tempfile.TemporaryDirectory() as temp:
                 dest = Path(temp)
                 (dest / 'manifest.json').write_text(canonical(self.manifest), encoding='utf-8')
-                self.write_execution(dest, changes.get('CLAUDE_RESULT'))
+                self.write_execution(dest, changes.get('raw_fixture'))
                 self.assertEqual(collect(dest, {**self.env, **changes, 'RUNNER_TEMP': temp}), 1)
                 report = (dest / 'report.json').read_text(encoding='utf-8')
                 self.assertNotIn('not-json-sensitive-fixture', report)
@@ -147,6 +251,24 @@ class ActionsReviewTests(unittest.TestCase):
             self.assertEqual(report['provenance']['GITHUB_RUN_ID'], '123')
             self.assertFalse(report['publication_allowed'])
             self.assertTrue((dest / 'INFORME.txt').is_file())
+
+    def test_pending_partial_retains_findings_without_public_free_text(self):
+        with tempfile.TemporaryDirectory() as temp:
+            dest = Path(temp)
+            (dest / 'manifest.json').write_text(canonical(self.manifest), encoding='utf-8')
+            raw = json.dumps({**self.result, 'coverage': 'incomplete', 'summary_es': 'PRIVATE-REVIEW'}, indent=2)
+            self.write_execution(dest, raw)
+            self.assertEqual(collect(dest, {**self.env, 'RUNNER_TEMP': temp}), 1)
+            report = json.loads((dest / 'report.json').read_text(encoding='utf-8'))
+            self.assertEqual(report['status'], 'PARTIAL')
+            self.assertEqual(report['response_sha256'], hashlib.sha256(raw.encode()).hexdigest())
+            self.assertNotIn('PRIVATE-REVIEW', canonical(report))
+            self.assertNotIn('PRIVATE-REVIEW', (dest / 'INFORME.txt').read_text(encoding='utf-8'))
+            pending = json.loads((dest / 'review.pending.json').read_text(encoding='utf-8'))
+            self.assertEqual(pending['review']['summary_es'], 'PRIVATE-REVIEW')
+            workflow = (Path(__file__).resolve().parent.parent / '.github/workflows/claude-factory-review.yml').read_text(encoding='utf-8')
+            self.assertNotIn('review.pending.json', workflow)
+            with self.assertRaises(Blocked): collect(dest, {**self.env, 'RUNNER_TEMP': temp})
 
     def test_request_includes_workflow_but_excludes_state_and_credentials(self):
         with tempfile.TemporaryDirectory() as temp:
