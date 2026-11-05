@@ -1,5 +1,16 @@
 # Estado vigente: preparacion de PR unica de bloques 1 a 7
 
+## Decision posterior: retirada de la fabrica original (solo diseño)
+
+Fernando decide detenerla permanentemente y archivarla sin borrar codigo, historial
+ni evidencias. Procedimiento y decisiones pendientes en docs/RETIRADA-ORIGINAL.md.
+Esta entrega es exclusivamente documental: no se consulto ni modifico Ubuntu,
+rdc, GitHub, servicios o credenciales; no hubo red ni ejecucion de codigo original.
+ORIGINAL_COORDINATION_NOT_VERIFIED sigue intacto. Solo se diseña su posible
+sustitucion con evidencia autenticada y vigente. Verificacion local de referencias,
+enlaces y git diff --check; sin suites de proyecto por ser documentacion.
+
+
 Decision expresa de Fernando: publicacion/bloques-1-7 nace de origin/main
 930528e2aad40aace0903311fc997c3d34024bd6 y contiene la fuente completa
 0ff127fd2a6fc65ec5d9064087c91b3bfcda6b91, incluido b0da873 del bloque 1.
