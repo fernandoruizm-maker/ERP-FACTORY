@@ -28,6 +28,13 @@ El antiguo objeto monolitico ya no cuenta como revision privada. Los tres format
 publicos se conservan intactos como dependencia historica hasta la migracion;
 no se afirma haber corregido aun la puerta operativa publica (M2, bloque 4).
 
+Contratos obsoletos para el revisor privado: `factory2/core.py::validate_review`,
+`factory2/review_packet.py::validate_complete` y
+`factory2/actions_review.py::validate_result`. No se importan ni se aceptan como
+alternativas al contrato V2 privado. Se mantienen fisicamente para no modificar
+el flujo publico en esta etapa; su retirada/adaptacion de consumidores corresponde
+a la migracion autorizada y al bloque 4. No estan eliminados de la fabrica local.
+
 Se amplian patrones de credenciales habituales, incluido github_pat_. Es una
 heuristica, no una garantia de ausencia de secretos. Se mantiene la decision
 restringida del bloque 2 para response.unvalidated.txt: solo privado, BLOCKED,
@@ -65,12 +72,15 @@ Desde `ERP-FACTORY-correcciones/ERP-FACTORY-revision`:
 & "$env:USERPROFILE\.cache\codex-runtimes\codex-primary-runtime\dependencies\python\python.exe" -m unittest discover -s tests -v
 ```
 
-Suite privada completa: 86 pruebas, 0 fallos, 0 errores, 0 omitidas. Incluye
-32 controles privados/estaticos, 28 de protocolo y 26 de conservacion restringida.
+Suite privada completa: 87 pruebas, 0 fallos, 0 errores, 0 omitidas. Incluye
+32 controles privados/estaticos, 29 de protocolo y 26 de conservacion restringida.
 Prueba partes ausentes, duplicadas o de otra version; huellas alteradas; intervalos
 incompletos; hallazgos fuera de archivo o parte; JSON fuera del sistema; pasada
 final ligada a cada resultado; contexto excesivo; tipos de archivo no clasificados;
 inventario real de los 91 archivos del SHA base; y patrones de tokens ficticios.
+El commit adicional comprueba explicitamente una pasada final de otra version
+(source_sha o factory_digest), ademas de la prueba existente de pasada ausente
+y de la huella ligada a todos los resultados. Todo usa datos ficticios.
 
 Registro de desarrollo: la primera ejecucion privada reporto 60 casos, 0 fallos
 de asercion y 1 error de importacion por un error de sintaxis en la prueba de
@@ -86,11 +96,17 @@ node --experimental-strip-types --test --test-reporter=tap pilot-js/tests/bottle
 ```
 
 Suite raiz: 60 Python; JavaScript: 5; TypeScript: 3. Cero fallos, errores u
-omitidas. Total final: 154 casos. TS se ejecuta sin comprobar tipos estaticamente.
+omitidas. Total final: 155 casos. TS se ejecuta sin comprobar tipos estaticamente.
 Las pruebas Python usaron la via autorizada del ejecutor para temporales, sin
 cambiar permisos del sistema. No se descargaron dependencias.
 
 ## No verificado
+
+**NO VERIFICADO:** la deteccion de errores del proveedor mediante los campos
+`error`/`errors` en cualquier evento no se ha contrastado con eventos reales de
+Claude Code. Solo se ha probado con eventos ficticios; no se acredita que esos
+campos, tipos y significados coincidan con todas las salidas reales del proveedor.
+No se obtuvieron eventos reales ni se hizo una llamada para comprobarlo.
 
 Integracion real con Claude/Anthropic, Codex remoto u otros proveedores; ejecucion
 del workflow en GitHub; existencia/configuracion del repositorio privado; pin real

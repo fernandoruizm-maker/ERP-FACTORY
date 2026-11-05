@@ -94,6 +94,14 @@ class ProtocolTests(unittest.TestCase):
         with self.assertRaisesRegex(Blocked, 'VERSION_MISMATCH'):
             validate_result(self.manifest, self.bundle)
 
+    def test_cross_of_another_version_rejected(self):
+        for field, value in (('source_sha', 'b' * 40), ('factory_digest', 'b' * 64)):
+            with self.subTest(field=field):
+                bundle = copy.deepcopy(self.bundle)
+                bundle['cross']['report'][field] = value
+                with self.assertRaisesRegex(Blocked, 'VERSION_MISMATCH'):
+                    validate_result(self.manifest, bundle)
+
     def test_cross_receives_every_validated_part_in_order(self):
         payload = cross_request(self.manifest, list(reversed(self.bundle['parts'])))
         self.assertEqual([item['part_id'] for item in payload['part_results']], list(range(1, len(self.parts) + 1)))

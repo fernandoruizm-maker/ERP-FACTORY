@@ -141,3 +141,13 @@ y limites en docs/pr/bloque-3.md. Las entradas anteriores son historicas.
 No verificados integracion real, GitHub, privacidad/retencion de artefactos,
 minutos, Docker, identidades ni ERP. No se ejecuto upstream/. Sin red, secretos,
 proveedores, publicacion o activacion; original y factoria-2 intactas.
+
+
+### Aclaracion adicional del bloque 3
+
+Se documentan los tres contratos de factory2/ obsoletos para el revisor privado.
+Se agrega la prueba de pasada final con source_sha o factory_digest de otra
+version. Suites completas: 87 privadas + 60 raiz + 5 JS + 3 TS = 155, sin
+fallos, errores u omitidas. NO VERIFICADO: campos error/errors en cualquier
+evento frente a eventos reales de Claude Code; solo se usaron eventos ficticios.
+Sin cambios de codigo operativo, red, publicacion ni activacion.
