@@ -26,7 +26,8 @@ puede realizar sus propios reintentos de transporte.
 
 Los datos se cargan desde un archivo de contexto, evitando pasar cientos de miles
 de caracteres por variables de entorno. Se deshabilitan herramientas integradas
-y MCP, y la carga automatica de hooks/configuraciones mediante `--bare`. El modelo
+y MCP, y las personalizaciones mediante `--safe-mode`. Este modo conserva OAuth;
+`--bare` no es compatible con el token de suscripcion. El modelo
 no puede leer otros archivos, ejecutar pruebas, editar, comentar PR o integrar.
 El token de GitHub solo tiene `contents: read`. No instala una GitHub App nueva.
 
