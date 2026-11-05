@@ -151,3 +151,17 @@ version. Suites completas: 87 privadas + 60 raiz + 5 JS + 3 TS = 155, sin
 fallos, errores u omitidas. NO VERIFICADO: campos error/errors en cualquier
 evento frente a eventos reales de Claude Code; solo se usaron eventos ficticios.
 Sin cambios de codigo operativo, red, publicacion ni activacion.
+
+
+### Calculo documental previo al bloque 4
+
+Con el codigo 49aadc8, el SHA original 0cb1882548fc141f4b764e82ff2e5154cfae2762
+genera 10 partes para sus 91 archivos: una revision completa supondria 11 llamadas
+(10 partes + 1 interacciones), condicionada a validacion y limite del mensaje final.
+Cero llamadas reales, sin coste medido. La pasada final recibe resultados e
+inventario, no codigo fuente. Queda obligatorio construir posteriormente el
+workflow secuencial con guardado inmediato de cada parte validada, conservacion
+ante fallos, topes autorizados de llamadas/gasto y sin reintentos automaticos.
+No se construyo ahora. error/errors sigue NO VERIFICADO frente a eventos reales.
+Solo documentacion y calculo local; suites no repetidas porque el codigo no cambia.
+Se espera instruccion de Fernando antes del bloque 4. Ver docs/pr/bloque-3.md.

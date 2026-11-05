@@ -64,6 +64,55 @@ no hay truncado, resumen automatico ni reintento de pago. Son limites de bytes,
 no garantias de ventana de contexto ni de coste. Validar cobertura no acredita
 que Claude haya leido o comprendido realmente todas las lineas.
 
+**Limitacion de la pasada de interacciones:** `cross_request()` recibe los
+resultados validados de todas las partes y el inventario (nombres, huellas y
+numero de lineas), pero NO recibe el codigo fuente. Por ello su analisis depende
+de lo recogido en los informes de las partes; no equivale a una segunda lectura
+global del codigo y puede omitir interacciones no descritas en esos resultados.
+
+**Pendiente obligatorio antes de cualquier intento real:** construir y revisar
+un workflow multiparte que haga las llamadas en orden, guarde cada parte validada
+en cuanto llegue y conserve las anteriores si otra falla. Debera aplicar un tope
+de llamadas y un tope de gasto por ejecucion, con valores expresamente autorizados,
+y no reintentar automaticamente. El calculo de llamadas de abajo no establece
+ni autoriza esos topes. Ese workflow NO se construye en este commit documental;
+la preparacion real sigue bloqueada y cualquier intento exige nueva autorizacion.
+
+## Calculo local adicional, sin llamadas ni funcionalidad nueva
+
+Ejecutado con el codigo de `49aadc8aab8a6e2b270bd0e3b0ecc59f237a5f40`, usando
+la politica de alcance y los limites actuales, sobre el commit exacto
+`0cb1882548fc141f4b764e82ff2e5154cfae2762`: **91 archivos, 10 partes**.
+Una revision completa supondria **11 llamadas a Claude: 10 de partes + 1 final**,
+sin reintentos. Es un conteo estructural, condicionado a que todas las partes
+validen y el mensaje final quepa en su limite; no garantiza llegar a completarlas.
+El tamano final depende de respuestas aun inexistentes y no se ha calculado con
+respuestas reales. Llamadas efectivamente realizadas: **0**. No hay coste medido
+ni estimacion monetaria en esta entrega.
+
+Limites usados: 60.000 bytes UTF-8 por mensaje de usuario de parte, 2.000.000 bytes
+de fuente y 128 partes como maximo. Tamanos medidos, en orden, incluyendo el JSON
+delimitado y su huella (sin instrucciones/esquema del sistema):
+`59978, 59989, 59962, 59960, 59935, 59961, 59958, 59932, 59930, 24374` bytes.
+
+Comando exacto ejecutado desde `ERP-FACTORY-correcciones/ERP-FACTORY-revision`:
+
+```powershell
+@'
+import json
+from reviewer.packets import packet, user_message, MAX_PART_BYTES, MAX_SOURCE_BYTES, MAX_PARTS
+from reviewer.validation import check_manifest
+manifest, parts = packet('..', '0cb1882548fc141f4b764e82ff2e5154cfae2762')
+check_manifest(manifest)
+print(json.dumps({'source_sha': manifest['source_sha'], 'files': len(manifest['files']), 'parts': len(parts), 'complete_review_calls': len(parts)+1, 'max_part_bytes': MAX_PART_BYTES, 'max_source_bytes': MAX_SOURCE_BYTES, 'max_parts': MAX_PARTS, 'user_message_bytes': [len(user_message(p).encode('utf-8')) for p in parts], 'actual_provider_calls': 0}, sort_keys=True))
+'@ | & "$env:USERPROFILE\.cache\codex-runtimes\codex-primary-runtime\dependencies\python\python.exe" -B -
+```
+
+Resultado: salida 0, inventario y manifiesto comprobados localmente. Solo se leyeron
+objetos Git locales mediante un indice temporal; no se ejecuto el codigo objetivo.
+Este commit cambia exclusivamente documentacion. No se repitieron las suites:
+los resultados completos de abajo corresponden al codigo sin cambios de 49aadc8.
+
 ## Pruebas ejecutadas
 
 Desde `ERP-FACTORY-correcciones/ERP-FACTORY-revision`:
