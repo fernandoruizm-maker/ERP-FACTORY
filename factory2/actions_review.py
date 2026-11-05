@@ -124,7 +124,9 @@ def prepare(root, destination, source_sha):
     (destination / 'request.txt').write_text(request, encoding='utf-8')
     (destination / 'manifest.json').write_text(canonical(manifest), encoding='utf-8')
     # The pinned Action drops empty flag values. Deny every tool explicitly.
-    args = '--bare --disallowedTools "*" --max-turns 2 --max-budget-usd 2 --model sonnet '
+    # --bare ignores CLAUDE_CODE_OAUTH_TOKEN. Safe mode preserves authentication
+    # while disabling customizations; the separate tool deny remains in force.
+    args = '--safe-mode --disallowedTools "*" --max-turns 2 --max-budget-usd 2 --model sonnet '
     args += '--append-system-prompt-file outputs/claude-review/request.txt --json-schema ' + "'" + canonical(schema()) + "'"
     if os.environ.get('GITHUB_OUTPUT'):
         with open(os.environ['GITHUB_OUTPUT'], 'a', encoding='utf-8') as stream:

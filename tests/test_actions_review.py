@@ -107,6 +107,9 @@ class ActionsReviewTests(unittest.TestCase):
             with patch.dict('os.environ', {'GITHUB_OUTPUT': str(root / 'job-output.txt')}):
                 prepare(root, root / 'outputs/claude-review', 'a' * 40)
             args = (root / 'job-output.txt').read_text(encoding='utf-8')
+            # OAuth credentials are ignored in bare mode (Anthropic auth docs).
+            self.assertNotIn('--bare', args)
+            self.assertIn('--safe-mode', args)
             self.assertIn('--disallowedTools "*"', args)
             self.assertNotIn('--tools ""', args)
             self.assertIn('--append-system-prompt-file', args)
