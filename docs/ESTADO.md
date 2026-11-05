@@ -270,3 +270,19 @@ Pruebas completas: 93 raiz + 87 privadas + 5 JS + 3 TS = 188; cero fallos,
 errores u omitidas. Sin red, credenciales, proveedores, publicacion o activacion.
 Original, factoria-2, upstream/ y main intactos. Ver comandos, limites y hallazgos
 parcialmente resueltos en docs/pr/bloque-4.md. Puntos 5-9 para la segunda mitad.
+
+## Bloque 7: guia local para la cuenta de Codex
+
+Base: 31abe689a20aff9ab886c0f0ff59248c7f2dc44f. Rama fix/bloque-7-cuenta-codex.
+Solo documentacion: guia de cuenta separada, permisos minimos, caducidad propuesta
+de 30 dias, configuracion futura por clon y revocacion. PUBLICACION.md establece
+cuenta/token, proteccion de main, prueba ficticia autorizada sin integrar y despues
+publicacion del bloque 1 con autorizacion expresa. Repositorio publico sin cambios.
+Verificacion local: lectura de los documentos, enlaces relativos y git diff --check.
+No se ejecutaron suites: no cambia codigo. NO VERIFICADOS: pantallas de GitHub,
+compatibilidad del token de grano fino con un colaborador de otro propietario
+personal, aislamiento efectivo del gestor de credenciales y proteccion de main.
+La guia exige detenerse si no se puede cumplir el alcance exacto del token.
+Sin red, cuentas nuevas, tokens, cambios de configuracion, credenciales o remotos.
+No se rehabilito el envio DISABLED. Sin publicacion ni activacion; upstream/,
+la fabrica original y factoria-2 intactos.

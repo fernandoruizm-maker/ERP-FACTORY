@@ -5,6 +5,11 @@ del ERP, ni siquiera a una rama, un informe, un comentario, una PR o un artefact
 Revisar tambien el historial que se vaya a enviar. Borrar un dato del ultimo archivo
 no lo borra de los commits anteriores. Ante una duda, detener la subida.
 
+Decision del bloque 7: las PR las abrira una cuenta de maquina separada para Codex,
+con nombre provisional **fernando-codex**; Fernando elegira el definitivo. Fernando
+y FERRUMTJA seguiran aprobando con sus propias cuentas. No se crea la cuenta aqui.
+El repositorio sigue siendo PUBLICO y propiedad de fernandoruizm-maker.
+
 ## Permisos de Fernando
 
 | Accion | Permiso aplicable |
@@ -24,22 +29,76 @@ Si la proteccion cambia, deja de aplicarse o su estado es incierto, suspender el
 uso de ese permiso y volver a comprobarla con Fernando. No usar una revision local
 de JSON como sustituto de la verificacion real de Claude.
 
-## Paso 0. Resolver autoria y proteger main
+## Orden previo obligatorio: a, b, c y d
 
-- Fernando decide quien abrira las PR y autoriza la configuracion de main.
-  No puede ser uno de los dos aprobadores si se necesitan sus dos aprobaciones:
-  GitHub no cuenta la aprobacion del autor. No se crea una cuenta/app aqui, no se
-  comparten credenciales y no se rebaja la regla. La identidad de autoria queda pendiente.
-- Codex entrega docs/github/ruleset-main.json y GUIA-PROTEGER-MAIN.md; no los aplica.
-- Fernando crea/importa la regla desde la web y autoriza una PR de prueba reversible.
-- Claude comprueba en lectura regla efectiva y comportamiento de esa PR, incluida
-  la invalidacion de aprobaciones al cambiar el SHA. Documenta pruebas y limites.
-- Como deshacer: cerrar la PR de prueba sin integrar; corregir una regla mal puesta
-  solo con autorizacion de Fernando. No usar force push ni borrar main.
+### a) Fernando crea la cuenta y el token
+
+- Fernando sigue [GUIA-CUENTA-CODEX.md](github/GUIA-CUENTA-CODEX.md): correo distinto,
+  verificacion en dos pasos, invitacion Write y token de grano fino solo para
+  ERP-FACTORY, con Contents/Pull requests lectura-escritura y Metadata lectura.
+- La compatibilidad de ese token con una cuenta colaboradora de un repositorio
+  personal ajeno NO esta comprobada. Si no puede seleccionar exactamente ese
+  propietario/repositorio, detenerse: no usar token clasico, permisos mas amplios
+  ni credenciales de Fernando. Hace falta una decision posterior sobre otro diseño.
+- Fernando realiza cualquier configuracion local posterior solo en el clon
+  ERP-FACTORY-correcciones; no cambia identidades o credenciales globales. Codex
+  solo prepara la guia, no recibe ni almacena el token. No se comparte en chat.
+- Claude puede revisar en lectura las opciones no secretas. No pedirle capturas
+  con tokens, codigos de recuperacion, contraseñas o QR de autenticacion.
+- Como deshacer: Fernando revoca el token y retira el acceso de la cuenta nueva
+  siguiendo la guia; no borrar credenciales personales ni reescribir commits.
+- Este paso no rehabilita el envio: sigue DISABLED.
+
+### b) Fernando crea la regla de main
+
+- Fernando sigue [GUIA-PROTEGER-MAIN.md](github/GUIA-PROTEGER-MAIN.md) y utiliza
+  ruleset-main.json: PR obligatoria, dos aprobaciones, invalidacion tras cambios,
+  conversaciones resueltas, sin force push, borrado ni bypass.
+- Codex no aplica ni modifica la regla. Claude inspecciona en lectura lo que
+  Fernando haya configurado, sin afirmar que la prueba funcional ya esta hecha.
+- No agregar la cuenta de Codex a una lista de bypass. Write no debe confundirse
+  con una garantia tecnica de "solo crear PR"; las restricciones y el procedimiento
+  de integracion humana se mantienen.
+- Como deshacer: corregir una configuracion equivocada solo con autorizacion
+  expresa; nunca rebajar las dos aprobaciones ni desproteger main para continuar.
+
+### c) Prueba ficticia con autorizacion expresa
+
+- Fernando autoriza concretamente rehabilitar el envio de ESTE clon solo hacia
+  https://github.com/fernandoruizm-maker/ERP-FACTORY.git, subir una rama ficticia,
+  abrir la PR de prueba con la cuenta nueva y cerrarla despues SIN integrarla.
+  Esta documentacion no ejecuta ni concede por si sola esa autorizacion.
+- Solo entonces Codex puede efectuar los cambios de envio autorizados, comprobar
+  que no hay otro destino de push y subir la rama de prueba. Nunca incluir el token
+  en una URL. La autenticacion se introduce por Fernando en el gestor seguro.
+- La PR debe aparecer abierta por la cuenta de maquina. El nombre/correo de un
+  commit no bastan para demostrarlo. Fernando y FERRUMTJA usan sus cuentas personales.
+- Claude verifica en lectura repositorio, regla efectiva y estados de la PR:
+  sin aprobaciones bloqueada, con una aun bloqueada, conversaciones abiertas
+  bloquean y un cambio nuevo invalida las aprobaciones previas. La prueba debe
+  incluir ese cambio ficticio autorizado. Se inspeccionan las prohibiciones de
+  force push/borrado sin intentar ejecutarlos. No integrar ni pulsar auto-merge.
+- Documentar evidencia, SHA, cuenta autora y lo que no pudo verificarse. Un token
+  que falla, una regla que no bloquea o un cambio de identidad inesperado detienen
+  la prueba; no ampliar permisos ni eludir la regla.
+- Al terminar, cerrar la PR sin integrarla. No borrar ramas ni cambiar mas remotos
+  fuera de la autorizacion. Si falla la prueba, Fernando autoriza volver a DISABLED;
+  entretanto, no hacer mas envios. Reabrir acceso o corregir permisos requiere permiso.
+- Solo cuando Claude haya verificado el funcionamiento se cumple la condicion del
+  permiso permanente limitado a subir ramas y abrir PR. No incluye integrar ni
+  cambiar configuraciones, secretos o protecciones.
+
+### d) Publicar el bloque 1 con autorizacion expresa
+
+- Despues de a, b y c, Fernando autoriza expresamente la publicacion del bloque 1.
+  Esta primera publicacion conserva ese requisito aunque la prueba anterior haya
+  cumplido la condicion del permiso permanente para trabajo posterior.
+- Seguir el paso siguiente, con el SHA exacto y la cuenta nueva; no publicar de
+  golpe las ramas acumuladas de los bloques 4, 5, 6 o 7.
 
 ## Paso 1. Publicar y revisar el bloque 1
 
-- Fernando autoriza esa subida si la condicion de permiso permanente no esta cumplida.
+- Fernando autoriza expresamente esta subida del bloque 1, conforme al paso d.
 - Codex prepara una rama de publicacion desde la base real vigente, con el contenido
   del bloque 1 (referencia local b0da873), su texto de PR y pruebas correspondientes.
   Revisa los archivos y el historial por datos que no deban publicarse. Antes de subir,
