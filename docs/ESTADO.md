@@ -1,14 +1,22 @@
 # Estado vigente: preparacion de PR unica de bloques 1 a 7
 
-## Decision posterior: retirada de la fabrica original (solo diseño)
+## Decision vigente: retirada sencilla de la original (sin ejecutar cambios)
 
-Fernando decide detenerla permanentemente y archivarla sin borrar codigo, historial
-ni evidencias. Procedimiento y decisiones pendientes en docs/RETIRADA-ORIGINAL.md.
-Esta entrega es exclusivamente documental: no se consulto ni modifico Ubuntu,
-rdc, GitHub, servicios o credenciales; no hubo red ni ejecucion de codigo original.
-ORIGINAL_COORDINATION_NOT_VERIFIED sigue intacto. Solo se diseña su posible
-sustitucion con evidencia autenticada y vigente. Verificacion local de referencias,
-enlaces y git diff --check; sin suites de proyecto por ser documentacion.
+Fernando elige opcion A para rdc: cerrar sus PR sin integrar y no cambiar reglas.
+Guia por clics de hasta 80 lineas en docs/RETIRADA-ORIGINAL.md. La anterior se
+conserva como historia en RETIRADA-ORIGINAL-ANEXO-TECNICO.md; no se exige a Fernando
+usar Linux, backups SQLite por API ni firmas. Registro final simple, documental.
+Inventario autorizado solo lectura: una VM RDC-Piloto-Aislado, poweroff, autostart
+off y una instantanea. Sin tareas/servicios propios de fabrica identificados;
+coincidencias Autopilot/Copilot y VBoxSDS no se deben deshabilitar por ese filtro.
+Existe pilot.pause en la carpeta historica rdc-activation/state (ruta en anexo).
+Lecturas inicialmente denegadas por aislamiento se completaron por la via formal
+de aprobacion de solo lectura. Sin cambios operativos, red, Ubuntu ni GitHub.
+No se inspeccionaron trabajos dentro de la VM, procesos sueltos o todas las rutas
+de Windows. Inventario acotado, no prueba de ausencia total de componentes.
+ORIGINAL_COORDINATION_NOT_VERIFIED sigue intacto. No se implementa ningun cambio
+de coordinacion ni activacion. Verificacion documental de lineas, enlaces y diff;
+sin suites de proyecto. El archivo/exportacion y las bajas siguen pendientes.
 
 
 Decision expresa de Fernando: publicacion/bloques-1-7 nace de origin/main
