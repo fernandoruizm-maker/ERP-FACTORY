@@ -29,6 +29,17 @@ solo a artefactos privados con retencion propuesta de 7 dias. Respuestas invalid
 o posiblemente sensibles no conservan texto libre: solo codigos y huella disponible.
 Nunca se suben estos datos al repositorio publico. Las pruebas usan solo ficticios.
 
+El commit adicional conserva evidencia tambien ante fallos tempranos: archivo de
+ejecucion ausente, enlace/directorio/tamaño invalido, error de lectura, JSON o
+estructura invalida, o material ausente/alterado/de otra version. En esos casos
+artifacts/ contiene report.json BLOCKED, diagnostic.json, SHA256.json e INFORME.txt,
+sin texto libre del proveedor, rutas ni excepciones. reason_code pertenece a un
+conjunto fijo; nunca se obtiene comparando mensajes de excepcion.
+El archivo de ejecucion se comprueba primero; si es valido, se verifica el material
+antes de validar sus hallazgos. Ninguna de estas salidas puede producir aprobacion.
+No se sobrescribe evidencia previa. Si el propio directorio de salida no permite
+escritura, no se promete producir archivos: se falla sin cambiar sus permisos.
+
 ## Bloqueos y dependencias expresos
 
 Se entregan tres bloqueos deliberados: guardia false del workflow,
@@ -57,7 +68,7 @@ El validador privado toma funciones de validacion del commit LOCAL
 b0da873b1dc3ff37bbafdf93eb6b8027d911885e, adaptadas a un paquete independiente,
 sin importar factory2 ni otro codigo del candidato. Su copia aun necesita revision
 antes de escoger el pin privado. La suite raiz es la de la base (49 Python);
-las 23 nuevas pruebas cubren el diseño privado. No se confunden con las 60 de la
+las 31 pruebas actuales cubren el diseño privado. No se confunden con las 60 de la
 rama independiente del bloque 1 ni se afirma que aquel bloque desaparecio.
 
 ## Verificacion ejecutada
@@ -68,12 +79,21 @@ Desde ERP-FACTORY-correcciones/ERP-FACTORY-revision:
 & "$env:USERPROFILE\.cache\codex-runtimes\codex-primary-runtime\dependencies\python\python.exe" -B -m unittest discover -s tests -v
 ```
 
-Resultado real: 23 pruebas, 0 fallos, 0 errores, 0 omitidas. Incluye lectura de tar
+Resultado final real: 31 pruebas, 0 fallos, 0 errores, 0 omitidas. Incluye lectura de tar
 malicioso, enlaces/rutas/tamaños, fuente no ejecutada, version exacta, controles de
 contexto, bloqueo antes de red, transporte SOLO simulado, datos fuera del system
 prompt, huellas alteradas, PARTIAL, respuestas invalidas y mutaciones del YAML.
 El workflow usa el subconjunto JSON de YAML; se analiza con json de Python, sin
 instalar dependencias. Estos controles no equivalen a validar Actions en GitHub.
+Ocho pruebas nuevas comprueban salidas bloqueadas con sus huellas, errores de
+lectura simulados, material invalido, la ruta completa del CLI sin archivo,
+rechazo de reason_code libre, conservacion de evidencia previa y la ruta valida.
+
+La primera ejecucion del commit adicional tuvo 31 pruebas, 1 fallo y 22 errores
+(incluidos subcasos), sin omitidas, por un operador ausente al concatenar el texto
+del informe. Se corrigio y se repitio la suite privada completa: 31/31. El resultado
+fallido no se presenta como validacion. Las suites de base y Node pasaron y sus
+archivos no cambiaron despues; no se ejecutaron proveedores para estas pruebas.
 
 Desde ERP-FACTORY-correcciones:
 
@@ -84,7 +104,7 @@ node --experimental-strip-types --test --test-reporter=tap pilot-js/tests/bottle
 ```
 
 Resultados reales: 49 Python, 5 JavaScript y 3 TypeScript, todos aprobados; 0 fallos,
-0 errores y 0 omitidas. TypeScript sin comprobacion estatica de tipos. Total: 80
+0 errores y 0 omitidas. TypeScript sin comprobacion estatica de tipos. Total: 88
 casos entre la suite nueva del revisor privado y la suite completa de la fabrica
 base documentada. upstream/ permanece intacto y su suite heredada no se ejecuto.
 Las pruebas Python se ejecutaron con la via autorizada del ejecutor para temporales;
@@ -110,10 +130,57 @@ no se cambiaron permisos del sistema, credenciales ni configuracion de red.
   y piloto) siguen pendientes. La documentacion antigua del repositorio publico
   requiere su actualizacion del bloque 4; este bloque solo documenta el diseño nuevo.
 
-## Entrega y publicacion futura
+## Destino de publicacion y orden propuesto (NO ejecutado)
+
+Publicar el bloque 2 significa CREAR EL REPOSITORIO PRIVADO con el CONTENIDO de
+ERP-FACTORY-revision/ como su raiz. No significa integrar esta rama completa en
+ERP-FACTORY ni alojar alli el workflow del revisor. Los documentos docs/pr/ y
+docs/ESTADO.md de esta rama son evidencia de la entrega local, no una orden de
+fusionar la carpeta privada en el repositorio publico.
+
+Orden propuesto, sujeto a autorizacion posterior por destino y bloque:
+
+1. Bloque 1 en ERP-FACTORY, solo si Fernando autoriza esa correccion transitoria
+   del diagnostico publico; mantener la fabrica y cualquier nuevo intento apagados.
+2. Bloque 2 actualizado: publicar exclusivamente el contenido de la carpeta nueva
+   en ERP-FACTORY-revision PRIVADO. Revisar y fijar alli el commit del validador.
+3. Bloque 3: partir de fix/bloque-2-aislamiento ACTUALIZADA y desarrollar partes,
+   lineas numeradas y cobertura calculada exclusivamente sobre el revisor privado.
+   Integrar despues sus cambios en ese repositorio privado, no en el validador
+   publico. No incorporar como dependencia el bloque 1 publico completo.
+4. Bloque 4: integrar las condiciones operativas de la fabrica en ERP-FACTORY,
+   con el importador vinculado a la evidencia del revisor privado. Resolver y
+   revisar sus dependencias expresamente; no trasladar secretos o informes alli.
+5. Cuando el revisor privado este verificado y autorizado para operar, retirar
+   factory2/actions_review.py y .github/workflows/claude-factory-review.yml del
+   repositorio publico, junto con sus referencias/pruebas obsoletas. Retirar su
+   secreto publico en esa misma migracion autorizada. Deshabilitar la via publica
+   antes de permitir la privada: no mantener dos validadores operativos ni dos
+   rutas de ejecucion. Estos retiros NO se han realizado en esta entrega.
+
+El choque de docs/ESTADO.md con el bloque 1 se resuelve conservando ambas secciones:
+primero el registro del bloque 1 y despues el del bloque 2 como revision PRIVADA.
+No usar una sustitucion global de un lado por el otro ni borrar resultados previos.
+Conservar la distincion entre las 60 pruebas de la rama 1 y las 49 de la base de la
+rama 2, mas las 31 privadas. Como el bloque 2 no se fusiona entero en ERP-FACTORY,
+esa reconciliacion documental solo se aplica si se autoriza trasladar el registro;
+no es necesario fusionar codigo privado para resolverla. Reejecutar las pruebas
+pertinentes si la futura integracion modifica codigo, y entregar su nuevo SHA.
+
+La rama provisional del bloque 3 creada antes de esta aclaracion no tiene cambios
+propios de codigo; solo copias locales de los commits 1 y 2. No se publicara ni se
+usara como base. Se conservara como referencia local y la rama de trabajo del
+bloque 3 partira del bloque 2 actualizado conforme a esta decision.
+
+## Entrega y comprobacion futura
 
 Commit y diff --stat respecto a 0cb1882 se entregan junto a este documento, fuera
 del propio commit para no crear una autorreferencia. Sin push, PR remota ni uso
 de gh/API. origin conserva push=DISABLED. Ninguna operacion de red en este bloque.
 Antes de publicar un bloque con autorizacion escrita se verificara que el SHA
-coincide exactamente con el entregado; si difiere, detenerse y avisar.
+coincide exactamente con el entregado; si difiere, detenerse y avisar. Para crear
+el repositorio privado se exportara exactamente el subarbol ERP-FACTORY-revision/
+de ese SHA, sin cambios de codigo adicionales. El nuevo commit del repositorio
+privado tendra otra historia y puede tener otro SHA: cotejar los archivos y el
+arbol exportado con la referencia local entregada, no afirmar que ambos commits
+son el mismo. La creacion, configuracion y conexion siguen fuera de esta tarea.

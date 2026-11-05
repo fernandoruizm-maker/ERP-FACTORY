@@ -5,12 +5,13 @@ from pathlib import Path
 import tarfile
 import tempfile
 import unittest
+from contextlib import redirect_stdout
 from unittest.mock import patch
 
 from reviewer.contract import Blocked, canonical, sha256
 from reviewer.material import (NoRedirect, archive_material, download_archive,
                                manifest_for, verified_material)
-from reviewer.runtime import collect, preflight, prepare
+from reviewer.runtime import blocked_artifacts, collect, collect_file, preflight, prepare
 from reviewer.workflow_audit import audit
 
 ROOT = Path(__file__).resolve().parent.parent
@@ -166,9 +167,128 @@ class PrivateReviewTests(unittest.TestCase):
                 verified_material(work / 'input', receipt, TRUSTED)
             path = work / 'input/material.json'
             path.write_bytes(path.read_bytes() + b' ')
-            with self.assertRaisesRegex(Blocked, 'MATERIAL_HASH_MISMATCH'):
-                collect(work, receipt, SOURCE, [], 'success', self.provenance)
+            report = collect(work, receipt, SOURCE, [], 'success', self.provenance)
+            self.assertEqual(report['reason_code'], 'MATERIAL_VERIFICATION_FAILED')
+            self.assert_blocked_artifacts(work, 'MATERIAL_VERIFICATION_FAILED')
+
+    def assert_blocked_artifacts(self, work, reason):
+        dest = work / 'artifacts'
+        self.assertEqual(set(p.name for p in dest.iterdir()),
+                         {'report.json', 'diagnostic.json', 'SHA256.json', 'INFORME.txt'})
+        report = json.loads((dest / 'report.json').read_text(encoding='utf-8'))
+        self.assertEqual(report, {'status': 'BLOCKED', 'reason_code': reason,
+                                 'publication_allowed': False, 'human_approvals': 0})
+        diagnostic = json.loads((dest / 'diagnostic.json').read_text(encoding='utf-8'))
+        self.assertFalse(diagnostic['provider_text_saved'])
+        self.assertEqual(diagnostic['reason_code'], reason)
+        hashes = json.loads((dest / 'SHA256.json').read_text(encoding='utf-8'))
+        self.assertEqual(set(hashes), {'report.json', 'diagnostic.json', 'INFORME.txt'})
+        for name, expected in hashes.items():
+            self.assertEqual(sha256((dest / name).read_bytes()), expected)
+            self.assertNotIn('SENSITIVE-FIXTURE', (dest / name).read_text(encoding='utf-8'))
+
+    def test_missing_execution_file_still_writes_blocked_artifacts(self):
+        with tempfile.TemporaryDirectory() as temp:
+            work = Path(temp)
+            report = collect_file(work, '', SOURCE, work / 'missing.json', 'success', self.provenance)
+            self.assertEqual(report['status'], 'BLOCKED')
+            self.assert_blocked_artifacts(work, 'EXECUTION_FILE_MISSING')
+
+    def test_invalid_execution_file_always_has_safe_diagnostic(self):
+        cases = [('directory', 'EXECUTION_FILE_INVALID'), ('oversize', 'EXECUTION_FILE_INVALID'),
+                 ('not-json', 'EXECUTION_JSON_INVALID'), ('utf8', 'EXECUTION_JSON_INVALID'),
+                 ('object', 'EXECUTION_FORMAT_INVALID'), ('no-directory', 'EXECUTION_DIRECTORY_MISSING')]
+        for case, reason in cases:
+            with self.subTest(case=case), tempfile.TemporaryDirectory() as temp:
+                work = Path(temp)
+                execution = work / 'execution.json'
+                if case == 'directory':
+                    execution.mkdir()
+                elif case != 'no-directory':
+                    bodies = {'oversize': b'SENSITIVE-FIXTURE', 'not-json': b'SENSITIVE-FIXTURE',
+                              'utf8': b'\xff', 'object': b'{"text":"SENSITIVE-FIXTURE"}'}
+                    execution.write_bytes(bodies[case])
+                with patch('reviewer.runtime.MAX_EXECUTION_BYTES', 4 if case == 'oversize' else 10_000_000):
+                    collect_file(work, '', SOURCE, None if case == 'no-directory' else execution,
+                                 'success', self.provenance)
+                self.assert_blocked_artifacts(work, reason)
+
+    def test_execution_read_error_is_fixed_code_not_exception_text(self):
+        with tempfile.TemporaryDirectory() as temp:
+            work = Path(temp)
+            execution = work / 'execution.json'
+            execution.write_text('[]')
+            real_open = Path.open
+            def simulated_error(path, *args, **kwargs):
+                if path == execution:
+                    raise PermissionError('SENSITIVE-FIXTURE')
+                return real_open(path, *args, **kwargs)
+            with patch.object(Path, 'open', simulated_error):
+                collect_file(work, '', SOURCE, execution, 'success', self.provenance)
+            self.assert_blocked_artifacts(work, 'EXECUTION_READ_FAILED')
+
+    def test_missing_or_invalid_material_still_writes_blocked_artifacts(self):
+        for case in ('missing', 'hash', 'json', 'structure', 'version'):
+            with self.subTest(case=case), tempfile.TemporaryDirectory() as temp:
+                work = Path(temp)
+                if case == 'missing':
+                    receipt = 'd' * 64
+                else:
+                    receipt, _ = prepare(work, archive(), SOURCE)
+                    material_path = work / 'input/material.json'
+                    if case == 'hash':
+                        material_path.write_bytes(b'SENSITIVE-FIXTURE')
+                    elif case in ('json', 'structure'):
+                        body = b'SENSITIVE-FIXTURE' if case == 'json' else b'null'
+                        material_path.write_bytes(body)
+                        receipt = sha256(body)
+                collect(work, receipt, TRUSTED if case == 'version' else SOURCE,
+                        [{'result': 'SENSITIVE-FIXTURE'}], 'success', self.provenance)
+                self.assert_blocked_artifacts(work, 'MATERIAL_VERIFICATION_FAILED')
+
+    def test_cli_missing_file_produces_evidence_without_network(self):
+        from reviewer.cli import main
+        with tempfile.TemporaryDirectory() as temp:
+            work = Path(temp)
+            context = {**self.context, 'REVIEW_WORKDIR': str(work), 'RUNNER_TEMP': str(work),
+                       'MATERIAL_SHA256': 'd' * 64, 'CLAUDE_CONCLUSION': 'success'}
+            with patch('sys.argv', ['entrypoint.py', 'collect']), \
+                 patch.dict('os.environ', context, clear=True), \
+                 patch.object(Path, 'read_text', return_value=canonical(self.policy)), \
+                 patch('reviewer.cli.subprocess.run') as git, \
+                 patch('reviewer.cli.download_archive') as download, redirect_stdout(io.StringIO()) as console:
+                git.return_value.stdout = TRUSTED + '\n'
+                self.assertEqual(main(), 1)
+            download.assert_not_called()
+            self.assertEqual(console.getvalue(), 'PRIVATE_REVIEW_BLOCKED\n')
+            self.assert_blocked_artifacts(work, 'EXECUTION_FILE_MISSING')
+
+    def test_early_failure_never_overwrites_previous_evidence(self):
+        with tempfile.TemporaryDirectory() as temp:
+            work = Path(temp)
+            blocked_artifacts(work, 'EXECUTION_FILE_MISSING')
+            before = {p.name: p.read_bytes() for p in (work / 'artifacts').iterdir()}
+            with self.assertRaises(FileExistsError):
+                blocked_artifacts(work, 'MATERIAL_VERIFICATION_FAILED')
+            self.assertEqual(before, {p.name: p.read_bytes() for p in (work / 'artifacts').iterdir()})
+
+    def test_arbitrary_failure_text_cannot_be_written_as_reason_code(self):
+        with tempfile.TemporaryDirectory() as temp:
+            work = Path(temp)
+            with self.assertRaises(Blocked): blocked_artifacts(work, 'SENSITIVE-FIXTURE')
             self.assertFalse((work / 'artifacts').exists())
+
+    def test_valid_execution_file_preserves_existing_validation(self):
+        with tempfile.TemporaryDirectory() as temp:
+            work = Path(temp)
+            receipt, _ = prepare(work, archive(), SOURCE)
+            material = verified_material(work / 'input', receipt, SOURCE)
+            execution = work / 'execution.json'
+            execution.write_text(canonical([self.response(material)]), encoding='utf-8')
+            report = collect_file(work, receipt, SOURCE, execution, 'success', self.provenance)
+            self.assertEqual(report['status'], 'NEEDS_HUMAN_REVIEW')
+            self.assertEqual(report['human_approvals'], 0)
+            self.assertFalse(report['publication_allowed'])
 
     def test_success_private_artifacts_hashes_and_no_approval(self):
         with tempfile.TemporaryDirectory() as temp:

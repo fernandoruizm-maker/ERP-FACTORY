@@ -85,3 +85,15 @@ Workflow bloqueado, politica desactivada y pin privado revisado pendiente.
 omitidas). Ver comandos y limites en docs/pr/bloque-2.md. No verificados Actions,
 visibilidad de artefactos, minutos consumidos, proveedores o identidades. No se
 creo repositorio, no se movieron secretos, no se publico ni se activo la fabrica.
+
+### Ajuste adicional del bloque 2
+
+Los fallos tempranos de archivo de ejecucion o verificacion del material producen
+ahora artefactos BLOCKED con codigos fijos y huellas, sin texto del proveedor.
+Resultado final: 31 pruebas privadas + 49 Python de base + 5 JS + 3 TS = 88,
+sin fallos ni omitidas. El primer ensayo del cambio detecto una concatenacion
+incorrecta, corregida y comprobada al repetir la suite privada completa.
+Publicacion futura: exportar solo ERP-FACTORY-revision/ al repositorio PRIVADO;
+no fusionar esta rama en ERP-FACTORY. Bloque 3 partira de la rama 2 actualizada.
+El retiro del validador/workflow publico y secreto se reserva para la migracion
+autorizada al revisor privado. Ver orden y reconciliacion documental en la PR local.

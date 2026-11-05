@@ -56,10 +56,14 @@ def prepare(work, archive, commit):
 
 
 def collect(work, expected_material_hash, commit, events, conclusion, provenance):
-    material = verified_material(Path(work) / 'input', expected_material_hash, commit)
-    manifest = manifest_for(material)
-    if provenance.get('source_sha') != commit or provenance.get('repository') != PRIVATE_REPOSITORY:
-        raise Blocked('PROVENANCE_MISMATCH')
+    try:
+        material = verified_material(Path(work) / 'input', expected_material_hash, commit)
+        manifest = manifest_for(material)
+    except (Blocked, OSError, ValueError, KeyError, TypeError, AttributeError, RecursionError):
+        return blocked_artifacts(work, 'MATERIAL_VERIFICATION_FAILED')
+    if (not isinstance(provenance, dict) or provenance.get('source_sha') != commit
+            or provenance.get('repository') != PRIVATE_REPOSITORY):
+        return blocked_artifacts(work, 'PROVENANCE_INVALID')
     report = {'status': 'BLOCKED', 'publication_allowed': False, 'human_approvals': 0,
               'provenance': provenance, 'source_sha': commit,
               'factory_digest': manifest['factory_digest'], 'material_sha256': expected_material_hash}
@@ -82,18 +86,76 @@ def collect(work, expected_material_hash, commit, events, conclusion, provenance
         report['reason_code'] = error.code if isinstance(error, ReviewRejected) else 'INVALID_OR_UNSAFE_RESPONSE'
         if isinstance(error, ReviewRejected) and error.coverage:
             report['coverage_diagnostic'] = error.coverage
+    diagnostic = safe_diagnostic(events) if isinstance(events, list) else {'status': 'INVALID_EVENT_LIST'}
+    return write_artifacts(work, report, diagnostic, manifest=manifest, response=safe_raw)
+
+
+EARLY_FAILURE_CODES = frozenset({
+    'EXECUTION_DIRECTORY_MISSING', 'EXECUTION_FILE_MISSING', 'EXECUTION_FILE_INVALID',
+    'EXECUTION_READ_FAILED', 'EXECUTION_JSON_INVALID', 'EXECUTION_FORMAT_INVALID',
+    'MATERIAL_VERIFICATION_FAILED', 'PROVENANCE_INVALID',
+})
+MAX_EXECUTION_BYTES = 10_000_000
+
+
+def blocked_artifacts(work, reason_code):
+    """Fail with useful evidence even when neither manifest nor result is trusted."""
+    if reason_code not in EARLY_FAILURE_CODES:
+        raise Blocked('UNRECOGNIZED_FAILURE_CODE')
+    report = {'status': 'BLOCKED', 'reason_code': reason_code,
+              'publication_allowed': False, 'human_approvals': 0}
+    diagnostic = {'status': 'BLOCKED', 'reason_code': reason_code, 'provider_text_saved': False}
+    return write_artifacts(work, report, diagnostic)
+
+
+def collect_file(work, expected_material_hash, commit, execution_path, conclusion, provenance):
+    """Only fixed codes, never paths, parsing exceptions or provider prose on failure."""
+    if execution_path is None:
+        return blocked_artifacts(work, 'EXECUTION_DIRECTORY_MISSING')
+    path = Path(execution_path)
+    reason = None
+    try:
+        if path.is_symlink() or (hasattr(path, 'is_junction') and path.is_junction()):
+            reason = 'EXECUTION_FILE_INVALID'
+        elif not path.exists():
+            reason = 'EXECUTION_FILE_MISSING'
+        elif not path.is_file() or path.stat().st_size > MAX_EXECUTION_BYTES:
+            reason = 'EXECUTION_FILE_INVALID'
+        else:
+            with path.open('rb') as stream:
+                raw = stream.read(MAX_EXECUTION_BYTES + 1)
+            if len(raw) > MAX_EXECUTION_BYTES:
+                reason = 'EXECUTION_FILE_INVALID'
+    except FileNotFoundError:
+        reason = 'EXECUTION_FILE_MISSING'
+    except OSError:
+        reason = 'EXECUTION_READ_FAILED'
+    if reason is not None:
+        return blocked_artifacts(work, reason)
+    try:
+        events = json.loads(raw.decode('utf-8'))
+    except (ValueError, UnicodeError, RecursionError):
+        return blocked_artifacts(work, 'EXECUTION_JSON_INVALID')
+    if not isinstance(events, list):
+        return blocked_artifacts(work, 'EXECUTION_FORMAT_INVALID')
+    return collect(work, expected_material_hash, commit, events, conclusion, provenance)
+
+
+def write_artifacts(work, report, diagnostic, *, manifest=None, response=None):
     destination = Path(work) / 'artifacts'
+    # Refuse to overwrite evidence from an earlier collection, even on failure.
     destination.mkdir(parents=True, exist_ok=False)
     # No raw event stream, sessions, environment, or unvalidated provider prose.
-    if safe_raw is not None:
-        (destination / 'response.txt').write_bytes(safe_raw.encode('utf-8'))
-    (destination / 'manifest.json').write_text(canonical(manifest), encoding='utf-8')
+    if response is not None:
+        (destination / 'response.txt').write_bytes(response.encode('utf-8'))
+    if manifest is not None:
+        (destination / 'manifest.json').write_text(canonical(manifest), encoding='utf-8')
     (destination / 'report.json').write_text(canonical(report), encoding='utf-8')
-    diagnostic = safe_diagnostic(events) if isinstance(events, list) else {'status': 'INVALID_EVENT_LIST'}
     (destination / 'diagnostic.json').write_text(canonical(diagnostic), encoding='utf-8')
     (destination / 'INFORME.txt').write_text(
         'Estado: ' + report['status'] + '\nNo autoriza activar, publicar ni aprobar.\n'
-        'Hallazgos validados en report.json, exclusivamente en el repositorio privado.\n', encoding='utf-8')
+        + ('Hallazgos validados en report.json, exclusivamente en el repositorio privado.\n'
+         if 'review' in report else 'Sin hallazgos validados. Diagnostico fijo en report.json.\n'), encoding='utf-8')
     hashes = {path.name: sha256(path.read_bytes()) for path in destination.iterdir()}
     (destination / 'SHA256.json').write_text(canonical(hashes), encoding='utf-8')
     return report

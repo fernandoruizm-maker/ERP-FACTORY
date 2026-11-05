@@ -49,6 +49,11 @@ riesgos; las pruebas locales no demuestran aislamiento real del runner.
    estructura, version, hallazgos y patrones de secretos (puede ser PARTIAL).
    Respuesta fallida, ilegible o posiblemente sensible: solo diagnostico fijo y
    huella cuando existe un unico resultado; no se guarda texto libre ni sesiones.
+   Si falta el archivo de ejecucion, no se puede leer, es invalido o falla la
+   verificacion del material, tambien se crean report.json BLOCKED, diagnostic.json,
+   SHA256.json e INFORME.txt. No se incluyen mensajes de error ni contenido sin
+   verificar. No se sobrescribe una coleccion anterior. Un fallo de escritura del
+   propio directorio sigue siendo un limite y no provoca cambios de permisos.
 
 Los patrones son una precaucion heuristica, no una garantia de ausencia de secretos.
 Los informes validos contienen texto no confiable del revisor: inspeccionarlos como

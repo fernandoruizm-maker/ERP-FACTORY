@@ -7,7 +7,7 @@ import uuid
 
 from .contract import Blocked
 from .material import download_archive
-from .runtime import collect, preflight, prepare
+from .runtime import collect_file, preflight, prepare
 
 
 def main():
@@ -41,12 +41,10 @@ def main():
                 output.write('user_prompt<<' + delimiter + '\n' + user + '\n' + delimiter + '\n')
             print('PUBLIC_SOURCE_PREPARED_NOT_EXECUTED')
             return 0
-        path = Path(os.environ['RUNNER_TEMP']) / 'claude-execution-output.json'
-        if path.is_symlink() or not path.is_file() or path.stat().st_size > 10_000_000:
-            raise Blocked('EXECUTION_FILE_INVALID')
-        events = json.loads(path.read_text(encoding='utf-8'))
-        report = collect(work, os.environ['MATERIAL_SHA256'], provenance['source_sha'], events,
-                         os.environ.get('CLAUDE_CONCLUSION'), provenance)
+        folder = os.environ.get('RUNNER_TEMP')
+        path = Path(folder) / 'claude-execution-output.json' if folder else None
+        report = collect_file(work, os.environ.get('MATERIAL_SHA256', ''), provenance['source_sha'], path,
+                              os.environ.get('CLAUDE_CONCLUSION'), provenance)
         print('PRIVATE_REVIEW_' + report['status'])
         return 0 if report['status'] == 'NEEDS_HUMAN_REVIEW' else 1
     except (Blocked, OSError, ValueError, KeyError, TypeError, subprocess.SubprocessError):
