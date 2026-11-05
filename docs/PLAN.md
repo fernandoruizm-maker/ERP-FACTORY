@@ -26,3 +26,15 @@ Destino: `factoria-2/` en este espacio de trabajo. Fuente: ZIP verificado 53/53 
 7. Pruebas de dominio, acceso, límites, respuestas incompletas, aprobación desactualizada y recuperación. Documentar lo realmente ejecutado.
 
 No forma parte de esta entrega activar consumidores de GitHub, instalar un servicio Ubuntu, abrir acceso al ERP, transmitir código a Anthropic o desplegar. El prototipo local queda desactivado. La identificación de personas y autenticación de las aprobaciones reales será un requisito de puesta en marcha: un registro local no acredita una firma humana.
+
+
+## Actualizacion local: bloques 2 y 3
+
+Fernando decidio que revisiones y artefactos vivan en un repositorio privado
+separado; la carpeta ERP-FACTORY-revision/ es solo su propuesta local. Retencion
+no validada limitada a los codigos/condiciones autorizados, documentada en bloque 2.
+La base del bloque 3 incorpora b0da873 y f288441 (incluido a8cfa18), sin tocar main.
+Bloque 3 implementa protocolo privado por partes, lineas y cobertura calculada,
+con pruebas locales y dobles ficticios. No conecta la secuencia real a Actions.
+Pendientes: bloque 4 y migracion/configuracion/ejecucion posterior expresamente
+autorizada. No hay nuevo intento de pago preparado. Ver docs/pr/bloque-3.md.

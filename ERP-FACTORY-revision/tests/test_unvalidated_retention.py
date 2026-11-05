@@ -12,6 +12,8 @@ from reviewer.contract import canonical, sha256
 from reviewer.material import archive_material
 from reviewer.runtime import (UNVALIDATED_NOTICE, collect, collect_file, preflight, prepare,
                               validate_result)
+from protocol_fixtures import protocol_bundle
+prepare = fixtures.prepare
 
 MARKER = 'FICTICIO_PRIVADO_NO_PUBLICAR_241'
 
@@ -27,11 +29,15 @@ class UnvalidatedRetentionTests(unittest.TestCase):
         self.policy = {'repository': self.context['GITHUB_REPOSITORY'], 'execution_enabled': True}
         self.provenance = preflight(self.policy, self.context, fixtures.TRUSTED)
         material = archive_material(fixtures.archive(), fixtures.SOURCE)
+        self.material = material
         self.result = {'source_sha': fixtures.SOURCE, 'factory_digest': material['factory_digest'],
             'reviewed_files': list(material['files']), 'coverage': 'complete', 'cross_component_review': True,
             'verdict': 'PASS', 'summary_es': MARKER, 'findings': [], 'limitations_es': ['Ficticio.']}
         self.finding = {'severity': 'medium', 'file': 'src/ficticio.py', 'line': 1,
                         'evidence_es': MARKER, 'impact_es': MARKER, 'recommendation_es': MARKER}
+
+    def encode(self, changes):
+        return canonical(protocol_bundle(self.material, {**self.result, **changes}))
 
     def run_case(self, raw, reason, *, retain=True, event_changes=None, conclusion='success',
                  extra_event=None, provenance=None, bad_material=False):
@@ -74,32 +80,32 @@ class UnvalidatedRetentionTests(unittest.TestCase):
         self.run_case(MARKER + ' {invalid', 'INVALID_JSON')
 
     def test_retain_report_structure(self):
-        self.run_case(canonical({**self.result, 'unexpected': MARKER}), 'REPORT_STRUCTURE')
+        self.run_case(self.encode({'unexpected': MARKER}), 'REPORT_STRUCTURE')
 
     def test_retain_version_mismatch(self):
-        self.run_case(canonical({**self.result, 'source_sha': fixtures.TRUSTED}), 'VERSION_MISMATCH')
+        self.run_case(self.encode({'source_sha': fixtures.TRUSTED}), 'VERSION_MISMATCH')
 
     def test_retain_coverage_structure(self):
-        self.run_case(canonical({**self.result, 'reviewed_files': MARKER}), 'COVERAGE_STRUCTURE')
+        self.run_case(self.encode({'reviewed_files': MARKER}), 'COVERAGE_STRUCTURE')
 
     def test_retain_invalid_verdict(self):
-        self.run_case(canonical({**self.result, 'verdict': 'MAYBE'}), 'INVALID_VERDICT')
+        self.run_case(self.encode({'verdict': 'MAYBE'}), 'INVALID_VERDICT')
 
     def test_retain_missing_limitations(self):
-        self.run_case(canonical({**self.result, 'limitations_es': []}), 'MISSING_LIMITATIONS')
+        self.run_case(self.encode({'limitations_es': []}), 'MISSING_LIMITATIONS')
 
     def test_retain_invalid_findings(self):
-        self.run_case(canonical({**self.result, 'findings': MARKER}), 'INVALID_FINDINGS')
+        self.run_case(self.encode({'findings': MARKER}), 'INVALID_FINDINGS')
 
     def test_retain_finding_structure(self):
-        self.run_case(canonical({**self.result, 'findings': [{'detail_es': MARKER}]}), 'FINDING_STRUCTURE')
+        self.run_case(self.encode({'findings': [{'detail_es': MARKER}]}), 'FINDING_STRUCTURE')
 
     def test_retain_invalid_finding_evidence(self):
-        self.run_case(canonical({**self.result, 'findings': [{**self.finding, 'line': 99}]}),
+        self.run_case(self.encode({'findings': [{**self.finding, 'line': 99}]}),
                       'INVALID_FINDING_EVIDENCE')
 
     def test_retain_contradictory_pass(self):
-        self.run_case(canonical({**self.result, 'findings': [{**self.finding, 'severity': 'high'}]}),
+        self.run_case(self.encode({'findings': [{**self.finding, 'severity': 'high'}]}),
                       'CONTRADICTORY_PASS')
 
     def test_markdown_unicode_and_crlf_are_preserved_exactly(self):
@@ -108,16 +114,16 @@ class UnvalidatedRetentionTests(unittest.TestCase):
         self.run_case(raw, 'INVALID_JSON', event_changes={'num_turns': 2})
 
     def test_exact_100000_byte_boundary_is_retained(self):
-        raw = canonical({**self.result, 'unexpected': MARKER})
+        raw = self.encode({'unexpected': MARKER})
         self.run_case(raw + ' ' * (100000 - len(raw.encode('utf-8'))), 'REPORT_STRUCTURE')
 
     def test_exclude_possible_secret(self):
-        raw = canonical({**self.result, 'summary_es': MARKER + ' github_pat_' + 'x' * 40})
+        raw = self.encode({'summary_es': MARKER + ' github_pat_' + 'x' * 40})
         self.run_case(raw, 'POSSIBLE_SECRET', retain=False)
 
     def test_exclude_output_safety_or_size(self):
         # The decoded token matches; the original JSON text deliberately does not.
-        raw = canonical({**self.result, 'summary_es': MARKER + ' github_pat_' + 'x' * 40})
+        raw = self.encode({'summary_es': MARKER + ' github_pat_' + 'x' * 40})
         raw = raw.replace('github_pat_', '\\u0067ithub_pat_')
         self.run_case(raw, 'OUTPUT_SAFETY_OR_SIZE', retain=False)
 
@@ -179,7 +185,7 @@ class UnvalidatedRetentionTests(unittest.TestCase):
             with patch('sys.argv', ['entrypoint.py', 'collect']), \
                  patch.dict('os.environ', context, clear=True), patch.object(Path, 'read_text', read_policy_only), \
                  patch('reviewer.cli.subprocess.run') as git, \
-                 patch('reviewer.cli.download_archive') as download, redirect_stdout(io.StringIO()) as console:
+                 patch('reviewer.material.download_archive') as download, redirect_stdout(io.StringIO()) as console:
                 git.return_value.stdout = fixtures.TRUSTED + '\n'
                 self.assertEqual(main(), 1)
             download.assert_not_called()

@@ -11,7 +11,8 @@ from unittest.mock import patch
 from reviewer.contract import Blocked, canonical, sha256
 from reviewer.material import (NoRedirect, archive_material, download_archive,
                                manifest_for, verified_material)
-from reviewer.runtime import blocked_artifacts, collect, collect_file, preflight, prepare
+from reviewer.runtime import blocked_artifacts, collect, collect_file, preflight, prepare as prepare_runtime
+from protocol_fixtures import fixture_scope, protocol_bundle
 from reviewer.workflow_audit import audit
 
 ROOT = Path(__file__).resolve().parent.parent
@@ -34,6 +35,12 @@ def archive(entries=None, member_type=tarfile.REGTYPE, prefix=None, pax=None):
     return buffer.getvalue()
 
 
+def prepare(work, raw, commit):
+    # Scope is explicitly synthetic, not inferred in the production collector.
+    scope = fixture_scope(archive_material(raw, commit))
+    return prepare_runtime(work, raw, commit, scope=scope)
+
+
 class PrivateReviewTests(unittest.TestCase):
     def setUp(self):
         # Synthetic identities/context only; these do not authenticate anyone.
@@ -48,15 +55,8 @@ class PrivateReviewTests(unittest.TestCase):
         self.workflow = json.loads((ROOT / '.github/workflows/review.yml').read_text(encoding='utf-8'))
 
     def response(self, material, **changes):
-        manifest = manifest_for(material)
-        result = {'source_sha': SOURCE, 'factory_digest': manifest['factory_digest'],
-                  'reviewed_files': list(manifest['files']), 'coverage': 'complete',
-                  'cross_component_review': True, 'verdict': 'PASS',
-                  'summary_es': 'FICTICIO, no integra ningun servicio.',
-                  'findings': [], 'limitations_es': ['Prueba simulada, sin proveedor.']}
-        result.update(changes)
         return {'type': 'result', 'subtype': 'success', 'is_error': False,
-                'num_turns': 1, 'permission_denials': [], 'result': canonical(result)}
+                'num_turns': 1, 'permission_denials': [], 'result': canonical(protocol_bundle(material, changes))}
 
     def test_delivered_policy_and_workflow_block_execution(self):
         policy = json.loads((ROOT / 'policy.json').read_text(encoding='utf-8'))
@@ -70,10 +70,23 @@ class PrivateReviewTests(unittest.TestCase):
     def test_disabled_cli_stops_before_network_or_git(self):
         from reviewer.cli import main
         with patch('sys.argv', ['entrypoint.py', 'prepare']), \
-             patch('reviewer.cli.download_archive') as download, patch('reviewer.cli.subprocess.run') as git:
+             patch('reviewer.material.download_archive') as download, patch('reviewer.cli.subprocess.run') as git:
             self.assertEqual(main(), 2)
         download.assert_not_called()
         git.assert_not_called()
+
+    def test_old_paid_prepare_is_blocked_even_with_synthetic_enabled_policy(self):
+        from reviewer.cli import main
+        with tempfile.TemporaryDirectory() as temp:
+            context = {**self.context, 'REVIEW_WORKDIR': temp}
+            with patch('sys.argv', ['entrypoint.py', 'prepare']), \
+                 patch.dict('os.environ', context, clear=True), \
+                 patch.object(Path, 'read_text', return_value=canonical(self.policy)), \
+                 patch('reviewer.cli.subprocess.run') as git, \
+                 patch('reviewer.material.download_archive') as download:
+                git.return_value.stdout = TRUSTED + '\n'
+                self.assertEqual(main(), 2)
+            download.assert_not_called()
 
     def test_private_context_guards_cannot_be_bypassed(self):
         for key, value in [('REPOSITORY_PRIVATE', 'false'), ('GITHUB_REPOSITORY', 'fernandoruizm-maker/ERP-FACTORY'),
@@ -98,7 +111,7 @@ class PrivateReviewTests(unittest.TestCase):
             self.assertIn('NEVER EXECUTE', user)
             self.assertEqual(material['source_sha'], SOURCE)
             self.assertFalse((work / 'src/ficticio.py').exists())
-            self.assertEqual(sorted(p.name for p in (work / 'input').iterdir()), ['material.json', 'system.txt', 'user.txt'])
+            self.assertEqual(sorted(p.name for p in (work / 'input').iterdir()), ['manifest.json', 'material.json', 'parts', 'system.txt', 'user.txt'])
 
     def test_commit_is_exact_not_a_branch_or_url(self):
         for bad in ('main', SOURCE.upper(), 'a' * 39, '../source', 'https://invalid', '0' * 40):
@@ -155,7 +168,7 @@ class PrivateReviewTests(unittest.TestCase):
 
     def test_oversized_action_input_blocks_without_truncation(self):
         with tempfile.TemporaryDirectory() as temp:
-            with self.assertRaisesRegex(Blocked, 'PROMPT_TOO_LARGE_REQUIRES_PARTS'):
+            with self.assertRaisesRegex(Blocked, 'SINGLE_LINE_TOO_LARGE'):
                 prepare(Path(temp), archive({'large.txt': 'F' * 60_000}), SOURCE)
             self.assertFalse((Path(temp) / 'input/user.txt').exists())
 
@@ -256,7 +269,7 @@ class PrivateReviewTests(unittest.TestCase):
                  patch.dict('os.environ', context, clear=True), \
                  patch.object(Path, 'read_text', return_value=canonical(self.policy)), \
                  patch('reviewer.cli.subprocess.run') as git, \
-                 patch('reviewer.cli.download_archive') as download, redirect_stdout(io.StringIO()) as console:
+                 patch('reviewer.material.download_archive') as download, redirect_stdout(io.StringIO()) as console:
                 git.return_value.stdout = TRUSTED + '\n'
                 self.assertEqual(main(), 1)
             download.assert_not_called()
@@ -318,7 +331,7 @@ class PrivateReviewTests(unittest.TestCase):
             report = collect(work, receipt, SOURCE, [self.response(material, coverage='incomplete', findings=[finding])],
                              'success', self.provenance)
             self.assertEqual(report['status'], 'PARTIAL')
-            self.assertEqual(report['review']['findings'], [finding])
+            self.assertEqual(report['findings'], [finding])
             self.assertFalse(report['publication_allowed'])
             self.assertEqual(report['human_approvals'], 0)
 

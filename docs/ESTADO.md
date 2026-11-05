@@ -123,3 +123,21 @@ Integracion solo local en fix/bloque-3-cobertura, conservando ambos registros de
 estado. Sin cambios nuevos de codigo: suites completas 57 privadas + 60 raiz +
 5 JS + 3 TS = 125 aprobadas, sin fallos, errores u omitidas. No hubo red,
 proveedores, publicacion o activacion. La implementacion del bloque 3 sigue pendiente.
+
+
+## Bloque 3: protocolo privado local por partes
+
+Base combinada: fa650d7322e136093e445b6801b90bd37d93fd4c, con bloque 1 y bloque 2
+completo. Inventario Git exacto y clasificacion expresa; lineas numeradas, huellas
+por parte y pasada final ligada a todos los resultados. Contrato privado unico
+y cobertura calculada desde rangos/partes validados, sin aprobacion ni publicacion.
+La secuencia se prueba con dobles ficticios; prepare bloquea la antigua llamada
+monolitica. El workflow y la politica siguen desactivados.
+
+Resultado final: 86 privadas + 60 raiz + 5 JS + 3 TS = 154 pruebas, cero fallos,
+errores u omitidas. El primer ensayo privado tuvo un error de sintaxis en una
+prueba, corregido antes de repetir la suite completa. Ver comandos, incidencia
+y limites en docs/pr/bloque-3.md. Las entradas anteriores son historicas.
+No verificados integracion real, GitHub, privacidad/retencion de artefactos,
+minutos, Docker, identidades ni ERP. No se ejecuto upstream/. Sin red, secretos,
+proveedores, publicacion o activacion; original y factoria-2 intactas.

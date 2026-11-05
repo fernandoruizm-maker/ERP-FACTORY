@@ -3,7 +3,7 @@ This copy still requires review before a private immutable reference is selected
 """
 import json
 import re
-from .contract import Blocked, canonical, SECRET_PATTERN
+from .contract import Blocked, canonical, digest, SECRET_PATTERN
 
 MAX_RESULT_BYTES = 100_000
 
@@ -37,7 +37,7 @@ class ReviewRejected(Blocked):
         self.coverage = coverage
 
 
-def coverage_diagnostic(manifest, result):
+def coverage_diagnostic(manifest, result, require_cross=True):
     reviewed = result.get('reviewed_files')
     expected = set(manifest['files'])
     codes = []
@@ -61,7 +61,7 @@ def coverage_diagnostic(manifest, result):
     cross = result.get('cross_component_review')
     if coverage != 'complete':
         codes.append('COVERAGE_DECLARED_INCOMPLETE')
-    if cross is not True:
+    if require_cross and cross is not True:
         codes.append('CROSS_REVIEW_FALSE')
     return {'codes': codes, 'expected_count': len(expected),
             'reviewed_count': len(reviewed) if isinstance(reviewed, list) else None,
@@ -72,14 +72,14 @@ def coverage_diagnostic(manifest, result):
             'cross_component_review': cross if type(cross) is bool else 'INVALID'}
 
 
-def validate_result(manifest, result):
+def _validate_report(manifest, result, require_cross=True):
     if not isinstance(result, dict) or set(result) != set(schema()['required']):
         raise ReviewRejected('REPORT_STRUCTURE')
     if len(canonical(result).encode('utf-8')) > MAX_RESULT_BYTES or SECRET_PATTERN.search(canonical(result)):
         raise ReviewRejected('OUTPUT_SAFETY_OR_SIZE')
     if result['source_sha'] != manifest['source_sha'] or result['factory_digest'] != manifest['factory_digest']:
         raise ReviewRejected('VERSION_MISMATCH')
-    coverage = coverage_diagnostic(manifest, result)
+    coverage = coverage_diagnostic(manifest, result, require_cross)
     if (any(code in coverage['codes'] for code in ('REVIEWED_NOT_LIST', 'REVIEWED_NOT_STRINGS'))
             or coverage['coverage'] == 'INVALID' or coverage['cross_component_review'] == 'INVALID'):
         raise ReviewRejected('COVERAGE_STRUCTURE', coverage)
@@ -106,6 +106,153 @@ def validate_result(manifest, result):
     status = 'PARTIAL' if coverage['codes'] else ('NEEDS_HUMAN_REVIEW' if result['verdict'] == 'PASS' else 'BLOCKED')
     return {'status': status, 'coverage_diagnostic': coverage,
             'publication_allowed': False, 'human_approvals': 0, 'review': result}
+
+
+def envelope_schema():
+    properties = {'protocol_version': {'const': 2}, 'phase': {'enum': ['part', 'cross']},
+                  'part_id': {'type': 'integer', 'minimum': 0},
+                  'artifact_digest': {'type': 'string'}, 'report': schema()}
+    return {'type': 'object', 'additionalProperties': False, 'properties': properties,
+            'required': list(properties)}
+
+
+def check_manifest(manifest):
+    """Validate coverage intervals from the trusted packet builder, never a model."""
+    try:
+        if manifest['protocol_version'] != 2 or not manifest['packets']:
+            raise ReviewRejected('MANIFEST_INVALID')
+        if set(manifest['files']) != set(manifest['file_lines']):
+            raise ReviewRejected('MANIFEST_INVALID')
+        intervals = {name: [] for name in manifest['files']}
+        seen = set()
+        for index, part in enumerate(manifest['packets'], 1):
+            if (type(part['part_id']) is not int or part['part_id'] != index
+                    or not re.fullmatch('[0-9a-f]{64}', part['artifact_digest'])
+                    or part['artifact_digest'] in seen or not part['ranges']):
+                raise ReviewRejected('MANIFEST_INVALID')
+            seen.add(part['artifact_digest'])
+            for name, span in part['ranges'].items():
+                if name not in intervals or not isinstance(span, list) or len(span) != 2 or not all(type(n) is int for n in span):
+                    raise ReviewRejected('MANIFEST_INVALID')
+                intervals[name].append(span)
+        for name, spans in intervals.items():
+            count = manifest['file_lines'][name]
+            if type(count) is not int or count < 0:
+                raise ReviewRejected('MANIFEST_INVALID')
+            if count == 0:
+                if spans != [[0, 0]]:
+                    raise ReviewRejected('MANIFEST_INVALID')
+                continue
+            cursor = 1
+            for start, end in sorted(spans):
+                if start != cursor or end < start or end > count:
+                    raise ReviewRejected('MANIFEST_INVALID')
+                cursor = end + 1
+            if cursor != count + 1:
+                raise ReviewRejected('MANIFEST_INVALID')
+    except (KeyError, TypeError, AttributeError):
+        raise ReviewRejected('MANIFEST_INVALID') from None
+
+
+def validate_review(manifest, envelope, part_id, *, cross_payload=None):
+    """The one envelope contract for a part or the final cross-component pass."""
+    check_manifest(manifest)
+    if (not isinstance(envelope, dict) or set(envelope) != set(envelope_schema()['required'])
+            or type(envelope['protocol_version']) is not int or envelope['protocol_version'] != 2
+            or type(envelope['part_id']) is not int):
+        raise ReviewRejected('REPORT_STRUCTURE')
+    if part_id == 0:
+        if cross_payload is None:
+            raise ReviewRejected('COVERAGE_STRUCTURE')
+        expected_digest = digest(cross_payload)
+        ranges = {name: [1, count] for name, count in manifest['file_lines'].items()}
+        phase = 'cross'
+    else:
+        matches = [p for p in manifest['packets'] if p['part_id'] == part_id]
+        if len(matches) != 1:
+            raise ReviewRejected('VERSION_MISMATCH')
+        expected_digest, ranges = matches[0]['artifact_digest'], matches[0]['ranges']
+        phase = 'part'
+    if (envelope['phase'] != phase or envelope['part_id'] != part_id
+            or envelope['artifact_digest'] != expected_digest):
+        raise ReviewRejected('VERSION_MISMATCH')
+    context = {**manifest, 'files': {name: manifest['files'][name] for name in ranges}}
+    checked = _validate_report(context, envelope['report'], require_cross=(part_id == 0))
+    for finding in envelope['report']['findings']:
+        start, end = ranges[finding['file']]
+        if not start <= finding['line'] <= end or start == 0:
+            raise ReviewRejected('INVALID_FINDING_EVIDENCE', checked['coverage_diagnostic'])
+    return {'complete': not checked['coverage_diagnostic']['codes'],
+            'coverage_diagnostic': checked['coverage_diagnostic'], 'envelope': envelope,
+            'publication_allowed': False, 'human_approvals': 0}
+
+
+def _parts(manifest, reviews):
+    if not isinstance(reviews, list):
+        raise ReviewRejected('REPORT_STRUCTURE')
+    checked = {}
+    for envelope in reviews:
+        if not isinstance(envelope, dict) or type(envelope.get('part_id')) is not int or envelope['part_id'] <= 0:
+            raise ReviewRejected('REPORT_STRUCTURE')
+        identifier = envelope['part_id']
+        if identifier in checked:
+            raise ReviewRejected('COVERAGE_STRUCTURE')
+        checked[identifier] = validate_review(manifest, envelope, identifier)
+    return checked
+
+
+def cross_request(manifest, reviews):
+    """Bind final review to every exact, validated part result, including findings."""
+    check_manifest(manifest)
+    checked = _parts(manifest, reviews)
+    if (set(checked) != {p['part_id'] for p in manifest['packets']}
+            or not all(item['complete'] for item in checked.values())):
+        raise ReviewRejected('COVERAGE_STRUCTURE')
+    return {'protocol_version': 2, 'phase': 'cross', 'source_sha': manifest['source_sha'],
+            'factory_digest': manifest['factory_digest'], 'scope_digest': manifest['scope_digest'],
+            'files': manifest['files'], 'file_lines': manifest['file_lines'],
+            'part_results': [{'part_id': i, 'result_digest': digest(checked[i]['envelope']),
+                              'result': checked[i]['envelope']} for i in sorted(checked)],
+            'task': 'Revisar interacciones entre TODAS las partes. No ejecutar ni aprobar.'}
+
+
+def validate_complete(manifest, bundle):
+    check_manifest(manifest)
+    if (not isinstance(bundle, dict) or set(bundle) != {'protocol_version', 'source_sha', 'factory_digest', 'parts', 'cross'}
+            or type(bundle['protocol_version']) is not int or bundle['protocol_version'] != 2):
+        raise ReviewRejected('REPORT_STRUCTURE')
+    if bundle['source_sha'] != manifest['source_sha'] or bundle['factory_digest'] != manifest['factory_digest']:
+        raise ReviewRejected('VERSION_MISMATCH')
+    # The aggregate is local; each individual response has its own 100 KB limit.
+    if SECRET_PATTERN.search(canonical(bundle)):
+        raise ReviewRejected('OUTPUT_SAFETY_OR_SIZE')
+    checked = _parts(manifest, bundle['parts'])
+    expected = {p['part_id'] for p in manifest['packets']}
+    complete = {i for i, item in checked.items() if item['complete']}
+    cross_complete = False
+    if bundle['cross'] is not None:
+        payload = cross_request(manifest, bundle['parts'])
+        cross_complete = validate_review(manifest, bundle['cross'], 0, cross_payload=payload)['complete']
+    all_complete = complete == expected and cross_complete
+    reports = [item['envelope']['report'] for item in checked.values()]
+    if bundle['cross'] is not None:
+        reports.append(bundle['cross']['report'])
+    blocked = any(report['verdict'] == 'BLOCK' for report in reports)
+    status = 'PARTIAL' if not all_complete else ('BLOCKED' if blocked else 'NEEDS_HUMAN_REVIEW')
+    file_parts = {name: {p['part_id'] for p in manifest['packets'] if name in p['ranges']}
+                  for name in manifest['files']}
+    covered = sorted(name for name, ids in file_parts.items() if ids <= complete)
+    return {'status': status, 'publication_allowed': False, 'human_approvals': 0,
+            'coverage': {'expected_parts': len(expected), 'validated_parts': len(checked),
+                         'complete_parts': len(complete), 'missing_parts': sorted(expected - set(checked)),
+                         'covered_files': covered, 'missing_files': sorted(set(file_parts) - set(covered)),
+                         'cross_component_review_validated': cross_complete},
+            'findings': [finding for report in reports for finding in report['findings']],
+            'review': bundle}
+
+
+def validate_result(manifest, result):
+    return validate_complete(manifest, result)
 
 
 def successful_text(events):

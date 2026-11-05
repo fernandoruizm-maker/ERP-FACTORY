@@ -27,9 +27,11 @@ def source_sha(value):
 
 # Heuristic, not a guarantee that arbitrary text contains no secrets.
 SECRET_PATTERN = re.compile(
-    r'-----BEGIN (?:OPENSSH |RSA |EC )?PRIVATE KEY-----|'
+    r'-----BEGIN (?:OPENSSH |RSA |EC |DSA |ENCRYPTED )?PRIVATE KEY-----|'
     r'\bgh[pousr]_[A-Za-z0-9]{30,}|\bgithub_pat_[A-Za-z0-9_]{40,}|'
-    r'\bsk-(?:ant-|proj-)?[A-Za-z0-9_-]{32,}|\bxox[baprs]-[A-Za-z0-9-]{20,}'
+    r'\bsk-(?:ant-|proj-)?[A-Za-z0-9_-]{32,}|\bxox[baprs]-[A-Za-z0-9-]{20,}|'
+    r'\b(?:AKIA|ASIA)[A-Z0-9]{16}\b|\bAIza[A-Za-z0-9_-]{35}|'
+    r'\bglpat-[A-Za-z0-9_-]{20,}|\bnpm_[A-Za-z0-9]{30,}|\bpypi-[A-Za-z0-9_-]{40,}'
 )
 
 

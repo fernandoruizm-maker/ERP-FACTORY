@@ -3,11 +3,9 @@ import json
 import os
 from pathlib import Path
 import subprocess
-import uuid
 
 from .contract import Blocked
-from .material import download_archive
-from .runtime import collect_file, preflight, prepare
+from .runtime import collect_file, preflight
 
 
 def main():
@@ -31,16 +29,9 @@ def main():
             return 0
         work = Path(os.environ['REVIEW_WORKDIR'])
         if args.command == 'prepare':
-            archive = download_archive(provenance['source_sha'])
-            receipt, user = prepare(work, archive, provenance['source_sha'])
-            delimiter = 'REVIEW_' + uuid.uuid4().hex
-            while delimiter in user:
-                delimiter = 'REVIEW_' + uuid.uuid4().hex
-            with open(os.environ['GITHUB_OUTPUT'], 'a', encoding='utf-8') as output:
-                output.write('material_sha256=' + receipt + '\n')
-                output.write('user_prompt<<' + delimiter + '\n' + user + '\n' + delimiter + '\n')
-            print('PUBLIC_SOURCE_PREPARED_NOT_EXECUTED')
-            return 0
+            # The old one-call Action cannot implement the multi-part protocol.
+            # Do not silently submit part 1 or bypass the local Git inventory.
+            raise Blocked('MULTIPART_WORKFLOW_NOT_CONNECTED')
         folder = os.environ.get('RUNNER_TEMP')
         path = Path(folder) / 'claude-execution-output.json' if folder else None
         report = collect_file(work, os.environ.get('MATERIAL_SHA256', ''), provenance['source_sha'], path,
