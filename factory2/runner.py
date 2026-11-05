@@ -10,18 +10,25 @@ import uuid
 from .core import Blocked, contained, digest
 
 
-def test_command(profile, files):
-    if not files:
+def test_command(profile, files, *, directory):
+    root = Path(directory)
+    if not root.is_dir():
+        raise Blocked('CANDIDATE_DIRECTORY_REQUIRED')
+    for part in (root, *root.parents):
+        if part.is_symlink() or (hasattr(part, 'is_junction') and part.is_junction()):
+            raise Blocked('CANDIDATE_LINK_FORBIDDEN')
+    if not isinstance(files, list) or not files or not all(isinstance(name, str) for name in files):
         raise Blocked("No hay pruebas seleccionadas.")
+    if len({name.casefold() for name in files}) != len(files):
+        raise Blocked('DUPLICATE_TEST_PATH')
     for name in files:
-        p = contained(Path.cwd(), name)
-        if not name.startswith("tests/"):
+        p = contained(root, name)
+        if not name.startswith("tests/") or not p.is_file():
             raise Blocked("Las pruebas deben estar en tests/.")
     if profile == "python":
-        if files != ["tests"]:
-            # Explicit test modules avoid arbitrary code flags.
-            if any(not re.fullmatch(r"tests/test_[A-Za-z0-9_]+\.py", x) for x in files):
-                raise Blocked("Prueba Python no admitida.")
+        # Explicit modules only. The former ["tests"] -> "te" branch is removed.
+        if any(not re.fullmatch(r"tests/test_[A-Za-z0-9_]+\.py", x) for x in files):
+            raise Blocked("Prueba Python no admitida.")
         return ["python", "-m", "unittest", "-v", *[x[:-3].replace("/", ".") for x in files]]
     if profile in ("javascript", "typescript"):
         suffix = ".test.mjs" if profile == "javascript" else ".test.ts"
@@ -76,7 +83,7 @@ class DockerRunner:
                 "--user=65534:65534", "--pids-limit=64", "--memory=512m", "--cpus=1",
                 "--tmpfs=/tmp:rw,noexec,nosuid,size=64m", "--env=PYTHONDONTWRITEBYTECODE=1",
                 "--mount", f"type=bind,source={path},target=/workspace,readonly",
-                "--workdir=/workspace", image, *test_command(profile, tests)]
+                "--workdir=/workspace", image, *test_command(profile, tests, directory=directory)]
 
     def run(self, directory, image, profile, tests, artifact_digest):
         name = "rdc2-test-" + uuid.uuid4().hex

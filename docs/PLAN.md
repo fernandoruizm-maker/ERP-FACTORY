@@ -57,3 +57,14 @@ Faltan origen GitHub autenticado y coordinacion real con la original: fallar
 cerrado, no tratar fixtures o huellas locales como prueba de esas integraciones.
 Verificar suites privada/raiz/JS/TS, registrar evidencia y entregar commit y
 diffs contra ad91cb3 y 0cb1882 por cada mitad; no tocar main ni upstream/.
+
+
+### Segunda mitad del bloque 4
+
+Implementados localmente puntos 5-9 desde 84c5fe8: orquestador con pruebas de
+confianza y dobles, rutas contra candidato, envoltorio Codex con entorno por
+lista blanca, ledger persistente de reservas/topes, piloto y documentacion.
+Suites finales 129 raiz + 87 privadas + 7 JS + 3 TS = 226, sin fallos/omitidas.
+Primer ensayo raiz: 2 fallos por orden alfabetico de perfiles; corregido y
+verificado con suites completas. Moneda y ambos topes monetarios siguen null.
+No se construye el workflow multiparte ni se activa infraestructura real.

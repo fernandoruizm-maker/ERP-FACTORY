@@ -22,6 +22,8 @@ def coordinator(root):
 def config(root):
     path = Path(root) / 'fixture-config.json'
     path.write_text(canonical({'human_approvals_required': 2,
+        'budget_currency': 'TST', 'max_calls_per_execution': 11,
+        'max_spend_per_execution': '2', 'max_spend_total': '4',
         'human_approvers': {'business': {'login': 'persona-a', 'id': '101'},
                             'technical': {'login': 'persona-b', 'id': '202'}},
         'private_review_trust': {'repository': PRIVATE_REPOSITORY, 'validator_sha': 'b' * 40,

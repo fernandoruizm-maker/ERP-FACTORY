@@ -1,3 +1,26 @@
+# Estado actual: bloque 4 completado localmente, fabrica desactivada
+
+Las dos mitades estan implementadas y probadas en fix/bloque-4-operacion. Base
+ad91cb3; primera mitad 84c5fe8. Suites finales: 129 raiz + 87 privadas + 7 JS +
+3 TS = 226, cero fallos, errores u omitidas. El primer ensayo de la segunda
+mitad tuvo 2 fallos de orden de perfiles, corregidos antes de repetir las suites.
+Ver comandos, evidencia y limites en docs/pr/bloque-4.md.
+
+Existe el archivo de workflow publico historico, que se conserva hasta la
+migracion autorizada. No se consulto su estado actual en GitHub. El diseno privado
+esta bloqueado y su workflow multiparte real sigue pendiente. .disabled es OBSOLETO.
+Las entradas anteriores de instalacion y llamadas remotas quedan abajo como
+historia; no describen el estado actual ni autorizan nuevas conexiones.
+
+Orquestador solo con dobles ficticios, Codex con entorno limitado y sin runner
+real, ledger persistente local de reservas y piloto con restauracion coherente.
+Se registran 11 llamadas por ejecucion; gasto por ejecucion, acumulado y moneda
+siguen null y bloquean. No hay factura ni gasto real medido en estas correcciones.
+Autenticacion, procedencia GitHub y coordinacion con la original siguen pendientes;
+gate permanece BLOCKED. Sin red, proveedores, ERP, publicacion ni activacion.
+
+## Registro historico (no sustituye el estado actual anterior)
+
 # Estado de la segunda fábrica · 5 de noviembre de 2026
 
 ## Actualizacion: conexion mediante Actions preparada

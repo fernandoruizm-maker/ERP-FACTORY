@@ -1,52 +1,68 @@
-# Segunda fábrica RDC · instalación local desactivada
+# Segunda fabrica RDC: guia local
 
-Creada el 5 de noviembre de 2026, separada de Ubuntu y del ERP. No tiene tareas heredadas, credenciales, conexión a GitHub, servicio de fondo ni publicación automática. La primera fábrica no se ha modificado.
+La fabrica esta desactivada. No se modifico la original ni se accedio al ERP.
+Esta rama contiene correcciones locales y pruebas con datos ficticios.
 
-## Qué puedes revisar ahora
+Existe un archivo de workflow publico historico. El nuevo diseno ejecutara las
+revisiones en un repositorio privado separado, cuyo contenido propuesto esta en
+`ERP-FACTORY-revision/`. No se creo ese repositorio ni se probo su ejecucion real.
+No se han consultado ni movido credenciales en estas correcciones.
 
-- `outputs/INFORME-PILOTO.md`: resultados y pasos comprensibles del ensayo.
-- `outputs/comprobante-ensayo.html`: documento ficticio imprimible de diez botellas, saldo cero.
-- `fixtures/cliente.json`: ejemplo de objetivos, funciones, áreas y reglas.
-- `docs/CLAUDE-OPCIONES.md`: API o GitHub Actions, costos orientativos, permisos y decisiones pendientes.
-- `outputs/revision-claude/manifest.json`: referencia del código preparado para que Claude revise la propia fábrica. NOT_RUN significa que todavía no lo revisó.
+## Que esta disponible
 
-## Uso local
+1. Ficha de necesidades y comparacion por evidencia, con permiso de autorizante,
+   base, rutas y caducidad. Solo se prueba con una base ficticia; el ERP real
+   permanece PENDIENTE.
+2. Flujo construir -> montar pruebas de confianza -> probar -> revisar con dobles
+   ficticios. Comprueba huellas y conserva resultados previos si una etapa falla.
+   No ejecuta codigo generado, Docker ni llamadas reales.
+3. Importacion local del contrato V2 privado con hashes y procedencia declarada.
+   Las huellas no autentican GitHub; el resultado sigue bloqueado para operar.
+4. Aceptaciones con identidad normalizada, version, revision y caducidad, sin
+   reemplazo silencioso. Los nombres configurados no autentican a las personas.
+5. Candado local de un trabajador y recuperacion sin reintento. La coordinacion
+   con la original no esta conectada y por eso bloquea la via real.
+6. Reservas de presupuesto por ejecucion y acumuladas. Los intentos inciertos
+   conservan su reserva; un importe reportado mayor congela nuevos intentos hasta
+   conciliacion. No son importes facturados ni certificacion del proveedor.
+7. Piloto de diez botellas y restauracion que verifica solicitudes, movimientos,
+   aprobadores y saldos. La huella no firma ni autentica el estado.
 
-Abrir `VER_ESTADO.cmd` consulta el estado. `PROBAR_PILOTO.cmd` repite solo el ejemplo ficticio y actualiza sus informes. No encienden la fábrica ni conectan proveedores. Necesitan el Python local que ya usa Codex y Node instalado; no instalan herramientas.
+## Probar el ejemplo confiable
 
-Comandos equivalentes desde esta carpeta con Python disponible:
+`VER_ESTADO.cmd` consulta el estado y `PROBAR_PILOTO.cmd` ejecuta el piloto local.
+Necesitan Python y Node disponibles; no instalan nada ni encienden servicios.
 
 ```text
 python -B -m factory2 status
 python -B -m factory2 discover fixtures/cliente.json
 python -B -m factory2 pilot
-python -B -m factory2 prepare-factory-review
 python -B -m unittest discover -s tests -v
 ```
 
-No usar `upstream/factory/mvp` para iniciar el piloto antiguo. `upstream/` conserva los 53 archivos verificados para comparación y reutilización del adaptador Codex, sin la configuración ni la cola originales.
+Los informes del piloto se generan en outputs/. El comprobante dice
+**SIN VALIDEZ FISCAL**. TypeScript se ejecuta sin comprobar tipos estaticamente.
+No ejecutar propuestas de modelos en el host: su ejecucion real requiere un
+entorno aislado y una autorizacion futura.
 
-## Qué está implementado
+El comando historico `prepare-factory-review` conserva el formato anterior;
+no genera una revision V2 aceptable y no debe usarse para habilitar otro intento.
+Los contratos antiguos y el workflow publico se retiraran solo en la migracion
+autorizada al revisor privado. El borrador `.disabled` esta marcado OBSOLETO.
 
-1. Ficha de descubrimiento con dudas y criterios de aceptación; no aprueba el alcance automáticamente.
-2. Comparador de catálogo por requisito, ruta y huella, con autorización explícita de la base. El ERP real sigue sin acceso: su matriz queda PENDIENTE. Solo se probó un catálogo ficticio temporal.
-3. Constructor Codex que propone archivos nuevos dentro de `src/`, sin tocar pruebas o reglas. Se reutiliza el adaptador del código verificado. No se ejecutó una llamada real de esta fábrica a Codex.
-4. Adaptador Claude con límite de respuesta, tiempo, permiso vinculado al contenido, rechazo de herramientas y respuestas incompletas, y sin redirección de credenciales. Probado con transporte simulado; ninguna llamada real.
-5. Perfiles de pruebas Python, JavaScript y TypeScript. Código generado requiere Docker con imagen aprobada por digest y ya instalada. No se probó Docker en esta entrega. El piloto propio se ejecutó localmente.
-6. SQLite propio, reservas de llamadas transaccionales, límites por tarea y recuperación que marca llamadas inciertas sin reenviar.
-7. Dos aceptaciones locales distintas vinculadas al expediente y código; revisión del producto y de la propia fábrica. Son registros preparatorios: falta autenticación real de personas y de resultados remotos antes de producción.
-8. Informe de ensayo y comprobante consultable sin nuevos movimientos.
+## Decisiones y puesta en marcha pendientes
 
-## Límites que impiden activar producción
+Fernando indico negocio fernandoruizm-maker (342326625) y tecnica FERRUMTJA
+(352290329), sin que esta tarea autentique esas cuentas. Indico 11 llamadas por
+ejecucion; gasto por ejecucion, gasto acumulado y moneda siguen sin definir.
+Los valores ausentes bloquean un intento pagado; no hay importes por defecto.
+Se conservan ademas los bloqueos de coordinacion y acceso.
 
-Esta versión es una base local funcional de desarrollo, no un servicio operativo autónomo. No hay comando de activación. El estado permanece vacío: el piloto no crea trabajos en la cola real de esta instalación.
+Antes de cualquier intento real faltan un workflow multiparte revisado, guardado
+inmediato de cada parte validada, topes efectivos, ausencia de reintentos,
+procedencia autenticada, identidades reales y autorizacion expresa nueva.
+La pasada de interacciones recibe resultados e inventario, no el codigo completo.
+No operar las dos fabricas simultaneamente. No se autoriza aqui su transicion.
 
-Faltan elegir e integrar Claude (API o Actions), autorizar transmisión y costos, configurar credenciales nuevas de forma segura, comprobar Codex CLI real y Docker, autenticar aprobaciones, revisar la fábrica con Claude, y decidir el destino de despliegue. TypeScript se probó ejecutando código con eliminación de tipos; no equivale a `tsc` o al build completo de React.
-
-El escenario supone que un gerente O subgerente de la misma área, distinto del solicitante, puede aprobar. Es una regla de ensayo que debe confirmarse para cada cliente. La doble aceptación humana de la fábrica es un control distinto.
-
-## Cambio futuro de fábrica
-
-No operar ambas simultáneamente. Una futura transición debe primero impedir que la original reciba trabajos nuevos y reconciliar trabajos en curso; después activar solamente la segunda, con estado propio y autorizaciones nuevas. Ese cambio no se realiza desde estos comandos ni se ha autorizado en esta entrega.
-
-Ver recuperación y verificación en `docs/RECUPERACION.md` y `docs/ESTADO.md`.
+Ver [estado](docs/ESTADO.md), [diseno privado](docs/CLAUDE-OPCIONES.md)
+y [entrega por mitades](docs/pr/bloque-4.md).

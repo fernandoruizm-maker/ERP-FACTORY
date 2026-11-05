@@ -10,6 +10,7 @@ from pathlib import Path
 from .core import Blocked, canonical, digest, validate_review
 from .operations import Coordinator
 from .review_import import import_artifacts, verify_stored
+from .budget import BudgetLedger
 
 
 def identity(value):
@@ -45,6 +46,7 @@ class Store:
                 PRIMARY KEY(task,version,role), UNIQUE(task,version,person),
                 UNIQUE(task,version,person_id));
             """)
+        self.budget = BudgetLedger(self.path)
 
     @contextmanager
     def connect(self):
@@ -143,6 +145,9 @@ class Store:
         if status not in ("COMPLETED", "UNKNOWN", "REJECTED"):
             raise Blocked("Estado de llamada inválido.")
         with self.connect() as db:
+            db.execute('BEGIN IMMEDIATE')
+            if db.execute('SELECT 1 FROM paid_attempts WHERE id=?', (call_id,)).fetchone():
+                self.budget.finish_in(db, call_id, status)
             updated = db.execute("UPDATE calls SET status=? WHERE id=? AND status='IN_FLIGHT'", (status, call_id))
             if updated.rowcount != 1:
                 raise Blocked("La llamada no estaba en curso.")
@@ -150,9 +155,27 @@ class Store:
     def recover(self):
         with self.worker():
             with self.connect() as db:
+                db.execute('BEGIN IMMEDIATE')
+                paid = db.execute('UPDATE paid_attempts SET status="UNKNOWN" WHERE status="IN_FLIGHT"').rowcount
                 count = db.execute("UPDATE calls SET status='UNKNOWN' WHERE status='IN_FLIGHT'").rowcount
-        return {"uncertain_calls": count, "retried": 0,
+        return {"uncertain_calls": count, "uncertain_paid_attempts": paid, "retried": 0,
                 "action": "Reconciliar manualmente; no reenviar ni liberar presupuesto automáticamente."}
+
+    def reserve_paid_call(self, call_id, task, provider, payload_hash, *, execution_id,
+                          source_sha, max_cost, output_limit):
+        self.coordinator.require_worker()
+        if type(output_limit) is not int or not 1 <= output_limit <= 4096:
+            raise Blocked('OUTPUT_LIMIT_INVALID')
+        with self.connect() as db:
+            db.execute('BEGIN IMMEDIATE')
+            if not db.execute('SELECT 1 FROM tasks WHERE id=?', (task,)).fetchone():
+                raise Blocked('TASK_NOT_FOUND')
+            if db.execute('SELECT 1 FROM calls WHERE id=?', (call_id,)).fetchone():
+                raise Blocked('CALL_ALREADY_RECORDED')
+            self.budget.reserve_in(db, call_id, execution_id, provider, payload_hash,
+                                   source_sha, max_cost, self.config())
+            db.execute('INSERT INTO calls VALUES(?,?,?,?,?,?,?)',
+                       (call_id, task, provider, payload_hash, 'IN_FLIGHT', output_limit, time.time()))
 
     def accept(self, task, version, person, role, *, source_sha=None,
                factory_digest=None, review_id=None, expires_at=None):

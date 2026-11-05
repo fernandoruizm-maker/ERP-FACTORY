@@ -13,7 +13,7 @@ from factory2.runner import DockerRunner, assess, test_command
 from factory2.state import Store
 from factory2.workflow import prepare, stage
 from factory2.comparison_permit import ComparisonPermit
-from tests.operation_fixtures import store_fixture, coordinator, accept
+from tests.operation_fixtures import store_fixture, coordinator, accept, config
 
 ROOT = Path(__file__).resolve().parent.parent
 BRIEF = json.loads((ROOT / 'fixtures/cliente.json').read_text(encoding='utf-8'))
@@ -130,13 +130,16 @@ class StateTests(unittest.TestCase):
 class ProviderTests(unittest.TestCase):
     def setUp(self):
         self.temp = tempfile.TemporaryDirectory(); self.addCleanup(self.temp.cleanup)
-        self.store = Store(Path(self.temp.name)/'s.sqlite3', coordinator=coordinator(self.temp.name))
+        self.store = Store(Path(self.temp.name)/'s.sqlite3', coordinator=coordinator(self.temp.name),
+                           config_path=config(self.temp.name))
         self.store.put_task('T',BRIEF)
+        self.store.budget.begin('exec-1', 'a'*40, self.store.config())
         self.cfg = {'external_calls_enabled':True,'max_calls_per_task':2,'max_output_tokens':100,
                     'claude_model':'test-model-NOT-REAL','timeout_seconds':1}
         self.artifact = {'synthetic':'fixture'}
         self.payload = {'artifact':self.artifact,'artifact_digest':digest(self.artifact),'tests':[]}
-        self.permit = Permit('claude',digest(self.payload),time.time()+60,'operador-de-ensayo','call1')
+        self.permit = Permit('claude',digest(self.payload),time.time()+60,'operador-de-ensayo','call1',
+                             'exec-1', 'a'*40, '1')
         self.review = {'artifact_digest':digest(self.artifact),'verdict':'PASS','summary_es':'Respuesta simulada para prueba de contrato','findings':[]}
 
     def test_disabled_provider_never_invokes_transport_or_reads_key(self):
@@ -188,7 +191,7 @@ class ProviderTests(unittest.TestCase):
         class FakeAgent:
             def ask(inner,*_): return proposal
         payload={'brief':BRIEF}
-        permit=Permit('codex',digest(payload),time.time()+60,'operador-de-ensayo','codex1')
+        permit=Permit('codex',digest(payload),time.time()+60,'operador-de-ensayo','codex1', 'exec-1', 'a'*40, '1')
         self.assertEqual(CodexBuilder(self.cfg,self.store,FakeAgent()).build('T',payload,permit),proposal)
 
 
@@ -205,6 +208,8 @@ class RunnerAndProposalTests(unittest.TestCase):
 
     def test_docker_has_no_network_or_credentials_and_pinned_image(self):
         with tempfile.TemporaryDirectory() as temp:
+            (Path(temp)/'tests').mkdir()
+            (Path(temp)/'tests/test_a.py').write_text('FICTICIO')
             args=DockerRunner().command(temp,'python@sha256:'+'a'*64,'python',['tests/test_a.py'],'rdc2-test-fixture')
             for flag in ('--network=none','--read-only','--pull=never','--cap-drop=ALL','--security-opt=no-new-privileges'):
                 self.assertIn(flag,args)
@@ -218,7 +223,7 @@ class RunnerAndProposalTests(unittest.TestCase):
 
     def test_profiles_cannot_inject_shell_flags(self):
         for profile,files in [('javascript',['--eval=bad']),('typescript',['tests/../../bad.test.ts']),('python',['tests/test_a.py;bad'])]:
-            with self.assertRaises(Blocked): test_command(profile,files)
+            with self.assertRaises(Blocked): test_command(profile,files,directory=ROOT)
 
 
 if __name__ == '__main__': unittest.main()
