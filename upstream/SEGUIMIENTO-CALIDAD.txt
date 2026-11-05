@@ -1,0 +1,37 @@
+SEGUIMIENTO ADICIONAL DE CALIDAD
+
+Los PR de la cola normal conservan su proceso completo de pruebas, revisores
+y doble aprobación humana. Este monitor no reemplaza ese proceso.
+
+Para un PR de auditoría o externo a la cola, el operador debe añadir su número
+a quality_watch_prs en la configuración privada del servicio de Ubuntu.
+Ejemplo sin secretos: "quality_watch_prs": [18]. Máximo 20 números.
+La configuración permanece propiedad de root; no se obtiene autorización del
+texto de una Issue, del PR ni de las instrucciones de un agente.
+
+En cada ciclo se consulta el PR autorizado. Debe estar abierto, en el mismo
+repositorio y dirigido a la rama configurada. No se ejecutan PR de forks.
+Solo se admiten archivos del alcance de contexto ya configurado y README.md.
+Las pruebas se ejecutan sobre el commit exacto, dentro del contenedor aislado
+existente, sin red, credenciales ni carpetas del PC.
+
+Pruebas fallidas, vacías u omitidas: factory/quality=failure (rojo).
+Error de ejecución o alcance: factory/quality=error, bloqueante; se reintenta.
+Pruebas correctas: pendiente, porque faltan los revisores del proceso completo.
+factory/human-approval queda pendiente. Este monitor nunca publica success.
+No aprueba, integra ni despliega. No modifica las protecciones.
+
+El resultado se registra por repositorio, PR, commit, main y configuración.
+No se reutiliza como caché: cada ciclo realiza una comprobación nueva. Si el PR cambia durante
+la ejecución, se descarta el resultado y se comprueba en el siguiente ciclo.
+Un PR cerrado no se ejecuta. Un PR registrado en la cola sigue usando su flujo
+original para evitar sobrescribir sus revisiones y aprobaciones.
+
+La lista es explícita: esta mejora no descubre ni ejecuta todos los PR de GitHub.
+Para obtener un check verde completo se debe usar el proceso normal de la factoría.
+
+Cambiar quality_watch_prs cambia la configuración auditada y, por diseño,
+invalida las aprobaciones de trabajos pendientes del proceso normal. No se
+excluye esta opción del control de cambios de configuración. Planificar altas
+o bajas antes de solicitar aprobaciones; si había trabajos pendientes, deben
+volver a validarse. Nunca se reutilizan aprobaciones de otra configuración.

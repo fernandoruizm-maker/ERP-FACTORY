@@ -1,0 +1,13 @@
+{
+  "source_zip_sha256": "9924878c35d6ffa23e15ef2d619d6ece1b8bed936f966b5a69eaa5cc65b53ba2",
+  "verified_code_files": 53,
+  "copied_sections": [
+    "codigo"
+  ],
+  "excluded": [
+    "configuracion",
+    "estado",
+    "credenciales"
+  ],
+  "note": "Código cotejado 53/53 con Ubuntu; no se activan servicios."
+}

@@ -1,0 +1,2 @@
+# Only needed for GitHub App authentication; use a separate virtual environment.
+cryptography==50.0.2

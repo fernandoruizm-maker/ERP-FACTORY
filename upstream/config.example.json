@@ -1,0 +1,15 @@
+{
+  "repository": "fernandoruizm-maker/rdc",
+  "base_branch": "main",
+  "trigger_label": "ai-factory",
+  "allowed_requesters": ["fernandoruizm-maker"],
+  "human_reviewers": ["fernandoruizm-maker"],
+  "product_prefixes": ["src/"],
+  "context_prefixes": ["src/", "tests/"],
+  "brain_dir": "brain",
+  "state_dir": "state",
+  "agent_provider": "codex",
+  "model": null,
+  "runner_image": "REPLACE_WITH_LOCAL_IMAGE_SHA256",
+  "wsl_distribution": null
+}
