@@ -1,7 +1,9 @@
 # Configuracion local futura: instrucciones para Codex
 
-**NO EJECUTADO. Requiere autorizacion expresa posterior.** Este documento no
-habilita cambios, red, lectura de secretos ni publicacion. Envio actual: DISABLED.
+**Autorizados solo los pasos 1 a 10, sin red ni token.** Preparacion parcial:
+no se han aplicado ajustes porque falta el correo noreply real; el mensaje de
+Fernando contiene el marcador [CORREO NOREPLY], que no debe guardarse como correo.
+Los pasos 11 en adelante requieren otra autorizacion. Envio actual: DISABLED.
 Fernando no debe editar archivos ni ejecutar comandos. Claude verificara en
 lectura las opciones no secretas y los resultados de la prueba autorizada.
 
@@ -65,10 +67,11 @@ lectura las opciones no secretas y los resultados de la prueba autorizada.
 12. Verificar sin recuperar contraseñas que la entrada del gestor distingue cuenta
     y destino. Si solo queda una entrada generica compartida, no declarar aislamiento
     logrado. No usar comandos que devuelvan credenciales, como credential fill/get.
-13. El acceso Git no autentica por si solo una herramienta de PR ni una sesion web.
-    Para abrir la PR, usar solo un metodo autorizado que identifique fenando-codex;
-    no extraer el token del gestor para pasarlo a otra herramienta ni cambiar una
-    sesion global. Si no hay una via autorizada, detener esa parte y comunicarlo.
+13. Via intermedia elegida: Fernando abre la PR de prueba y la del bloque 1 en
+    la web, con su perfil de navegador de fenando-codex. Codex solo sube la rama
+    cuando se autorice y prepara titulo y texto para que Fernando los pegue.
+    El acceso Git no autentica esa sesion web. No extraer el token del gestor para
+    abrir PR ni usar la sesion personal de Fernando. gh queda para otra etapa.
 14. Claude comprueba autor de PR, identidad de los commits nuevos y reglas efectivas.
     La consulta anonima de un repositorio publico no demuestra quien se autentico.
     Cerrar la PR sin integrar. Registrar SHA y resultados, sin secretos.
@@ -96,9 +99,81 @@ alcance del token. No acreditar aislamiento o permisos efectivos sin comprobarlo
 6. Cerrar PR o revertir publicaciones solo con permiso; no force push ni borrados
    de historial. Registrar que se revirtio y lo pendiente, sin datos de credenciales.
 
-## Limites actuales
+## Comprobacion local de preparacion (2026-11-05)
 
-Ninguno de estos pasos se ejecuto en la actualizacion documental. No verificados
-version/comportamiento del gestor, correo noreply, autenticacion, almacenamiento,
-aislamiento efectivo ni PR de prueba. Los avances de cuenta y ruleset proceden
-del informe de Fernando; Codex no accedio a red para confirmarlos.
+Git Credential Manager instalado: **2.9.1+6760f0ef069c994aa2bb1d703fb374986ee82a3e**.
+Consulta local de version, sin red. GitHub CLI **gh no esta instalado o no esta
+accesible en PATH** (Get-Command no lo encontro); no hay version que registrar.
+No se instalo ni ejecuto gh. No se comprobaron opciones del gestor mediante una
+conexion real, no se consultaron credenciales ni se genero token.
+
+Valores locales antes y despues de esta preparacion documental:
+
+| Opcion | Antes | Despues |
+|---|---|---|
+| user.name | Sin definir localmente | Sin cambios |
+| user.email | Sin definir localmente | Sin cambios |
+| credential.helper | Sin definir localmente | Sin cambios |
+| credential.useHttpPath | Sin definir localmente | Sin cambios |
+| credential.credentialStore | Sin definir localmente | Sin cambios |
+| credential.gitHubAuthModes | Sin definir localmente | Sin cambios |
+| Usuario de credenciales para la URL exacta de ERP-FACTORY | Sin definir localmente | Sin cambios |
+| remote.origin.pushurl | DISABLED | DISABLED |
+
+Registro previo no secreto fuera del repositorio:
+../entregas-locales/bloque-7-config-before.json. Se comparan user.name y user.email
+globales sin publicar su correo personal; no se modifica configuracion global ni
+se leen opciones globales de credenciales. Esta comprobacion acotada no es una
+auditoria de todos los archivos globales ni de cambios realizados por otros procesos.
+Falta el noreply real para continuar los pasos de configuracion; no se inventa.
+
+## Etapa futura de gh: documentada, NO autorizada ni ejecutada
+
+La via actual para ambas PR es la web, con Fernando como operador de fenando-codex.
+No instalar, autenticar ni usar gh ahora. Si se autoriza mas adelante:
+
+1. Comprobar instalacion/version y ayuda local de gh. Instalarlo, si hace falta,
+   requiere permiso separado. Su compatibilidad con public_repo NO esta verificada.
+2. Preparar un directorio de configuracion exclusivo fuera del repositorio, por
+   ejemplo C:\Users\ferna\AppData\Local\ERP-FACTORY-Codex\gh. No crearlo ahora.
+   En cada proceso autorizado de gh establecer GH_CONFIG_DIR a esa ruta, solo
+   para ese proceso o terminal, nunca como variable global persistente. No usar
+   el directorio habitual de gh de Fernando ni ejecutar cambios globales de Git.
+3. No heredar GH_TOKEN, GITHUB_TOKEN, GH_ENTERPRISE_TOKEN ni GITHUB_ENTERPRISE_TOKEN
+   al proceso reservado: omitirlas sin consultar ni imprimir sus valores. No
+   ejecutar auth setup-git: el gestor Git del clon se configura por separado.
+4. Fernando abre su propia terminal para autenticar fenando-codex, fuera de la
+   captura/control de los asistentes, sin transcripcion ni trazas. Un procedimiento
+   revisado para la version instalada debe pedir el token con entrada OCULTA
+   (por ejemplo Read-Host -AsSecureString) y pasarlo a gh auth login --with-token
+   solo por entrada estandar; nunca como argumento, variable persistente, archivo
+   temporal, historial o texto visible. El valor en memoria solo vive el tiempo
+   imprescindible y se libera al terminar. No construir ni ejecutar ese proceso
+   ahora; Codex no lo introduce ni recibe el token.
+5. El token sigue siendo clasico con SOLO public_repo. gh puede exigir otros
+   permisos durante su validacion de inicio de sesion (por ejemplo repo/read:org/gist).
+   No afirmar que lo acepta: comprobarlo en esa etapa autorizada. Si lo rechaza,
+   pide mas permisos o usa otro flujo de autorizacion mas amplio, DETENERSE y
+   conservar la via web. No ampliar scopes, cambiar token ni eludir la validacion.
+6. Verificar antes que gh puede almacenar de forma segura sin caer en texto plano;
+   no usar --insecure-storage. GH_CONFIG_DIR separa archivos de configuracion,
+   pero no garantiza por si solo que el almacen de credenciales del sistema quede
+   separado. Si reutiliza o afecta una identidad personal, cancelar; no borrarla.
+   No inspeccionar hosts.yml ni otros archivos que pudieran contener el token.
+7. Tras una autenticacion autorizada, comprobar solo la identidad de la cuenta y
+   el repositorio mediante una consulta no secreta autorizada. Un estado local
+   no demuestra autenticacion real. Claude verifica la cuenta autora de la PR.
+   Nunca usar **gh auth token**, auth status --show-token, volcados, logs de
+   depuracion ni cualquier comando que muestre el token. Codex tampoco extrae
+   el token del almacen para pasarlo a otra herramienta.
+8. Reversion: Fernando revoca el token en Tokens (classic) de fenando-codex.
+   Con autorizacion, cerrar solo la sesion de esa cuenta en el GH_CONFIG_DIR
+   exclusivo y retirar solo sus datos identificados, sin tocar la sesion de
+   Fernando. Salir de gh no revoca el token en GitHub: la revocacion se hace alli.
+   Eliminar la variable de esa terminal/cerrarla; no cambiar variables globales.
+   Mantener las subidas detenidas; no reactivar autenticacion automaticamente.
+
+NO VERIFICADO: instalacion/autenticacion de gh, aceptacion de public_repo, entrada
+oculta del flujo futuro, aislamiento real de su almacen, correo noreply, opciones
+efectivas del gestor tras configurarlo, conexion Git y PR de prueba. No se consulto
+red ni se probaron credenciales. Los avances remotos proceden de Fernando.

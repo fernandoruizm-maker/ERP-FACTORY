@@ -9,6 +9,9 @@ Decision vigente del bloque 7: las PR las abrira **fenando-codex** (sin la prime
 r), cuenta de maquina que Fernando comunica ya creada, con dos pasos e invitacion
 aceptada. Fernando y FERRUMTJA aprueban con sus propias cuentas. El repositorio
 sigue siendo PUBLICO y propiedad de fernandoruizm-maker. El token NO esta creado.
+Via intermedia: Fernando abrira la PR de prueba y la del bloque 1 desde la web,
+con la sesion de fenando-codex. Codex prepara titulo/texto y solo sube las ramas
+cuando se autorice. Abrir PR con gh queda para una etapa posterior autorizada.
 
 Fernando informa que el ruleset **main - dos aprobaciones sin excepciones**,
 ID **26650549**, esta activo. Segun su informe, Claude comprobo por la API publica:
@@ -55,11 +58,14 @@ de JSON como sustituto de la verificacion real de Claude.
 - Como deshacer: Fernando revoca el token clasico; no ampliar permisos ni sustituirlo
   por el token personal. Este paso no rehabilita el envio: sigue DISABLED.
 
-### b) Codex configura el clon, con autorizacion expresa posterior
+### b) Codex configura el clon: pasos 1 a 10 autorizados, falta noreply
 
 - Seguir [CONFIG-LOCAL-CODEX.md](github/CONFIG-LOCAL-CODEX.md). Fernando no edita
   archivos ni ejecuta comandos. Codex configura solo ERP-FACTORY-correcciones:
   nombre fenando-codex, noreply real y gestor seguro, sin tocar opciones globales.
+- La autorizacion actual cubre solo los pasos 1 a 10, sin red ni token. Falta
+  recibir el correo noreply real: [CORREO NOREPLY] es un marcador, no un valor.
+  La preparacion no ha cambiado configuracion; el envio permanece DISABLED.
 - Claude verifica en lectura los ajustes no secretos y su alcance. La configuracion
   no acredita aun una autenticacion remota. No se rehabilita el envio en este paso.
 - La regla de main ya esta creada segun Fernando; no recrearla ni cambiarla. La
@@ -72,13 +78,15 @@ de JSON como sustituto de la verificacion real de Claude.
 ### c) Prueba ficticia con autorizacion expresa
 
 - Fernando autoriza concretamente rehabilitar el envio de ESTE clon solo hacia
-  https://github.com/fernandoruizm-maker/ERP-FACTORY.git, subir una rama ficticia,
-  abrir la PR de prueba con fenando-codex y cerrarla despues SIN integrarla.
+  https://github.com/fernandoruizm-maker/ERP-FACTORY.git y subir una rama ficticia.
+  Fernando abre la PR desde la web con la sesion de fenando-codex y la cierra
+  despues SIN integrarla; Codex prepara su titulo y texto para copiar y pegar.
   Esta documentacion no ejecuta ni concede por si sola esa autorizacion.
 - Solo entonces Codex puede efectuar los cambios de envio autorizados, comprobar
   que no hay otro destino de push y subir la rama de prueba. Nunca incluir el token
   en una URL. La autenticacion se introduce por Fernando en el gestor seguro.
-- La PR debe aparecer abierta por la cuenta de maquina. El nombre/correo de un
+- Fernando comprueba la cuenta en el navegador antes de abrir la PR.
+  La PR debe aparecer abierta por la cuenta de maquina. El nombre/correo de un
   commit no bastan para demostrarlo. Fernando y FERRUMTJA usan sus cuentas personales.
 - Claude verifica en lectura repositorio, regla efectiva y estados de la PR:
   sin aprobaciones bloqueada, con una aun bloqueada, conversaciones abiertas
@@ -112,6 +120,9 @@ de JSON como sustituto de la verificacion real de Claude.
   Revisa los archivos y el historial por datos que no deban publicarse. Antes de subir,
   entrega el SHA exacto; resolver cambios de base o conflictos genera otro SHA y
   requiere pruebas y revision de ese nuevo resultado. No empujar la rama del bloque 6.
+- Codex entrega el titulo y texto propuestos de la PR del bloque 1. Fernando
+  los pega y abre la PR desde la web con fenando-codex; Codex no usa gh ni API
+  para crearla en esta etapa.
 - Claude revisa solo el diff de esa PR respecto a su base y registra el SHA completo.
   Codex transcribe el informe recibido en docs/revisiones/*.local.md, sin agregarlo
   al commit revisado. No afirma que Claude ya reviso un SHA distinto.
@@ -166,3 +177,13 @@ hay revisor tecnico humano. Claude no esta autenticado y puede omitir errores.
 **Auditoria tecnica externa obligatoria antes de usar datos reales de clientes o
 conectar el ERP.** Tambien hacen falta las autorizaciones y controles de acceso y
 coordinacion pendientes. La revision de un contador no sustituye esa auditoria.
+
+## GitHub CLI posterior: no ejecutado
+
+La consulta local no encontro gh instalado/accesible en PATH; no hay version
+verificada. No instalarlo ni autenticarlo ahora. El plan de GH_CONFIG_DIR exclusivo
+fuera del repositorio, entrada oculta por Fernando, verificacion y revocacion esta
+en [CONFIG-LOCAL-CODEX.md](github/CONFIG-LOCAL-CODEX.md). gh debe aceptar solo
+public_repo; si exige mas, detenerse y mantener la via web. Prohibido mostrar el
+token (incluido gh auth token) o extraerlo del gestor. La autorizacion de configurar
+Git localmente no autoriza gh, conexiones, subidas ni nuevas PR.

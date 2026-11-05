@@ -60,6 +60,21 @@ son historicos del bloque 6, no una nueva ejecucion:
 Suites completas: 149 raiz + 113 privadas + 7 JS + 3 TS = 272, cero fallos,
 errores u omitidas. TS sin typecheck. Comandos y limites en docs/pr/bloque-6.md.
 
+## Preparacion local y via web (actualizacion posterior del bloque 7)
+
+Fernando autoriza solo pasos 1 a 10 de CONFIG-LOCAL-CODEX.md, sin red/token.
+El correo sigue como marcador [CORREO NOREPLY]; no se configuro identidad ni
+el gestor hasta disponer del valor real. Opciones locales registradas fuera del
+repositorio; envio observado DISABLED. GCM 2.9.1 instalado; gh no localizado en
+PATH, sin version disponible ni instalacion. No se consulto el almacen de secretos.
+Comparacion de identidad global seleccionada antes/despues sin cambios; no se
+modifico configuracion global, local ni remotos en esta preparacion documental.
+Fernando abrira en la web las PR de prueba y bloque 1 como fenando-codex; Codex
+preparara titulo/texto y subira solo bajo autorizacion. gh queda documentado para
+otra etapa, con directorio propio y sin ampliar public_repo si no lo acepta.
+Verificacion documental: enlaces locales y git diff --check; sin suites porque
+solo cambian documentos. No verificados autenticacion, gh ni aislamiento efectivo.
+
 ## Registro historico de bloques anteriores (no es el modelo vigente)
 
 # Estado actual: bloque 5 multiparte preparado localmente y bloqueado
