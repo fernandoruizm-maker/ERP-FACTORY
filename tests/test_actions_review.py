@@ -9,6 +9,11 @@ from factory2.core import Blocked, canonical
 
 
 class ActionsReviewTests(unittest.TestCase):
+    def test_successful_review_text_is_not_classified_as_provider_failure(self):
+        result = safe_diagnostic([{'type': 'result', 'subtype': 'success', 'is_error': False,
+                                  'result': 'Review mentions rate limit, json schema and budget limit.'}])
+        self.assertEqual(result['categories'], [])
+
     def test_diagnostic_classifies_without_revealing_provider_text(self):
         result = safe_diagnostic([{'type': 'result', 'is_error': True,
                                   'result': 'Invalid OAuth token: SECRET-DO-NOT-PUBLISH',
@@ -72,6 +77,23 @@ class ActionsReviewTests(unittest.TestCase):
             dest = Path(temp)
             (dest / 'manifest.json').write_text(canonical(self.manifest), encoding='utf-8')
             self.assertEqual(collect(dest, {**self.env, 'RUNNER_TEMP': temp}), 1)
+            report = json.loads((dest / 'report.json').read_text(encoding='utf-8'))
+            self.assertEqual(report['failure_stage'], 'EXECUTION_FILE')
+
+    def test_rejection_diagnostic_distinguishes_json_version_and_coverage_without_raw_text(self):
+        cases = [('SECRET-RAW', 'RESULT_JSON', 'INVALID_JSON'),
+                 (canonical({**self.result, 'source_sha': 'b' * 40}), 'REPORT_VALIDATION', 'VERSION_MISMATCH'),
+                 (canonical({**self.result, 'coverage': 'incomplete'}), 'REPORT_VALIDATION', 'COVERAGE_INCOMPLETE')]
+        for raw, stage, reason in cases:
+            with self.subTest(reason=reason), tempfile.TemporaryDirectory() as temp:
+                dest = Path(temp)
+                (dest / 'manifest.json').write_text(canonical(self.manifest), encoding='utf-8')
+                self.write_execution(dest, raw)
+                self.assertEqual(collect(dest, {**self.env, 'RUNNER_TEMP': temp}), 1)
+                report = json.loads((dest / 'report.json').read_text(encoding='utf-8'))
+                self.assertEqual(report['failure_stage'], stage)
+                self.assertEqual(report['reason_code'], reason)
+                self.assertNotIn('SECRET-RAW', canonical(report))
 
     def test_complete_review_never_grants_approval(self):
         result = validate_result(self.manifest, self.result)
