@@ -14,8 +14,11 @@ historia; no describen el estado actual ni autorizan nuevas conexiones.
 
 Orquestador solo con dobles ficticios, Codex con entorno limitado y sin runner
 real, ledger persistente local de reservas y piloto con restauracion coherente.
-Se registran 11 llamadas por ejecucion; gasto por ejecucion, acumulado y moneda
-siguen null y bloquean. No hay factura ni gasto real medido en estas correcciones.
+Se registran 11 llamadas por ejecucion y moneda USD, elegida por Fernando.
+Gasto por ejecucion y acumulado siguen null y bloquean. No hay gasto real medido.
+Verificacion posterior de configuracion: USD/11/null/null e interruptores false;
+limits(config) bloquea con BUDGET_AMOUNT_REQUIRED (Python local, salida 0).
+Las 226 pruebas corresponden a d3d7319; no se repitieron para este ajuste de moneda.
 Autenticacion, procedencia GitHub y coordinacion con la original siguen pendientes;
 gate permanece BLOCKED. Sin red, proveedores, ERP, publicacion ni activacion.
 

@@ -39,8 +39,8 @@ respuestas del proveedor ni artefactos privados en este repositorio publico.
 ## Bloqueos vigentes
 
 Faltan autenticacion de las personas, procedencia autenticada de GitHub,
-coordinacion real con la original, importes maximos y moneda autorizados.
-Fernando indico 11 llamadas por ejecucion; ambos topes de gasto siguen vacios.
+coordinacion real con la original e importes maximos autorizados.
+Fernando indico USD y 11 llamadas por ejecucion; ambos topes de gasto siguen vacios.
 El registro local conserva reservas e intentos inciertos, pero no mide facturas
 ni garantiza un limite impuesto por el proveedor. Ninguna funcion publica o activa.
 

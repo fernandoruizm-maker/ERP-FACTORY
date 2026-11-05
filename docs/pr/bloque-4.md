@@ -229,8 +229,8 @@ reintento, devolucion o conciliacion automatica.
 
 Los importes son cadenas decimales exactas de hasta seis decimales, convertidas
 a enteros, no floats. Se exige moneda explicita. Fernando autorizo 11 llamadas
-por ejecucion. max_spend_per_execution, max_spend_total y budget_currency siguen
-null: no se eligen importes ni moneda sin Fernando, y esos parametros bloquean.
+por ejecucion y posteriormente eligio USD. budget_currency="USD";
+max_spend_per_execution y max_spend_total siguen null y bloquean.
 El permiso de cada intento debe incluir execution_id, source_sha y max_cost;
 una ejecucion se registra explicitamente antes, nunca se crea automaticamente
 al recibir una respuesta incierta.
@@ -330,7 +330,7 @@ lo justificara. Las verificaciones documentales y git diff --check son locales.
   upstream intacto. NO VERIFICADA la autenticacion/ejecucion real de Codex.
 - B5: ledger y topes locales acumulados y por ejecucion, probados con unidad TST
   ficticia. NO VERIFICADO gasto, factura, limites efectivos del proveedor ni uso
-  del ledger en Actions. Faltan importes/moneda de Fernando e infraestructura.
+  del ledger en Actions. Faltan importes de Fernando e infraestructura; moneda USD.
 - P1 y parte P2: coherencia de restauracion y nuevas negativas JS cubiertas.
   No se agregan cancelar/rechazar solicitudes (P3), area configurable o un
   comprobante JS mas completo: no forman parte de estos puntos. TS sin typecheck.
@@ -342,6 +342,18 @@ privacidad/retencion real, minutos, suite heredada de upstream/ y eventos reales
 error/errors de Claude Code. El importador permanece bloqueado para operar.
 No se construyo el workflow multiparte obligatorio ni se preparo otro intento.
 
-La entrega del bloque 4 comprende dos commits: primera mitad 84c5fe8 y el commit
-final de esta segunda mitad, cuyo SHA completo se entrega en la respuesta junto
-con los diff --stat contra ad91cb3 y 0cb1882. Sin push, PR, main ni activacion.
+La entrega de implementacion comprende 84c5fe8 (primera mitad) y d3d7319
+(segunda mitad). Se agrega un commit documental/de configuracion para registrar
+la posterior decision de Fernando: USD, sin definir los dos importes ni activar.
+El SHA final se entrega en la respuesta. Sin push, PR, main ni activacion.
+
+### Decision posterior: moneda USD
+
+Cambio exclusivo de configuracion y documentacion; sin cambios de funcionalidad.
+Verificacion local con Python -B - (script por entrada estandar): se comprobo
+budget_currency == "USD", max_calls_per_execution == 11, ambos importes null y
+los cuatro interruptores enabled/external_calls_enabled/erp_access_enabled/
+publication_enabled en false. limits(config) rechazo con BUDGET_AMOUNT_REQUIRED.
+Resultado: comprobacion aprobada, salida 0. No se repitieron las suites completas
+para este ajuste; las 226 pruebas arriba corresponden a d3d7319. No se verifico
+ninguna integracion real ni se ejecuto un intento de pago.

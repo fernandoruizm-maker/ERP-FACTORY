@@ -42,7 +42,7 @@ antes de transmitir, mantiene cargos conservadores ante incertidumbre o rechazo
 y evita reusar un identificador. Las transacciones impiden sobrepasar el saldo
 local disponible. No sustituye una garantia monetaria impuesta por el proveedor.
 
-Fernando autorizo 11 llamadas por ejecucion. Los dos importes y la moneda siguen
+Fernando autorizo 11 llamadas por ejecucion y eligio USD. Los dos importes siguen
 null y bloquean. No hay presupuesto monetario por defecto. Las pruebas usan la
 unidad ficticia TST; no selecciona una moneda real ni es gasto medido. Los ejemplos
 de tarifas del documento anterior eran historicos y no se usan para elegir topes

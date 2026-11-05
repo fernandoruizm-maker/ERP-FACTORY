@@ -54,7 +54,7 @@ autorizada al revisor privado. El borrador `.disabled` esta marcado OBSOLETO.
 
 Fernando indico negocio fernandoruizm-maker (342326625) y tecnica FERRUMTJA
 (352290329), sin que esta tarea autentique esas cuentas. Indico 11 llamadas por
-ejecucion; gasto por ejecucion, gasto acumulado y moneda siguen sin definir.
+ejecucion y moneda USD; gasto por ejecucion y gasto acumulado siguen sin definir.
 Los valores ausentes bloquean un intento pagado; no hay importes por defecto.
 Se conservan ademas los bloqueos de coordinacion y acceso.
 
