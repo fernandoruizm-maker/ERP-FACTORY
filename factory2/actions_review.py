@@ -174,6 +174,7 @@ def collect(destination, environ):
               'reason': 'No se recibio una revision valida.', 'provenance': provenance,
               'model_requested': 'sonnet', 'model_exact': 'UNVERIFIED',
               'factory_digest': manifest['factory_digest'], 'source_sha': manifest['source_sha']}
+    stage = 'PROVENANCE'
     try:
         if (provenance['GITHUB_REPOSITORY'] != REPOSITORY
                 or provenance['GITHUB_SHA'] != manifest['source_sha']
@@ -181,14 +182,37 @@ def collect(destination, environ):
                 or provenance['GITHUB_RUN_ATTEMPT'] != '1'
                 or provenance['GITHUB_ACTOR'] != 'fernandoruizm-maker'):
             raise Blocked('Procedencia del job no valida.')
+        stage = 'ACTION_CONCLUSION'
         if environ.get('CLAUDE_CONCLUSION') != 'success':
             raise Blocked('Claude no termino correctamente; no hay reintento automatico.')
-        result = text_result(read_execution_events(environ))
+        stage = 'EXECUTION_FILE'
+        events = read_execution_events(environ)
+        stage = 'RESULT_JSON'
+        result = text_result(events)
+        stage = 'REPORT_VALIDATION'
         report.update(validate_result(manifest, result))
         report.pop('reason', None)
-    except (Blocked, OSError, ValueError, TypeError, KeyError):
+    except (Blocked, OSError, ValueError, TypeError, KeyError) as error:
         # Do not echo provider content or parsing exceptions into public logs.
         report['reason'] = 'Resultado ausente, fallido, parcial o invalido. Requiere investigacion; no reintentar automaticamente.'
+        report['failure_stage'] = stage
+        reasons = {
+            'Respuesta ausente o estructura incorrecta.': 'REPORT_STRUCTURE',
+            'Respuesta excesiva o con posible credencial; no se publica.': 'OUTPUT_SAFETY_OR_SIZE',
+            'La respuesta corresponde a otra version.': 'VERSION_MISMATCH',
+            'Revision parcial o sin analisis de interacciones.': 'COVERAGE_INCOMPLETE',
+            'Conclusion invalida.': 'INVALID_VERDICT',
+            'Faltan limitaciones verificables.': 'MISSING_LIMITATIONS',
+            'Hallazgos invalidos.': 'INVALID_FINDINGS',
+            'Hallazgo sin evidencia completa.': 'FINDING_STRUCTURE',
+            'Evidencia fuera del alcance o incompleta.': 'INVALID_FINDING_EVIDENCE',
+            'PASS contradice los hallazgos bloqueantes.': 'CONTRADICTORY_PASS',
+            'Se requiere un unico resultado final.': 'RESULT_EVENT_COUNT',
+            'Ejecucion fallida, con denegaciones o fuera del limite.': 'RESULT_EXECUTION_INVALID',
+            'Respuesta ausente o excesiva.': 'RESULT_MISSING_OR_TOO_LARGE',
+        }
+        report['reason_code'] = ('INVALID_JSON' if isinstance(error, json.JSONDecodeError)
+                                 else reasons.get(str(error), 'REJECTED_AT_STAGE'))
     (destination / 'report.json').write_text(json.dumps(report, ensure_ascii=False, indent=2), encoding='utf-8')
     # Text, not active Markdown/HTML: model output is untrusted review material.
     lines = ['INFORME DE REVISION DE LA FABRICA', 'Estado: ' + report['status'],
@@ -202,6 +226,8 @@ def collect(destination, environ):
         lines += ['LIMITACIONES', *review['limitations_es']]
     else:
         lines.append(report['reason'])
+        if 'failure_stage' in report:
+            lines.append('Diagnostico: ' + report['failure_stage'] + ' / ' + report['reason_code'])
     (destination / 'INFORME.txt').write_text('\n\n'.join(lines) + '\n', encoding='utf-8')
     print(canonical({'status': report['status'], 'publication_allowed': False}))
     return 0 if report['status'] == 'NEEDS_HUMAN_REVIEW' else 1
@@ -215,7 +241,9 @@ def safe_diagnostic(events):
     if not results:
         return {'status': 'NO_RESULT_EVENT', 'provider_text_saved': False}
     event = results[-1]
-    error_material = canonical({k: event.get(k) for k in ('result', 'errors', 'error')}).lower()
+    successful = event.get('subtype') == 'success' and event.get('is_error') is False
+    # Successful review prose can mention errors without being a provider error.
+    error_material = '' if successful else canonical({k: event.get(k) for k in ('result', 'errors', 'error')}).lower()
     patterns = {
         'AUTHENTICATION': r'authentication_error|invalid (?:api key|oauth|token)|not logged in|token.{0,30}expired',
         'SUBSCRIPTION_OR_CREDITS': r'credit balance|subscription|billing|insufficient.{0,20}credit',
@@ -233,7 +261,8 @@ def safe_diagnostic(events):
     if isinstance(denials, list) and denials:
         categories.append('TOOL_PERMISSION_DENIED')
     report = {'status': 'DIAGNOSTIC_ONLY', 'provider_text_saved': False,
-              'categories': categories or ['UNCLASSIFIED'], 'is_error': event.get('is_error') is True}
+              'categories': categories if successful else categories or ['UNCLASSIFIED'],
+              'is_error': event.get('is_error') is True}
     if isinstance(denials, list):
         report['permission_denials_count'] = len(denials)
         report['structured_output_denied'] = any(

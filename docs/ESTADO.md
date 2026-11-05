@@ -61,5 +61,16 @@ estimado USD 1.039741. No se afirma que ese importe fuera facturado.
 Se preparo una correccion que recibe JSON textual y conserva todas las
 herramientas denegadas. Las 12 pruebas locales del modulo Actions pasan.
 No se ejecuto un quinto intento. Ver [evidencia y limites](CORRECCION-INFORME.md).
-Las entradas siguientes son historicas y no sustituyen este estado actual.
+Las entradas anteriores son historicas y no sustituyen esta actualizacion.
+
+## Actualizacion: quinto intento autorizado
+
+Se integro PR #4 y termino el run 41996918613: Claude completo la llamada en un
+turno, sin denegaciones, con USD 1.0870979 estimados. El validador rechazo el
+resultado, por lo que no hay informe de revision aceptado. El diagnostico
+generico no permite conocer la regla exacta que fallo.
+
+Se preparo una correccion local del diagnostico, sin relajar la validacion.
+Las 14 pruebas del modulo Actions pasan; no se hizo un sexto intento.
+Ver [evidencia, integridad del artefacto y limites](QUINTO-INTENTO.md).
 
