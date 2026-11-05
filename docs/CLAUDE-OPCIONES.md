@@ -1,3 +1,18 @@
+# Decision vigente: revision manual en el chat
+
+Desde el bloque 6, Claude revisa cada PR (solo cambios); antes de una entrega
+importante, revisa toda la fabrica en una conversacion nueva. No es revisor humano
+ni esta autenticado. Registros locales en docs/revisiones/, guia en docs/GUIA-APROBAR.md.
+Negocio: Fernando. Contabilidad y funcionamiento: FERRUMTJA. No hay persona revisora
+tecnica; auditoria tecnica externa obligatoria antes de clientes reales o ERP.
+
+Actions queda APARCADO, sin repositorio privado por ahora y con tres bloqueos.
+Para reactivarlo en un hito se registran USD 1.00/llamada, 12.00/ejecucion y
+13.00/acumulado, 11 llamadas y opcion 1 (autorizacion manual). No se autoriza
+ninguna llamada ni se conecta el adaptador. Ver docs/PUBLICACION.md.
+
+## Diseno automatico anterior, conservado como referencia historica
+
 # Claude: diseno privado y limites vigentes
 
 Fernando eligio Claude Code en GitHub Actions y un repositorio privado separado

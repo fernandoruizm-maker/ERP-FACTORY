@@ -16,14 +16,15 @@ def audit(workflow, policy=None):
     if policy is None:
         policy = json.loads((Path(__file__).resolve().parent.parent / 'policy.json').read_text(encoding='utf-8'))
     expected = {'repository': PRIVATE, 'execution_enabled': False,
+                'automatic_review_status': 'PARKED',
                 'reviewed_validator_sha': None, 'artifact_retention_days': 7,
                 'budget_currency': 'USD', 'max_calls_per_execution': 11,
-                'max_spend_per_execution': None, 'max_budget_usd_per_call': None,
-                'cumulative_strategy': None,
+                'max_spend_per_execution': '12.00', 'max_budget_usd_per_call': '1.00',
+                'max_spend_total': '13.00', 'cumulative_strategy': 'manual_authorization',
                 'review_reference_status': 'PENDING_PRIVATE_REPOSITORY_AND_REVIEW'}
     if policy != expected:
         raise Blocked('DELIVERED_POLICY_OR_CAPS_CHANGED')
     return {'structural_checks': 'PASS', 'operational_readiness': 'BLOCKED',
             'pending': ['PENDING_REVIEWED_PRIVATE_COMMIT', 'EXECUTION_DISABLED',
-                        'SPEND_CAPS_PENDING', 'CUMULATIVE_STRATEGY_PENDING'],
+                        'AUTOMATIC_REVIEW_PARKED', 'MANUAL_ALLOWANCE_ADAPTER_PENDING'],
             'publication_allowed': False}

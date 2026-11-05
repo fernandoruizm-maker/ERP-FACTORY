@@ -1,3 +1,42 @@
+# Estado actual: bloque 6, revision manual y automatizacion aparcada
+
+Rama fix/bloque-6-revision-manual desde 55073009fc30c810c7c7ede8c1ff3352071a2fe0.
+Claude revisa cada PR (solo cambios) en el chat y, antes de hitos importantes,
+toda la fabrica en una conversacion nueva. Registro en docs/revisiones/:
+Claude, chat, no autenticado. No es aprobacion humana ni prueba de cobertura real.
+No se ha recibido ni fabricado una revision de Claude de este bloque.
+
+Personas declaradas (no autenticadas en esta tarea):
+- business: fernandoruizm-maker, ID 342326625; aprobacion de negocio.
+- accounting: FERRUMTJA, ID 352290329; contador con experiencia en ERP,
+  aprobacion contable y funcional. El rol technical antiguo se rechaza.
+
+**Riesgo aceptado expresamente por Fernando:** ninguna de esas personas programa
+ni hay una persona revisora tecnica. Claude no sustituye ese control humano.
+**Auditoria tecnica externa obligatoria antes de usar datos reales de clientes
+o conectar el ERP.** No se contrata ni realiza esa auditoria aqui.
+
+Via manual alternativa con SHA exacto, conclusion SIN OBJECIONES TÉCNICAS y
+aceptaciones vigentes vinculadas a revision/version/huella. Incluso lista para
+revision, provenance_authenticated=false y publication_allowed=false. La via V2
+mantiene su validacion y sus bloqueos de autenticacion; no se sustituye por un PASS manual.
+Los informes reales *.local.md se excluyen de commits para no cambiar el SHA revisado.
+
+Actions APARCADO: if false, execution_enabled=false y pin cero intactos. Sin
+repositorio privado por ahora. Registrados para futura reactivacion: USD, 1.00 por
+llamada, 12.00 por ejecucion, 13.00 acumulado, 11 llamadas, opcion 1 manual. No es
+permiso de gasto; el adaptador sigue sin conectar. Configuracion local desactivada.
+
+Proteccion de main: JSON y guia preparados, NO aplicados ni verificados en GitHub.
+Cada subida sigue necesitando autorizacion expresa hasta que Claude verifique la
+proteccion efectiva. Faltan resolver la autoria de las PR (el autor no puede dar
+su propia aprobacion) y las dependencias de la publicacion selectiva sin carpeta privada.
+Plan en docs/PUBLICACION.md. Sin red, push, PR, integracion, secretos ni activacion.
+Suites completas: 149 raiz + 113 privadas + 7 JS + 3 TS = 272, cero fallos,
+errores u omitidas. TS sin typecheck. Comandos y limites en docs/pr/bloque-6.md.
+
+## Registro historico de bloques anteriores (no es el modelo vigente)
+
 # Estado actual: bloque 5 multiparte preparado localmente y bloqueado
 
 Rama fix/bloque-5-multiparte desde 8ffb8115843fcb0f05b8c6a7c28adc0ce87c3934.

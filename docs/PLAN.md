@@ -78,3 +78,14 @@ ejecutado. Tres bloqueos intactos; USD/11, importes null. Implementar solo comun
 local de reserva/importacion de autorizaciones; opcion acumulada pendiente de
 Fernando. Diseno y limites en docs/pr/bloque-5.md. Verificar suites completas,
 entregar SHA/diffs frente a 8ffb811 y 0cb1882. Sin red/publicacion/activacion.
+
+## Bloque 6: decision de revision manual
+
+Base 55073009fc30c810c7c7ede8c1ff3352071a2fe0, rama fix/bloque-6-revision-manual.
+Registro manual versionado por huella (archivo real local, sin alterar el SHA del
+codigo), via alternativa con SHA exacto/dos roles vigentes, sin autenticacion
+ni publicacion; V2 intacto. Roles business/accounting; technical rechazado.
+Guias para personas no programadoras, ruleset local y plan de publicacion selectiva.
+Riesgo aceptado: sin persona revisora tecnica; auditoria externa antes de datos
+reales/ERP. Actions aparcado; registrar USD 1/12/13 y opcion manual sin activarla.
+Ejecutar suites raiz/privada/JS/TS y entregar SHA/diffs frente a 5507300 y 0cb1882.

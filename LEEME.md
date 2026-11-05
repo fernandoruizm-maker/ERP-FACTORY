@@ -1,69 +1,50 @@
-# Segunda fabrica RDC: guia local
+# Guia de la fabrica local
 
-La fabrica esta desactivada. No se modifico la original ni se accedio al ERP.
-Esta rama contiene correcciones locales y pruebas con datos ficticios.
+La segunda fabrica sigue desactivada. La original se conserva sin cambios y no
+se operan ambas a la vez. Las pruebas usan ejemplos ficticios, no el ERP real.
 
-Existe un archivo de workflow publico historico. El nuevo diseno ejecutara las
-revisiones en un repositorio privado separado, cuyo contenido propuesto esta en
-`ERP-FACTORY-revision/`. No se creo ese repositorio ni se probo su ejecucion real.
-No se han consultado ni movido credenciales en estas correcciones.
+## Como trabajaremos
 
-## Que esta disponible
+1. Fernando explica el objetivo y confirma las reglas de negocio.
+2. Codex prepara los cambios y las pruebas locales en una rama.
+3. Claude revisa en el chat solo los cambios de la propuesta, indicando el SHA
+   completo y sus hallazgos. Antes de una entrega importante, revisa toda la
+   fabrica en una conversacion nueva. No se trata de una aprobacion humana.
+4. Codex conserva la revision recibida en docs/revisiones/ usando la plantilla.
+   Un registro *.local.md no se agrega al commit evaluado: cambiarlo cambiaria el SHA.
+5. Fernando aprueba como negocio (business); FERRUMTJA como contable y funcional
+   (accounting). El antiguo rol technical ya no sirve. Ambos revisan la version vigente.
+6. Publicar o integrar solo sigue las condiciones de docs/PUBLICACION.md. Estar
+   listo para revision manual nunca significa publicar o activar automaticamente.
 
-1. Ficha de necesidades y comparacion por evidencia, con permiso de autorizante,
-   base, rutas y caducidad. Solo se prueba con una base ficticia; el ERP real
-   permanece PENDIENTE.
-2. Flujo construir -> montar pruebas de confianza -> probar -> revisar con dobles
-   ficticios. Comprueba huellas y conserva resultados previos si una etapa falla.
-   No ejecuta codigo generado, Docker ni llamadas reales.
-3. Importacion local del contrato V2 privado con hashes y procedencia declarada.
-   Las huellas no autentican GitHub; el resultado sigue bloqueado para operar.
-4. Aceptaciones con identidad normalizada, version, revision y caducidad, sin
-   reemplazo silencioso. Los nombres configurados no autentican a las personas.
-5. Candado local de un trabajador y recuperacion sin reintento. La coordinacion
-   con la original no esta conectada y por eso bloquea la via real.
-6. Reservas de presupuesto por ejecucion y acumuladas. Los intentos inciertos
-   conservan su reserva; un importe reportado mayor congela nuevos intentos hasta
-   conciliacion. No son importes facturados ni certificacion del proveedor.
-7. Piloto de diez botellas y restauracion que verifica solicitudes, movimientos,
-   aprobadores y saldos. La huella no firma ni autentica el estado.
+Si Claude concluye CORREGIR, el SHA no coincide, falta una aceptacion o vencio,
+la puerta queda bloqueada. Aunque los documentos sean coherentes, siguen sin
+estar autenticados: la verificacion de personas y de GitHub no se simula como real.
 
-## Probar el ejemplo confiable
+## Que se puede comprobar localmente
 
-`VER_ESTADO.cmd` consulta el estado y `PROBAR_PILOTO.cmd` ejecuta el piloto local.
-Necesitan Python y Node disponibles; no instalan nada ni encienden servicios.
+Con Python y Node ya disponibles, Codex puede ejecutar las suites y el piloto
+ficticio autorizado. No instala programas ni llama a proveedores para hacerlo.
+Las pruebas con dobles verifican reglas locales, no una integracion real.
+Los informes de cada bloque en docs/pr/ indican comandos, resultados y limites.
 
-```text
-python -B -m factory2 status
-python -B -m factory2 discover fixtures/cliente.json
-python -B -m factory2 pilot
-python -B -m unittest discover -s tests -v
-```
+Para quien aprueba, las instrucciones estan en docs/GUIA-APROBAR.md. No hace falta
+leer codigo: comparar el SHA completo y comprobar las demostraciones y resultados.
+No aprobar algo cuyo efecto no se comprende.
 
-Los informes del piloto se generan en outputs/. El comprobante dice
-**SIN VALIDEZ FISCAL**. TypeScript se ejecuta sin comprobar tipos estaticamente.
-No ejecutar propuestas de modelos en el host: su ejecucion real requiere un
-entorno aislado y una autorizacion futura.
+## Automatizacion aparcada
 
-El comando historico `prepare-factory-review` conserva el formato anterior;
-no genera una revision V2 aceptable y no debe usarse para habilitar otro intento.
-Los contratos antiguos y el workflow publico se retiraran solo en la migracion
-autorizada al revisor privado. El borrador `.disabled` esta marcado OBSOLETO.
+GitHub Actions no se activa. No se crea el repositorio privado. Sus tres bloqueos
+se mantienen y el envio remoto sigue deshabilitado. USD 1.00 por llamada, 12.00 por
+ejecucion, 13.00 acumulado y opcion 1 quedan anotados solo para una reactivacion
+expresamente autorizada. No hay permiso actual de gasto ni adaptador conectado.
 
-## Decisiones y puesta en marcha pendientes
+## Riesgo aceptado y limites
 
-Fernando indico negocio fernandoruizm-maker (342326625) y tecnica FERRUMTJA
-(352290329), sin que esta tarea autentique esas cuentas. Indico 11 llamadas por
-ejecucion y moneda USD; gasto por ejecucion y gasto acumulado siguen sin definir.
-Los valores ausentes bloquean un intento pagado; no hay importes por defecto.
-Se conservan ademas los bloqueos de coordinacion y acceso.
-
-El bloque 5 prepara localmente el workflow multiparte con checkpoints y sin
-reintentos. Antes de cualquier intento real faltan su revision, la verificacion
-en GitHub, elegir/conectar el presupuesto acumulado, topes efectivos,
-procedencia autenticada, identidades reales y autorizacion expresa nueva.
-La pasada de interacciones recibe resultados e inventario, no el codigo completo.
-No operar las dos fabricas simultaneamente. No se autoriza aqui su transicion.
-
-Ver [estado](docs/ESTADO.md), [diseno privado](docs/CLAUDE-OPCIONES.md)
-y [entrega por mitades](docs/pr/bloque-4.md).
+Fernando y FERRUMTJA no programan. No hay persona revisora tecnica; Claude puede
+omitir errores y su autoria no esta autenticada. Fernando acepta ese riesgo para
+el trabajo local con datos ficticios. Antes de usar datos reales de clientes o
+conectar el ERP se requiere una auditoria tecnica externa y autorizacion expresa.
+No publicar datos reales, claves o informacion del ERP en ninguna parte del
+repositorio publico. No usar recover() en modo real sin coordinacion verificable
+con la fabrica original. Nada de eso se habilita con esta entrega.

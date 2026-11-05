@@ -25,7 +25,7 @@ def config(root):
         'budget_currency': 'TST', 'max_calls_per_execution': 11,
         'max_spend_per_execution': '2', 'max_spend_total': '4',
         'human_approvers': {'business': {'login': 'persona-a', 'id': '101'},
-                            'technical': {'login': 'persona-b', 'id': '202'}},
+                            'accounting': {'login': 'persona-b', 'id': '202'}},
         'private_review_trust': {'repository': PRIVATE_REPOSITORY, 'validator_sha': 'b' * 40,
                                  'actor_id': '999'}}), encoding='utf-8')
     return path

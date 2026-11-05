@@ -67,8 +67,8 @@ class StateTests(unittest.TestCase):
 
     def test_two_distinct_people_and_version_bound(self):
         accept(self.store, 'T1', self.version, 'business', self.imported)
-        with self.assertRaises(Blocked): self.store.accept('T1', self.version, 'PERSONA-A', 'technical')
-        accept(self.store, 'T1', self.version, 'technical', self.imported)
+        with self.assertRaises(Blocked): self.store.accept('T1', self.version, 'PERSONA-A', 'accounting')
+        accept(self.store, 'T1', self.version, 'accounting', self.imported)
         review = {'artifact_digest':self.artifact_hash, 'verdict':'PASS', 'summary_es':'Sin hallazgos en ensayo', 'findings':[]}
         tests = [{'status':'PASS','test_count':3,'artifact_digest':self.artifact_hash}]
         factory_hash=self.imported['factory_digest']
@@ -82,7 +82,7 @@ class StateTests(unittest.TestCase):
 
     def test_factory_review_is_required_and_bound_to_its_version(self):
         accept(self.store, 'T1', self.version, 'business', self.imported)
-        accept(self.store, 'T1', self.version, 'technical', self.imported)
+        accept(self.store, 'T1', self.version, 'accounting', self.imported)
         review={'artifact_digest':self.artifact_hash,'verdict':'PASS','summary_es':'Ensayo','findings':[]}
         tests=[{'status':'PASS','test_count':1,'artifact_digest':self.artifact_hash}]
         for factory_review in (None,{**review,'artifact_digest':'outdated'}):
@@ -92,7 +92,7 @@ class StateTests(unittest.TestCase):
 
     def test_artifact_change_invalidates_acceptance_even_with_new_review(self):
         accept(self.store, 'T1', self.version, 'business', self.imported)
-        accept(self.store, 'T1', self.version, 'technical', self.imported)
+        accept(self.store, 'T1', self.version, 'accounting', self.imported)
         newhash = digest('different-code')
         review = {'artifact_digest':newhash,'verdict':'PASS','summary_es':'Ensayo','findings':[]}
         result = self.store.gate('T1',self.version,newhash,review,[{'status':'PASS','test_count':1,'artifact_digest':newhash}])
@@ -100,7 +100,7 @@ class StateTests(unittest.TestCase):
 
     def test_missing_or_blocked_review_and_zero_tests_fail(self):
         accept(self.store, 'T1', self.version, 'business', self.imported)
-        accept(self.store, 'T1', self.version, 'technical', self.imported)
+        accept(self.store, 'T1', self.version, 'accounting', self.imported)
         review = {'artifact_digest':self.artifact_hash,'verdict':'BLOCK','summary_es':'Falta prueba','findings':[]}
         for r in (None, review):
             self.assertEqual(self.store.gate('T1',self.version,self.artifact_hash,r,[])['status'],'BLOCKED')

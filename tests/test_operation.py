@@ -78,7 +78,7 @@ class OperationalTests(unittest.TestCase):
         with self.assertRaisesRegex(Blocked, 'ALREADY_RECORDED'):
             self.acceptance()
         self.config(human_approvers={'business': {'login': 'persona-c', 'id': '303'},
-                                    'technical': {'login': 'persona-b', 'id': '202'}})
+                                    'accounting': {'login': 'persona-b', 'id': '202'}})
         with self.assertRaises(Blocked):
             self.store.accept('T', self.version, 'persona-c', 'business',
                 source_sha=self.imported['source_sha'], factory_digest=self.imported['factory_digest'],
@@ -88,7 +88,7 @@ class OperationalTests(unittest.TestCase):
 
     def test_same_person_different_case_or_spaces_cannot_fill_two_roles(self):
         for second in ({'login': ' P E R S O N A-A ', 'id': '202'}, {'login': 'persona-b', 'id': '101'}):
-            self.config(human_approvers={'business': {'login': 'persona-a', 'id': '101'}, 'technical': second})
+            self.config(human_approvers={'business': {'login': 'persona-a', 'id': '101'}, 'accounting': second})
             with self.assertRaises(Blocked):
                 self.acceptance()
 
@@ -102,7 +102,7 @@ class OperationalTests(unittest.TestCase):
             with self.subTest(expiry=expiry), self.assertRaises(Blocked):
                 self.acceptance(expires_at=expiry)
         self.acceptance()
-        accept(self.store, 'T', self.version, 'technical', self.imported)
+        accept(self.store, 'T', self.version, 'accounting', self.imported)
         with patch('factory2.state.time.time', return_value=time.time()+120):
             self.assertIn('HUMAN_ACCEPTANCES_MISSING_STALE_OR_EXPIRED', self.outcome()['reasons'])
 
@@ -111,11 +111,11 @@ class OperationalTests(unittest.TestCase):
         with self.assertRaises(Blocked):
             self.acceptance()
         self.config(human_approvers={'business': {'login': 'persona-a', 'id': '101'},
-                    'technical': {'login': 'persona-b', 'id': '202'},
+                    'accounting': {'login': 'persona-b', 'id': '202'},
                     'audit': {'login': 'persona-c', 'id': '303'}})
         self.assertEqual(self.store.roster()[0], 3)
         self.acceptance()
-        accept(self.store, 'T', self.version, 'technical', self.imported)
+        accept(self.store, 'T', self.version, 'accounting', self.imported)
         self.assertIn('HUMAN_ACCEPTANCES_MISSING_STALE_OR_EXPIRED', self.outcome()['reasons'])
 
     def test_missing_people_or_invalid_count_block(self):
@@ -128,7 +128,7 @@ class OperationalTests(unittest.TestCase):
 
     def test_complete_fixture_stays_blocked_without_real_authentication(self):
         self.acceptance()
-        accept(self.store, 'T', self.version, 'technical', self.imported)
+        accept(self.store, 'T', self.version, 'accounting', self.imported)
         result = self.outcome()
         self.assertEqual(result['status'], 'BLOCKED')
         self.assertEqual(set(result['reasons']), {'HUMAN_AUTHENTICATION_PENDING', 'PRIVATE_REVIEW_AUTHENTICATION_PENDING'})
@@ -136,7 +136,7 @@ class OperationalTests(unittest.TestCase):
 
     def test_new_run_invalidates_previous_acceptances(self):
         self.acceptance()
-        accept(self.store, 'T', self.version, 'technical', self.imported)
+        accept(self.store, 'T', self.version, 'accounting', self.imported)
         folder, receipt = artifacts(self.root, run='124')
         imported = self.store.import_factory_review(folder, receipt)
         self.assertIn('HUMAN_ACCEPTANCES_MISSING_STALE_OR_EXPIRED',

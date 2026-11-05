@@ -11,6 +11,7 @@ from .core import Blocked, canonical, digest, validate_review
 from .operations import Coordinator
 from .review_import import import_artifacts, verify_stored
 from .budget import BudgetLedger
+from .manual_review import read_document, metadata as manual_metadata, CLEAR, hex_value
 
 
 def identity(value):
@@ -23,10 +24,12 @@ def identity(value):
 
 
 class Store:
-    def __init__(self, path, *, config_path=None, coordinator=None):
+    def __init__(self, path, *, config_path=None, coordinator=None, reviews_directory=None):
         self.path = Path(path)
         self.config_path = Path(config_path) if config_path else Path(__file__).resolve().parent.parent / 'config.json'
         self.coordinator = coordinator or Coordinator(None)
+        self.reviews_directory = (Path(reviews_directory) if reviews_directory else
+                                  Path(__file__).resolve().parent.parent / 'docs/revisiones')
         self.path.parent.mkdir(parents=True, exist_ok=True)
         with self.connect() as db:
             db.executescript("""
@@ -40,6 +43,7 @@ class Store:
             CREATE TABLE IF NOT EXISTS private_reviews(id TEXT PRIMARY KEY,
                 receipt TEXT NOT NULL, report BLOB NOT NULL, manifest BLOB NOT NULL,
                 hash_index BLOB NOT NULL);
+            CREATE TABLE IF NOT EXISTS manual_reviews(id TEXT PRIMARY KEY, document BLOB NOT NULL);
             CREATE TABLE IF NOT EXISTS acceptances_v2(task TEXT, version TEXT, person TEXT,
                 person_id TEXT, role TEXT, source_sha TEXT, factory_digest TEXT,
                 review_id TEXT, expires_at REAL, created REAL,
@@ -83,7 +87,8 @@ class Store:
         required = config.get('human_approvals_required')
         people = config.get('human_approvers')
         if (type(required) is not int or required < 2 or not isinstance(people, dict)
-                or len(people) != required or not {'business', 'technical'} <= set(people)):
+                or len(people) != required or not {'business', 'accounting'} <= set(people)
+                or 'technical' in people):
             raise Blocked('HUMAN_APPROVERS_PENDING')
         seen_names, seen_ids = set(), set()
         normalized = {}
@@ -122,6 +127,28 @@ class Store:
 
     def worker(self):
         return self.coordinator.worker()
+
+    def import_manual_review(self, path):
+        raw = read_document(path, self.reviews_directory)
+        review = manual_metadata(raw)
+        try:
+            with self.connect() as db:
+                db.execute('INSERT INTO manual_reviews VALUES(?,?)', (review['review_id'],raw))
+        except sqlite3.IntegrityError:
+            raise Blocked('MANUAL_REVIEW_ALREADY_IMPORTED') from None
+        return review
+
+    def manual_review(self, review_id):
+        if not isinstance(review_id,str) or not review_id.startswith('manual:'):
+            raise Blocked('MANUAL_REVIEW_ID_REQUIRED')
+        with self.connect() as db:
+            row = db.execute('SELECT document FROM manual_reviews WHERE id=?',(review_id,)).fetchone()
+        if row is None:
+            raise Blocked('MANUAL_REVIEW_NOT_FOUND')
+        review = manual_metadata(row[0])
+        if review['review_id'] != review_id:
+            raise Blocked('MANUAL_REVIEW_CHANGED')
+        return review
 
     def reserve_call(self, call_id, task, provider, payload_hash, *, max_calls, output_limit):
         self.coordinator.require_worker()
@@ -178,15 +205,25 @@ class Store:
                        (call_id, task, provider, payload_hash, 'IN_FLIGHT', output_limit, time.time()))
 
     def accept(self, task, version, person, role, *, source_sha=None,
-               factory_digest=None, review_id=None, expires_at=None):
+               factory_digest=None, review_id=None, expires_at=None, manual_review_id=None):
         # A local declaration only. Authentication is explicitly not implemented.
         _, people = self.roster()
         name = identity(person)
         if role not in people or name != people[role]['login']:
             raise Blocked('ACCEPTANT_NOT_CONFIGURED')
-        review = self.factory_review(review_id)
-        if review['source_sha'] != source_sha or review['factory_digest'] != factory_digest:
-            raise Blocked('ACCEPTANCE_REVIEW_VERSION_MISMATCH')
+        if manual_review_id is not None:
+            if review_id is not None:
+                raise Blocked('REVIEW_PATH_AMBIGUOUS')
+            review = self.manual_review(manual_review_id)
+            if review['source_sha'] != source_sha or not hex_value(factory_digest,64):
+                raise Blocked('ACCEPTANCE_REVIEW_VERSION_MISMATCH')
+            if review['conclusion'] != CLEAR:
+                raise Blocked('MANUAL_REVIEW_REQUIRES_CORRECTION')
+            review_id = manual_review_id
+        else:
+            review = self.factory_review(review_id)
+            if review['source_sha'] != source_sha or review['factory_digest'] != factory_digest:
+                raise Blocked('ACCEPTANCE_REVIEW_VERSION_MISMATCH')
         if type(expires_at) not in (int, float) or not math.isfinite(expires_at) or expires_at <= time.time():
             raise Blocked('ACCEPTANCE_EXPIRY_REQUIRED')
         with self.connect() as db:
@@ -203,8 +240,12 @@ class Store:
         return {'recorded': True, 'identity_authenticated': False, 'publication_allowed': False}
 
     def gate(self, task, version, artifact_digest, review, tests, *, factory_review=None,
-             factory_digest=None, source_sha=None):
+             factory_digest=None, source_sha=None, manual_review_id=None):
         reasons = []
+        manual = manual_review_id is not None
+        selected_review = manual_review_id if manual else factory_review
+        if manual and factory_review is not None:
+            reasons.append('REVIEW_PATH_AMBIGUOUS')
         with self.connect() as db:
             row = db.execute("SELECT version,brief FROM tasks WHERE id=?", (task,)).fetchone()
             acceptances = list(db.execute('SELECT * FROM acceptances_v2 WHERE task=? AND version=?', (task, version)))
@@ -217,31 +258,44 @@ class Store:
             valid = [r for r in acceptances if r['role'] in people
                      and r['person'] == people[r['role']]['login'] and r['person_id'] == people[r['role']]['id']
                      and r['source_sha'] == source_sha and r['factory_digest'] == factory_digest
-                     and r['review_id'] == factory_review and r['expires_at'] > time.time()]
+                    and r['review_id'] == selected_review and r['expires_at'] > time.time()]
             if (len(valid) != required or len({r['person_id'] for r in valid}) != required
                     or len({r['person'] for r in valid}) != required):
                 reasons.append('HUMAN_ACCEPTANCES_MISSING_STALE_OR_EXPIRED')
         except Blocked:
             reasons.append('HUMAN_APPROVERS_PENDING_OR_INVALID')
-        reasons.append('HUMAN_AUTHENTICATION_PENDING')
+        if not manual:
+            reasons.append('HUMAN_AUTHENTICATION_PENDING')
         try:
             validate_review(review, artifact_digest)
             if review["verdict"] != "PASS":
                 reasons.append("Claude bloqueó la entrega.")
         except (Blocked, TypeError):
             reasons.append("Revisión ausente, incompleta o de otra versión.")
-        try:
-            imported = self.factory_review(factory_review)
-            if imported['factory_digest'] != factory_digest or imported['source_sha'] != source_sha:
-                raise Blocked('FACTORY_REVIEW_VERSION_MISMATCH')
-            if imported['provenance_authenticated'] is not True:
-                reasons.append('PRIVATE_REVIEW_AUTHENTICATION_PENDING')
-        except (Blocked, TypeError):
-            reasons.append('PRIVATE_FACTORY_REVIEW_INVALID')
+        if manual:
+            try:
+                imported = self.manual_review(manual_review_id)
+                if imported['source_sha'] != source_sha or not hex_value(factory_digest,64):
+                    raise Blocked('MANUAL_REVIEW_SHA_MISMATCH')
+                if imported['conclusion'] != CLEAR:
+                    raise Blocked('MANUAL_REVIEW_REQUIRES_CORRECTION')
+            except (Blocked, TypeError):
+                reasons.append('MANUAL_FACTORY_REVIEW_INVALID_OR_REQUIRES_CORRECTION')
+        else:
+            try:
+                imported = self.factory_review(factory_review)
+                if imported['factory_digest'] != factory_digest or imported['source_sha'] != source_sha:
+                    raise Blocked('FACTORY_REVIEW_VERSION_MISMATCH')
+                if imported['provenance_authenticated'] is not True:
+                    reasons.append('PRIVATE_REVIEW_AUTHENTICATION_PENDING')
+            except (Blocked, TypeError):
+                reasons.append('PRIVATE_FACTORY_REVIEW_INVALID')
         if not tests or any(t.get("status") != "PASS" or t.get("test_count", 0) < 1 or t.get("artifact_digest") != artifact_digest for t in tests):
             reasons.append("Pruebas ausentes, fallidas o de otra versión.")
         return {"status": "BLOCKED" if reasons else "READY_FOR_MANUAL_REVIEW",
                 "reasons": reasons, "publication_allowed": False,
+                "provenance_authenticated": False, "human_acceptances_authenticated": False,
+                "review_mode": "MANUAL_CHAT" if manual else "PRIVATE_V2",
                 "note": "Los registros locales no autentican personas ni autorizan despliegues."}
 
     def summary(self):

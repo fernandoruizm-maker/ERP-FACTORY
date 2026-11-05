@@ -1,12 +1,14 @@
 {
   "repository": "fernandoruizm-maker/ERP-FACTORY-revision",
   "execution_enabled": false,
+  "automatic_review_status": "PARKED",
   "reviewed_validator_sha": null,
   "review_reference_status": "PENDING_PRIVATE_REPOSITORY_AND_REVIEW",
   "artifact_retention_days": 7,
   "budget_currency": "USD",
   "max_calls_per_execution": 11,
-  "max_spend_per_execution": null,
-  "max_budget_usd_per_call": null,
-  "cumulative_strategy": null
+  "max_spend_per_execution": "12.00",
+  "max_budget_usd_per_call": "1.00",
+  "max_spend_total": "13.00",
+  "cumulative_strategy": "manual_authorization"
 }

@@ -1,53 +1,45 @@
-# ERP-FACTORY
+# ERP-FACTORY — revision manual, fabrica desactivada
 
-Segunda fabrica RDC de desarrollo local, **desactivada**. La original se conserva.
-Las correcciones estan en ramas locales; no se publican ni activan desde esta tarea.
+Claude revisa en el chat los cambios de cada PR. Antes de una entrega importante,
+revisa toda la fabrica en una conversacion nueva. Sus informes se registran en
+`docs/revisiones/`, como revision tecnica **no autenticada y nunca aprobacion humana**.
+No se afirma que Claude ya haya revisado esta version.
 
-Existe un workflow publico historico en `.github/workflows/claude-factory-review.yml`.
-Se conserva hasta una migracion autorizada. Su estado actual en GitHub no se ha
-consultado. `ERP-FACTORY-revision/` contiene la propuesta de repositorio PRIVADO
-para ejecutar revisiones; su workflow esta bloqueado y su referencia revisada
-pendiente. No basta publicar esa carpeta para ponerla en marcha.
+Las dos personas aprobadoras son:
 
-Codex y Claude se prueban aqui con dobles ficticios. El flujo local monta el
-candidato junto con pruebas de confianza y recorre construir -> probar -> revisar
-sin ejecutar propuestas de modelos en el equipo. Esto no acredita integracion
-real con proveedores ni Docker. Las revisiones simuladas nunca aprueban la fabrica.
+- **Negocio (business):** fernandoruizm-maker, ID 342326625.
+- **Contable y funcional (accounting):** FERRUMTJA, ID 352290329, contador con experiencia en ERP.
 
-## Uso y evidencia
+Ninguna programa. Fernando acepta el riesgo de no tener una persona revisora
+tecnica. **Antes de usar datos reales de clientes o conectar el ERP se requiere
+una auditoria tecnica externa.** El contador y Claude no sustituyen esa auditoria.
 
+La puerta manual exige el SHA exacto de la revision y dos aceptaciones vigentes,
+ligadas a la revision, version y huella evaluadas. Su resultado puede quedar listo
+para revision manual, pero siempre declara provenance_authenticated=false y
+publication_allowed=false. Los registros locales no autentican personas.
+La via V2 privada se conserva, con sus controles, sin usarla como sustituto de la manual.
+
+## Guias y evidencia
+
+- [Como aprobar negocio y contabilidad](docs/GUIA-APROBAR.md)
+- [Plantilla de revision](docs/revisiones/PLANTILLA.md) y [como registrar sin cambiar el SHA](docs/revisiones/README.md)
+- [Proteccion de main](docs/github/GUIA-PROTEGER-MAIN.md)
+- [Plan y permisos de publicacion](docs/PUBLICACION.md)
+- [Estado y pruebas](docs/ESTADO.md)
+- [Entrega del bloque 6](docs/pr/bloque-6.md)
 - [Guia local](LEEME.md)
-- [Estado actual e historial de pruebas](docs/ESTADO.md)
-- [Diseno de revision privada y requisitos pendientes](docs/CLAUDE-OPCIONES.md)
-- [Entrega del bloque 4 y sus dos mitades](docs/pr/bloque-4.md)
-- [Workflow multiparte bloqueado y decisiones del bloque 5](docs/pr/bloque-5.md)
-- [Recuperacion historica](docs/RECUPERACION.md): la recuperacion actual exige
-  candado y coordinacion; la via real permanece bloqueada.
 
-Con Python y Node ya disponibles, los comandos del piloto confiable son:
+La revision automatica en GitHub esta **APARCADA**. ERP-FACTORY-revision/ se conserva
+localmente: no crear un repositorio privado ahora. Siguen if false,
+execution_enabled=false y el pin de ceros. El workflow publico historico tampoco
+se modifica ni ejecuta aqui. No se ha comprobado su estado remoto.
 
-```text
-python -B -m factory2 status
-python -B -m factory2 discover fixtures/cliente.json
-python -B -m factory2 pilot
-python -B -m unittest discover -s tests -v
-```
+Para una futura reactivacion se registran USD, 1.00 por llamada, 12.00 por ejecucion,
+13.00 acumulado, 11 llamadas y autorizacion manual (opcion 1). Son limites para
+cuando se autorice; no autorizan gasto. Falta conectar y revisar el adaptador.
 
-El piloto usa datos ficticios. No instala herramientas ni conecta al ERP.
-Los informes reales deberan permanecer privados. No publicar archivos de estado,
-respuestas del proveedor ni artefactos privados en este repositorio publico.
-
-## Bloqueos vigentes
-
-Faltan autenticacion de las personas, procedencia autenticada de GitHub,
-coordinacion real con la original e importes maximos autorizados.
-Fernando indico USD y 11 llamadas por ejecucion; ambos topes de gasto siguen vacios.
-El registro local conserva reservas e intentos inciertos, pero no mide facturas
-ni garantiza un limite impuesto por el proveedor. Ninguna funcion publica o activa.
-
-`upstream/` es referencia intacta: no ejecutar su piloto. El adaptador de Codex se
-envuelve desde factory2/ con una lista blanca de entorno; su ejecucion real sigue
-sin conectar. El borrador `docs/actions/*.disabled` es **OBSOLETO** y no debe activarse.
-El workflow multiparte esta preparado localmente en el bloque 5, con guardado,
-topes y sin reintentos. Sigue bloqueado y no verificado en GitHub. Falta elegir
-como conectar el presupuesto acumulado local y autorizar todos los importes.
+Trabajo actual exclusivamente local: sin red, publicacion ni activacion. Main,
+upstream/ y la fabrica original permanecen intactos. El repositorio es publico:
+nunca subir datos de clientes, credenciales ni informacion del ERP, tampoco a ramas.
+Hasta verificar la proteccion real de main, cada subida necesita autorizacion expresa.

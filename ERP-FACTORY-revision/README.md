@@ -1,3 +1,17 @@
+# APARCADO desde el bloque 6
+
+Fernando eligio revision manual de cada PR con Claude en el chat y revision completa
+en conversacion nueva antes de entregas importantes. Esta carpeta se conserva solo
+localmente; no crear un repositorio privado ni publicarla por ahora. No se activa.
+
+if false, execution_enabled=false y pin cero siguen intactos. Los valores registrados
+para una reactivacion autorizada son USD 1.00 por llamada, 12.00 por ejecucion,
+13.00 acumulado, maximo 11 llamadas y opcion 1 (manual_authorization). Esa seleccion
+no conecta el adaptador ni produce una autorizacion de gasto. La auditoria local
+comprueba el estado PARKED; el workflow y su validador V2 no cambian en este bloque.
+
+## Diseno anterior (historico; los importes null y la opcion sin elegir ya no son vigentes)
+
 # ERP-FACTORY-revision: propuesta local de repositorio privado
 
 Esta carpeta es la futura raiz del repositorio privado. Hoy es solo una carpeta
