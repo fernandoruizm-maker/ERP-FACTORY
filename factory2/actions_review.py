@@ -177,9 +177,54 @@ def collect(destination, environ):
     return 0 if report['status'] == 'NEEDS_HUMAN_REVIEW' else 1
 
 
+def safe_diagnostic(events):
+    """Return only fixed labels and numeric metadata, never provider text."""
+    if not isinstance(events, list):
+        raise Blocked('Formato de diagnostico desconocido.')
+    results = [e for e in events if isinstance(e, dict) and e.get('type') == 'result']
+    if not results:
+        return {'status': 'NO_RESULT_EVENT', 'provider_text_saved': False}
+    event = results[-1]
+    error_material = canonical({k: event.get(k) for k in ('result', 'errors', 'error')}).lower()
+    patterns = {
+        'AUTHENTICATION': r'authentication_error|invalid (?:api key|oauth|token)|not logged in|token.{0,30}expired',
+        'SUBSCRIPTION_OR_CREDITS': r'credit balance|subscription|billing|insufficient.{0,20}credit',
+        'RATE_LIMIT': r'rate_limit|rate limit|too many requests',
+        'CONTEXT_LIMIT': r'prompt is too long|context.{0,20}(?:limit|window)|too many tokens',
+        'SCHEMA_OR_FORMAT': r'structuredoutput|json.schema|invalid schema|structured.output',
+        'MODEL_ACCESS': r'model.{0,40}(?:not found|not available|not supported|access)',
+        'BUDGET': r'budget.{0,30}(?:exceed|limit)',
+        'TRANSPORT': r'econnreset|econnrefused|timed? ?out|connection error',
+    }
+    categories = [label for label, pattern in patterns.items() if re.search(pattern, error_material)]
+    report = {'status': 'DIAGNOSTIC_ONLY', 'provider_text_saved': False,
+              'categories': categories or ['UNCLASSIFIED'], 'is_error': event.get('is_error') is True}
+    for key in ('duration_ms', 'num_turns', 'total_cost_usd'):
+        value = event.get(key)
+        if type(value) in (int, float) and 0 <= value < 10**10:
+            report[key] = value
+    return report
+
+
+def diagnose(destination, environ):
+    # Fixed Action path. Never take an arbitrary path from model output.
+    folder = environ.get('RUNNER_TEMP')
+    report = {'status': 'EXECUTION_FILE_UNAVAILABLE', 'provider_text_saved': False}
+    if folder:
+        path = Path(folder) / 'claude-execution-output.json'
+        if path.is_file() and not path.is_symlink() and path.stat().st_size <= 10_000_000:
+            try:
+                report = safe_diagnostic(json.loads(path.read_text(encoding='utf-8')))
+            except (Blocked, ValueError, TypeError):
+                report = {'status': 'EXECUTION_FORMAT_UNRECOGNIZED', 'provider_text_saved': False}
+    destination.mkdir(parents=True, exist_ok=True)
+    (destination / 'diagnostic.json').write_text(canonical(report), encoding='utf-8')
+    print(canonical(report))
+
+
 def main():
     parser = argparse.ArgumentParser()
-    parser.add_argument('command', choices=('prepare', 'collect'))
+    parser.add_argument('command', choices=('prepare', 'collect', 'diagnose'))
     parser.add_argument('--sha', default=os.environ.get('GITHUB_SHA', ''))
     args = parser.parse_args()
     root = Path(__file__).resolve().parent.parent
@@ -187,6 +232,9 @@ def main():
     try:
         if args.command == 'prepare':
             prepare(root, destination, args.sha)
+            return 0
+        if args.command == 'diagnose':
+            diagnose(destination, os.environ)
             return 0
         return collect(destination, os.environ)
     except (Blocked, OSError, ValueError):

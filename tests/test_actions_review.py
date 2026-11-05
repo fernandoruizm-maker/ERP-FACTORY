@@ -4,11 +4,28 @@ import tempfile
 import unittest
 from unittest.mock import patch
 
-from factory2.actions_review import build_request, collect, prepare, validate_result
+from factory2.actions_review import build_request, collect, prepare, safe_diagnostic, validate_result
 from factory2.core import Blocked, canonical
 
 
 class ActionsReviewTests(unittest.TestCase):
+    def test_diagnostic_classifies_without_revealing_provider_text(self):
+        result = safe_diagnostic([{'type': 'result', 'is_error': True,
+                                  'result': 'Invalid OAuth token: SECRET-DO-NOT-PUBLISH',
+                                  'num_turns': 1, 'total_cost_usd': 0}])
+        self.assertEqual(result['categories'], ['AUTHENTICATION'])
+        self.assertNotIn('SECRET-DO-NOT-PUBLISH', canonical(result))
+        self.assertFalse(result['provider_text_saved'])
+        self.assertEqual(result['total_cost_usd'], 0)
+
+    def test_diagnostic_unknown_error_is_not_a_guessed_cause(self):
+        result = safe_diagnostic([{'type': 'result', 'is_error': True,
+                                  'result': 'Private unknown details', 'num_turns': 'secret'}])
+        self.assertEqual(result['categories'], ['UNCLASSIFIED'])
+        self.assertNotIn('Private', canonical(result))
+        self.assertNotIn('num_turns', result)
+        self.assertEqual(safe_diagnostic([])['status'], 'NO_RESULT_EVENT')
+
     def setUp(self):
         self.manifest = {'source_sha': 'a' * 40, 'factory_digest': 'digest-a',
                          'files': {'factory2/a.py': 'hash-a'}, 'file_lines': {'factory2/a.py': 3}}
