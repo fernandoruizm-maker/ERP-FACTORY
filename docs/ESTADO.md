@@ -30,7 +30,7 @@ permiso de gasto; el adaptador sigue sin conectar. Configuracion local desactiva
 
 Avances comunicados por Fernando el 2026-11-05 (Codex no los verifico por red):
 
-- Cuenta **fenando-codex**, con dos pasos; invitacion de colaboradora aceptada.
+- Cuenta **fernandocodex64-sudo**, con dos pasos; invitacion de colaboradora aceptada.
 - Ruleset activo **main - dos aprobaciones sin excepciones**, ID **26650549**.
   Segun Fernando, Claude verifico en lectura por API publica PR obligatoria,
   dos aprobaciones, invalidacion de antiguas, aprobacion del ultimo cambio por
@@ -49,31 +49,38 @@ Orden pendiente: token -> configuracion local por Codex autorizada y verificada
 por Claude -> PR ficticia autorizada, cerrar sin integrar -> bloque 1 con permiso
 expreso. Cada subida sigue necesitando autorizacion expresa hasta completar la
 verificacion funcional de proteccion, incluido bypass. Envio DISABLED sin cambios.
-Configuracion futura: fenando-codex y noreply real, solo en el clon, sin alterar
-lo global; Fernando solo crea e introduce el token en la ventana segura. Ver
-GUIA-CUENTA-CODEX.md y CONFIG-LOCAL-CODEX.md en docs/github/ y docs/PUBLICACION.md.
+Configuracion local ya aplicada por autorizacion posterior: usuario
+fernandocodex64-sudo (ID 353061596), nombre visible fenando-codex; correo
+353061596+fernandocodex64-sudo@users.noreply.github.com. Usuario/ID y colaboracion
+verificados por Claude segun Fernando, no por red en esta tarea de Codex.
+Ver CONFIG-LOCAL-CODEX.md para opciones antes/despues y limites.
 Siguen pendientes las dependencias de publicacion selectiva sin carpeta privada.
-No hubo red, configuracion, credenciales, remotos, publicacion ni activacion.
+No hubo red, acceso a credenciales, cambios de remotos, publicacion ni activacion.
+Se modificaron solo las opciones locales de Git expresamente autorizadas.
 Verificacion documental local: lectura, enlaces relativos y git diff --check.
 No se repiten suites por cambios solo documentales. Los resultados siguientes
 son historicos del bloque 6, no una nueva ejecucion:
 Suites completas: 149 raiz + 113 privadas + 7 JS + 3 TS = 272, cero fallos,
 errores u omitidas. TS sin typecheck. Comandos y limites en docs/pr/bloque-6.md.
 
-## Preparacion local y via web (actualizacion posterior del bloque 7)
+## Aplicacion local y via web (ultima actualizacion del bloque 7)
 
-Fernando autoriza solo pasos 1 a 10 de CONFIG-LOCAL-CODEX.md, sin red/token.
-El correo sigue como marcador [CORREO NOREPLY]; no se configuro identidad ni
-el gestor hasta disponer del valor real. Opciones locales registradas fuera del
-repositorio; envio observado DISABLED. GCM 2.9.1 instalado; gh no localizado en
-PATH, sin version disponible ni instalacion. No se consulto el almacen de secretos.
-Comparacion de identidad global seleccionada antes/despues sin cambios; no se
-modifico configuracion global, local ni remotos en esta preparacion documental.
-Fernando abrira en la web las PR de prueba y bloque 1 como fenando-codex; Codex
-preparara titulo/texto y subira solo bajo autorizacion. gh queda documentado para
-otra etapa, con directorio propio y sin ampliar public_repo si no lo acepta.
-Verificacion documental: enlaces locales y git diff --check; sin suites porque
-solo cambian documentos. No verificados autenticacion, gh ni aislamiento efectivo.
+Usuario correcto fernandocodex64-sudo, ID 353061596; fenando-codex es su nombre
+visible. Se corrige la confusion anterior en estas guias. Fernando informa de la
+verificacion por Claude en API publica y lista de colaboradores (Collaborator).
+Se completaron los ajustes autorizados de pasos 1 a 10 sin red ni token: identidad,
+helper local con reinicio de herencia y manager, useHttpPath=true, wincred, pat,
+y usuario asociado a la URL exacta del repositorio. Antes no existian esos valores
+locales; despues coinciden con lo autorizado. Envio DISABLED antes y despues.
+SHA-256 del archivo global identificado por Git e identidad global sin cambios.
+No se leyeron ni modificaron credenciales. GCM 2.9.1 observado anteriormente; su
+ayuda local fallo por restriccion Windows 0xC0000022, sin reintentar ni eludirla.
+La comprobacion de valores Git paso, pero uso real del gestor NO VERIFICADO.
+gh no localizado en PATH previamente; sin instalarlo ni usarlo. Fernando abrira
+las PR de prueba y bloque 1 en la web como fernandocodex64-sudo. Codex solo prepara
+textos y subira ramas con autorizacion posterior. Claude aun debe revisar los
+ajustes. Enlaces y git diff --check verificados; no se ejecutan suites por cambios
+documentales y de configuracion Git local. No hay conexion, subida o activacion.
 
 ## Registro historico de bloques anteriores (no es el modelo vigente)
 
