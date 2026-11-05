@@ -1,5 +1,20 @@
 # Plan autorizado: segunda fábrica local
 
+## Correcciones locales posteriores a la revision manual
+
+Base comprobada: 0cb1882548fc141f4b764e82ff2e5154cfae2762. Clon separado
+ERP-FACTORY-correcciones; factoria-2 intacta. Unico acceso de red: clon HTTPS
+anonimo autorizado. origin push=DISABLED. Sin fetch, pull, push, PR remota,
+workflows, proveedores ni nuevas dependencias.
+
+Ramas por bloque: diagnostico/PARTIAL; aislamiento estatico; contrato y cobertura
+por partes; condiciones operativas. Documentar dependencias sin integrar main.
+Cada bloque entrega commits, docs/pr/bloque-N.md y suite local completa con
+limites explicitos. Ninguno habilita ni prepara un nuevo intento de pago.
+
+Bloque 1: implementado y probado; 60 Python + 5 JavaScript + 3 TypeScript.
+Retencion y destinatarios de hallazgos: decision pendiente de Fernando.
+
 Destino: `factoria-2/` en este espacio de trabajo. Fuente: ZIP verificado 53/53 con Ubuntu, SHA en ORIGEN.json.
 
 1. Conservar 53 archivos en upstream sin alteraciones; no copiar configuración privada, colas ni evidencias históricas.

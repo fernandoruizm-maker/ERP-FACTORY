@@ -2,6 +2,13 @@
 
 ## Actualizacion: conexion mediante Actions preparada
 
+Nota posterior: en el clon ERP-FACTORY-correcciones se trabaja sobre la base
+0cb1882, exclusivamente en ramas locales y con push deshabilitado. Bloque 1:
+diagnostico tipado, SHA-256 y PARTIAL sin aprobacion; 60 pruebas Python, 5 JS
+y 3 TS correctas, sin omitidas. GitHub y proveedores reales no verificados.
+Ver docs/pr/bloque-1.md. Las entradas historicas siguientes no describen una
+activacion actual ni autorizan conexiones. Factoria original y factoria-2 intactas.
+
 Fernando confirma que guardo `CLAUDE_CODE_OAUTH_TOKEN` en GitHub. Su valor no se
 leyo. Se preparo un workflow manual con referencias fijas, autorizacion por SHA,
 revision estatica sin herramientas y validador de cobertura/informe. Las 42
