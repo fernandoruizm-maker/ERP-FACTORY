@@ -1,254 +1,126 @@
-# Cuenta de GitHub aparte para Codex
+# Cuenta de GitHub de Codex: fenando-codex
 
-Esta guia es solo documentacion local. No se ha creado cuenta, invitacion ni token;
-no se han cambiado credenciales, identidad, remotos o configuracion de Git. El envio
-sigue DISABLED. Fernando realizara los pasos desde su computadora en una etapa
-posterior. No active Actions ni cree un repositorio privado.
+Guia para Fernando. Nombre real: **fenando-codex**, sin la primera "r" de Fernando.
+Repositorio PUBLICO: **fernandoruizm-maker/ERP-FACTORY**.
+Esta actualizacion solo cambia documentos. El envio sigue DISABLED; no configura
+Git, credenciales ni remotos y no autoriza ninguna subida.
 
-Repositorio: **fernandoruizm-maker/ERP-FACTORY**, PUBLICO. Nombre provisional de la
-cuenta: **fernando-codex**. Fernando elegira el definitivo; reemplace ese nombre en
-la guia por el que realmente registre. La cuenta abre las PR, no las aprueba ni
-las integra. Fernando y FERRUMTJA siguen siendo las dos personas aprobadoras.
+## 1. Cuenta creada y protegida
 
-No se consulto internet para esta guia. Los nombres de botones, disponibilidad del
-token y comportamiento de Git Credential Manager NO se han verificado en este PC
-ni con GitHub. Si una pantalla no coincide, detengase; no improvise permisos mayores.
+Segun Fernando, la cuenta fenando-codex ya esta creada y tiene verificacion en dos
+pasos activada. No hay que crearla otra vez. Mantenga un perfil de navegador
+separado para distinguir esta cuenta de la cuenta personal de Fernando.
+Conserve los codigos de recuperacion fuera del repositorio; no los envie en chats
+ni en capturas. La cuenta abre PR; no las aprueba ni las integra.
 
-## 1. Crear la cuenta y protegerla
+## 2. Invitacion aceptada y proteccion de main
 
-1. Prepare un correo distinto del de su cuenta personal, bajo su control. No use
-   un correo prestado. Compruebe las condiciones de GitHub aplicables a cuentas
-   de maquina antes de continuar.
-2. Abra un perfil separado del navegador para esta cuenta, para distinguirlo del
-   perfil de Fernando. No cierre ni reconfigure su cuenta personal en otras aplicaciones.
-3. En GitHub, elija **Sign up**. Registre el correo nuevo, una contraseña exclusiva
-   y el nombre definitivo de la cuenta. Complete las verificaciones de GitHub y del correo.
-4. Dentro de la cuenta nueva, abra la foto de perfil > **Settings** > **Password
-   and authentication** > **Two-factor authentication** > **Enable**.
-5. Configure una aplicacion de autenticacion o una llave de seguridad siguiendo
-   las instrucciones. Confirme el codigo solicitado. No envie ese codigo a Codex.
-6. Guarde los codigos de recuperacion en su gestor de contraseñas o lugar seguro
-   fuera del repositorio. No los guarde en Documents/Codex ni en un chat o captura.
-7. Vuelva a la pantalla de seguridad: debe indicar que la verificacion en dos pasos
-   esta activada. No haga capturas de codigos, QR, contraseña o recuperacion.
+Fernando informa que invito a fenando-codex como colaboradora y que la invitacion
+ya fue aceptada. No ampliar su acceso a Admin ni Maintain ni a otros repositorios.
+Fernando y FERRUMTJA siguen siendo las dos personas aprobadoras.
 
-## 2. Dar acceso solo a ERP-FACTORY
+Fernando informa que el ruleset **main - dos aprobaciones sin excepciones**,
+ID **26650549**, esta activo. Segun su comunicacion, Claude verifico en lectura
+por la API publica: PR obligatoria, dos aprobaciones, invalidacion de aprobaciones
+antiguas, aprobacion del ultimo cambio por otra persona, conversaciones resueltas,
+prohibicion de borrar y de force push. La lista de excepciones (bypass) no fue
+visible sin credenciales: Fernando debe comprobar en pantalla que esta vacia.
+No se da esa comprobacion por hecha ni se ha ejecutado aun la PR de prueba.
+Codex no ha consultado GitHub en esta tarea.
 
-1. En el perfil de navegador de **Fernando**, abra fernandoruizm-maker/ERP-FACTORY.
-2. Entre en **Settings** > **Collaborators** o **Manage access**. Confirme la contraseña
-   o la verificacion adicional si GitHub se lo pide; hagalo usted, sin compartirla.
-3. Pulse **Add people** / **Add collaborator**, busque el nombre definitivo de la
-   cuenta nueva y compruebe que no esta eligiendo una persona de nombre parecido.
-4. Si aparece un selector de rol, elija **Write**. Nunca **Admin** ni **Maintain**.
-   En repositorios de una cuenta personal puede no existir selector de rol: la
-   interfaz de colaboradores es diferente de la de organizaciones. Si no puede
-   comprobar que el acceso resultante es de escritura sin administracion, detengase.
-5. En el perfil de navegador de la **cuenta nueva**, abra la invitacion recibida
-   y aceptela. Compruebe que menciona exactamente ERP-FACTORY y a su propietario.
-6. Fernando vuelve a la lista de colaboradores y comprueba que la invitacion ya
-   no esta pendiente. La cuenta no debe figurar como administradora ni propietaria.
+## 3. Por que se usara un token clasico
 
-Write no es un rol de "solo abrir PR": puede permitir otras acciones de escritura,
-incluida integrar si la proteccion lo permite. Esta guia no afirma que el token o
-el rol impidan por si solos integrar. Codex nunca integrara; hacen falta la regla
-de main, las dos aprobaciones y la autorizacion expresa para la integracion humana.
+Fernando comunica que Claude comprobo la documentacion oficial de GitHub: los
+tokens de grano fino no sirven para este colaborador de un repositorio de otra
+cuenta personal. Para este caso se elige **token clasico**, con un unico permiso:
+**public_repo**. Esta decision sustituye la propuesta anterior de grano fino.
+Codex registra esa comprobacion comunicada; no la repite por red en esta tarea.
 
-## 3. Comprobar compatibilidad ANTES de crear el token
+El token clasico **no tiene un selector para limitarlo a ERP-FACTORY**. Puede usar
+los permisos que fenando-codex tenga sobre repositorios publicos. Segun Fernando,
+esta cuenta solo es colaboradora de ERP-FACTORY: por eso su escritura actual como
+colaboradora de repositorios ajenos queda acotada a ese proyecto. No puede escribir
+en cualquier repositorio ajeno solo porque sea publico.
 
-GitHub ha tenido una limitacion para tokens de grano fino de cuentas que solo son
-colaboradoras de un repositorio perteneciente a otra cuenta personal. Aqui el
-propietario es fernandoruizm-maker, no la nueva cuenta. **Tener Write no garantiza
-que ERP-FACTORY aparezca en el selector del token.** No se verifico si esa limitacion
-sigue afectando a esta combinacion concreta.
+No es una restriccion permanente del token a un solo repositorio: si la cuenta
+crea otros repositorios publicos o recibe mas accesos, el token puede abarcarlos.
+No darle otros accesos ni usarla para otros proyectos sin revisar esta decision.
+La proteccion de main limita los cambios a esa rama; no reduce el alcance del
+token ni impide todas las demas acciones de escritura. Codex no integrara PR.
+La regla y las dos aprobaciones deben seguir vigentes, sin excepciones.
 
-1. Desde la **cuenta nueva**, foto de perfil > **Settings** > **Developer settings**
-   > **Personal access tokens** > **Fine-grained tokens** > **Generate new token**.
-2. Revise **Resource owner** y **Repository access** antes de generar nada.
-3. Debe poder elegir el propietario correcto y **Only select repositories**,
-   seleccionando SOLO **fernandoruizm-maker/ERP-FACTORY**.
-4. Si solo aparece la cuenta nueva como propietaria, si no aparece ERP-FACTORY,
-   o si solo ofrece lectura de repositorios publicos: **DETENGASE**. Ese token
-   no cumple el objetivo, aunque la cuenta sea colaboradora.
+## 4. Fernando crea el token justo antes de la configuracion autorizada
 
-En ese caso no generar un token clasico, no elegir todos los repositorios, no usar
-el token personal de Fernando, no trasladar el repositorio ni instalar una App
-como solucion automatica. Informar solo del bloqueo y de las opciones visibles,
-sin secretos. Fernando debera autorizar otro diseño compatible. Los pasos de token
-y conexion siguientes son CONDICIONALES a superar esta comprobacion.
+**Todavia no esta creado.** Espere a que se vaya a realizar la configuracion local
+y la prueba autorizada. No lo genere dias antes para dejarlo sin uso.
 
-## 4. Crear el token de grano fino, si el paso anterior es compatible
+1. Abra el perfil de navegador de **fenando-codex** y confirme ese nombre en el
+   menu de la foto. No cree el token desde fernandoruizm-maker.
+2. Foto de perfil > **Settings** > **Developer settings** > **Personal access
+   tokens** > **Tokens (classic)** > **Generate new token (classic)**.
+3. Si GitHub solicita contraseña o verificacion adicional, completela usted.
+4. En **Note**, escriba: **Codex ERP-FACTORY - ramas y PR**.
+5. En **Expiration**, elija **30 days** (30 dias). Al vencer se detiene el acceso;
+   no renovar automaticamente ni quitar la caducidad.
+6. En permisos, marque **solo public_repo**. Puede estar dentro del grupo repo:
+   no marque el permiso amplio **repo** ni sus otros permisos. Deje sin marcar
+   **workflow**, **admin:** (todos), **delete_repo**, **gist** y cualquier otro.
+7. Revise la seleccion completa y pulse **Generate token**. Si no puede dejar
+   solamente public_repo, detengase; no ampliar permisos para continuar.
+8. Mantenga la pantalla privada. Durante la prueba autorizada, escriba o pegue
+   el token **unicamente en la ventana segura de credenciales de Windows** que
+   aparezca para fenando-codex. Codex y Claude no deben ver ni leer ese cuadro.
+   No lo pegue en chat, terminal, archivo, URL ni captura. Si no aparece el cuadro
+   correcto, detengase: no entregue el token a los asistentes como alternativa.
+9. Si uso el portapapeles, borre su contenido y su entrada del historial al terminar.
+   Si cancela el proceso y no va a usar el token, revoquelo desde GitHub.
 
-1. Nombre sugerido: **Codex ERP-FACTORY - ramas y PR**.
-2. Propietario y repositorio: los comprobados arriba; **Only select repositories**,
-   con ERP-FACTORY como unica seleccion.
-3. Caducidad propuesta: **30 dias**. Limita el tiempo de uso si se pierde el token
-   y permite una primera revision mensual. Al vencer, el acceso debe fallar;
-   no quitar la caducidad ni renovarlo automaticamente. Fernando decide cada renovacion.
-4. En **Repository permissions**, configure unicamente:
+Las etiquetas de pantalla no se han comprobado en esta tarea sin red. Si difieren,
+pida ayuda indicando solo los nombres de las opciones, nunca mostrando el token.
+Sin workflow, una subida que cambie workflows puede rechazarse: no ampliar el
+permiso para resolverlo automaticamente.
 
-   | Permiso | Nivel |
-   |---|---|
-   | Contents | Read and write |
-   | Pull requests | Read and write |
-   | Metadata | Read-only; puede aparecer concedido automaticamente |
+## 5. La configuracion local la hara Codex, con autorizacion posterior
 
-5. **Workflows, Administration, Secrets y todos los demas permisos:** sin acceso.
-   Ningun permiso adicional de cuenta ni acceso a otros repositorios.
-6. Revise el resumen completo antes de **Generate token**. Si GitHub exige un
-   permiso mayor, detengase: no aceptar un conjunto distinto para que funcione.
-7. Copie el token solo al cuadro seguro de credenciales indicado en el paso 5,
-   o temporalmente a un gestor de contraseñas de su confianza. No lo pegue en un
-   comando de PowerShell, chat, URL remota, archivo del repositorio ni captura.
-   No lo muestre a Codex. Si no dispone aun del cuadro seguro, puede cancelar y
-   generar el token cuando vaya a configurarlo para no dejarlo expuesto.
+Fernando **no tiene que editar archivos ni ejecutar comandos**.
+Codex configurara solamente la carpeta ERP-FACTORY-correcciones, con nombre
+fenando-codex, el correo noreply real de esa cuenta y el gestor de credenciales.
+No cambiara la identidad ni las credenciales globales de Fernando. Claude
+verificara los ajustes no secretos. La tarea pendiente esta descrita en
+[CONFIG-LOCAL-CODEX.md](CONFIG-LOCAL-CODEX.md).
 
-Sin Workflows, una subida que cambie archivos de .github/workflows puede rechazarse.
-Eso no se arregla ampliando el token: el contenido a publicar debe respetar el
-alcance autorizado. La lectura publica de otros repositorios es posible para
-cualquiera; "solo ERP-FACTORY" limita la concesion del token, no la lectura anonima.
+A Fernando le corresponde crear el token y introducirlo personalmente en la
+ventana de credenciales cuando llegue la prueba autorizada. Puede consultar su
+correo noreply en Settings > Emails; no es una contraseña. Codex no inventara ese
+correo ni usara el correo personal de Fernando. No se cambian autores de commits
+anteriores.
 
-## 5. Aislar la configuracion de este clon en Windows
+El ajuste del gestor es local al clon; el secreto se guarda en el almacen seguro
+de Windows. Esto no crea una barrera contra otros procesos de la misma sesion.
+La configuracion y el uso real deben verificarse; no se presume aislamiento absoluto.
 
-**No se realiza ahora.** Estos cambios locales se haran por Fernando en la etapa
-posterior. No use git config --global, no cambie la sesion global de GitHub Desktop
-ni borre entradas existentes de Fernando en el administrador de credenciales.
+## 6. Prueba y publicacion, siempre en el orden acordado
 
-La carpeta exacta es:
+[PUBLICACION.md](../PUBLICACION.md) establece: token, configuracion local,
+PR ficticia autorizada con fenando-codex y, despues de comprobar los bloqueos,
+publicacion del bloque 1 con autorizacion expresa. La PR de prueba se cierra
+**sin integrarla**. No se habilita el envio solo por seguir esta guia.
+El nombre de autor de un commit no demuestra que la PR la abrio esa cuenta:
+Claude comprobara tambien la cuenta autora de la PR y las reglas efectivas.
 
-    C:\Users\ferna\Documents\Codex\2026-11-05\task\ERP-FACTORY-correcciones
+## 7. Revocar el token y retirar la cuenta
 
-### Preparar el gestor de credenciales
+1. Detenga las subidas. Desde **fenando-codex**: Settings > Developer settings >
+   Personal access tokens > **Tokens (classic)**. Localice el token por su nota
+   y pulse **Delete** / revocar. Confirme. No hace falta mostrar su valor.
+2. Desde **fernandoruizm-maker**: ERP-FACTORY > Settings > Collaborators / Manage
+   access. Seleccione **fenando-codex**, retire el acceso y confirme que desaparece.
+3. Pida a Codex la reversion local descrita en CONFIG-LOCAL-CODEX.md, con autorizacion
+   concreta. No borre credenciales personales de Fernando ni edite archivos usted.
+4. Quitar el token o la cuenta no deshace lo publicado. Cerrar PR o revertir cambios
+   requiere la autorizacion correspondiente; no reescribir main ni usar force push.
+5. No crear otro token, renovar o ampliar permisos automaticamente. Si el token se
+   expuso, revoquelo sin enviarlo a nadie para que compruebe si funciona.
 
-1. Abra esa carpeta en el Explorador y active **View > Show > Hidden items** si
-   no ve .git. Compruebe dos veces el nombre: no es factoria-2 ni el ERP.
-2. En una terminal de PowerShell abierta en esa carpeta, puede consultar:
-
-       git credential-manager --version
-
-   Esto debe mostrar una version local de Git Credential Manager. Si no existe,
-   detengase. No descargar ni instalar otro gestor como parte de esta guia.
-3. Anote para usted los valores actuales de identidad global, sin cambiarlos:
-
-       git config --global --get user.name
-       git config --global --get user.email
-
-   Que no exista alguno es valido. No copiar ni mostrar toda la configuracion;
-   otras entradas podrian contener informacion privada.
-
-### Identidad y opciones locales, sin guardar el token en Git
-
-4. Desde la cuenta nueva en GitHub, abra **Settings > Emails**. Verifique el correo
-   nuevo. Para no publicar su direccion real, active la opcion de mantenerla privada
-   y copie la direccion **noreply** que GitHub muestre. No invente su numero o formato.
-5. Abra **solo** el archivo `.git\config` de esta carpeta con el Bloc de notas.
-   No abra ni edite el archivo global `.gitconfig` de su carpeta de usuario.
-6. Mantenga las secciones existentes, en especial los remotos y el envio DISABLED.
-   Si ya hay secciones user o credential, ajuste sus valores locales sin duplicar
-   opciones contradictorias. Si no sabe interpretarlas, detengase y solicite ayuda
-   mostrando solo nombres de opciones, nunca secretos.
-7. Las opciones locales que se necesitan son estas. Sustituya los dos marcadores
-   de identidad antes de guardar. **No hay ningun lugar para el token en este texto.**
-
-   ```ini
-   [user]
-       name = NOMBRE_DEFINITIVO_DE_LA_CUENTA
-       email = DIRECCION_NOREPLY_COPIADA_DE_GITHUB
-   [credential]
-       helper =
-       helper = manager
-       useHttpPath = true
-       credentialStore = wincred
-       gitHubAuthModes = pat
-   [credential "https://github.com"]
-       username = NOMBRE_DEFINITIVO_DE_LA_CUENTA
-   ```
-
-   La primera linea helper vacia anula para este clon los gestores heredados;
-   la siguiente selecciona Git Credential Manager. useHttpPath pide distinguir la
-   ruta del repositorio; username selecciona la cuenta nueva; wincred solicita el
-   almacen seguro de Windows y pat la entrada de token. La compatibilidad exacta
-   de estas opciones debe comprobarse con la version instalada: si no se respetan,
-   detenerse, no cambiar valores globales ni pasar a guardar contraseñas en texto.
-8. Guarde el archivo. No cambie remote.origin.url ni remote.origin.pushurl.
-   Tampoco escriba el token en .git/config: aunque no se suba normalmente, es texto plano.
-
-### Introducir y comprobar la credencial sin exponerla
-
-9. La autenticacion de escritura se comprobara **solo en la prueba autorizada del
-   paso c de PUBLICACION.md**, despues de proteger main. El envio sigue DISABLED
-   hasta esa autorizacion. No haga un push ahora "para probar el token".
-10. En esa prueba, Git Credential Manager debe pedir la credencial de la cuenta
-    nueva. Pegue el token exclusivamente en su cuadro de token/contraseña. Si ofrece
-    entrar como Fernando o reutiliza su cuenta personal, cancele. No acepte cambiar
-    la cuenta global como solucion. No active registros de depuracion de credenciales.
-11. Abra en Windows **Control Panel > Credential Manager > Windows Credentials**
-    y mire solo los nombres de las entradas, sin revelar contraseñas. La nueva
-    entrada debe permitir distinguir la cuenta nueva y el destino de este proyecto.
-    El nombre exacto depende del gestor. Si parece una credencial generica reutilizable
-    para todos los repositorios, no considere verificado el aislamiento. No borre
-    entradas personales existentes. Detengase para revisar el gestor.
-12. En la carpeta correcta, compruebe el origen de las opciones no secretas:
-
-       git config --show-origin --get user.name
-       git config --show-origin --get user.email
-       git config --show-origin --get credential.useHttpPath
-       git config --show-origin --get-urlmatch credential.username https://github.com/fernandoruizm-maker/ERP-FACTORY.git
-       git config --local --get-all credential.helper
-       git config --local --get credential.credentialStore
-       git config --local --get credential.gitHubAuthModes
-
-    Nombre/correo y opciones locales deben proceder de .git/config de este clon;
-    useHttpPath debe ser true, usuario el nuevo, gestor manager, almacen wincred,
-    modo pat. Vuelva a consultar los dos valores globales del punto 3: deben ser
-    los mismos. Esto comprueba configuracion, no que una autenticacion remota haya
-    tenido exito ni que el gestor realmente haya almacenado la credencial como se pide.
-13. En la PR de prueba, compruebe **quien la abrio**: debe ser la cuenta nueva.
-    El nombre que figura en un commit no prueba quien se autentico. Un fetch de un
-    repositorio publico tampoco lo demuestra, porque puede ser anonimo.
-
-No usar `git credential fill`, `git credential-manager get`, volcados del entorno
-ni comandos que impriman el token para verificarlo. No capturar la pantalla mientras
-se muestra un secreto. Borre el portapapeles y su entrada del historial de portapapeles
-si se guardo alli, despues de almacenarlo de forma segura.
-
-**Limite del aislamiento:** la configuracion es local al clon; el secreto se guarda
-en el almacen protegido de Windows, no dentro de la carpeta. Eso no crea una barrera
-fisica que impida a otro proceso de su misma sesion usar una credencial accesible.
-El limite al repositorio debe imponerlo tambien GitHub mediante el token. No afirmar
-que una credencial solo puede usarse desde una carpeta por tener opciones locales.
-
-## 6. Nombre y correo de los commits de Codex
-
-Para los commits FUTUROS de esta carpeta: nombre publico de la cuenta de maquina
-(por ejemplo, fernando-codex si ese es el definitivo) y el noreply de esa cuenta.
-El correo debe ser el que GitHub le asigne; no usar el de Fernando ni FERRUMTJA.
-No reescribir los commits locales anteriores para cambiar su autor. Esta tarea
-documental conserva la identidad local de trabajo ya utilizada, no suplanta una
-cuenta nueva que todavia no existe. Identidad del commit y cuenta que abre una PR
-son cosas diferentes; hay que comprobar ambas cuando se autorice la prueba.
-
-## 7. Revocar acceso si algo va mal
-
-1. Detenga nuevas subidas. Si el token se expuso, no lo pruebe ni lo pegue para que
-   alguien confirme si funciona: desde la cuenta nueva vaya a Settings > Developer
-   settings > Personal access tokens > Fine-grained tokens y elimine/revoque ese token.
-2. Desde la cuenta de Fernando, ERP-FACTORY > Settings > Collaborators/Manage access:
-   quite la cuenta nueva del repositorio. Confirme que ya no aparece con acceso.
-3. Solo si puede identificarla sin duda, quite del Administrador de credenciales de
-   Windows la entrada de ESTA cuenta/proyecto. No borre credenciales de Fernando.
-4. Fernando puede retirar las opciones user/credential que agrego en el .git/config
-   de este clon, sin modificar otros apartados ni el archivo global. Dejar de tener
-   una identidad local explicita puede volver a heredar la de Fernando: mantenga el
-   trabajo de publicacion detenido, no continue con esa identidad accidentalmente.
-5. Restablecer el envio DISABLED, cerrar las PR abiertas o revertir cambios requiere
-   la autorizacion correspondiente; se prepara una reversion por PR, nunca force push.
-   Quitar una cuenta o token no deshace automaticamente commits ya enviados.
-6. Revise con Claude los cambios efectuados durante el incidente sin mostrar secretos.
-   Generar un reemplazo, cambiar permisos o volver a habilitar acceso requiere una
-   nueva autorizacion; no se renueva ni se amplian permisos automaticamente.
-
-## Antes de seguir
-
-La cuenta definitiva, compatibilidad del token para este propietario, funcionamiento
-del gestor local y proteccion real de main siguen SIN VERIFICAR. Si no se puede
-cumplir exactamente el alcance del token o el aislamiento, no continuar con la subida.
+Pendientes: token, configuracion local, confirmacion de bypass vacio por Fernando
+y prueba funcional de la proteccion. Estos documentos no acreditan esas acciones.

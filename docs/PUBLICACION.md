@@ -5,10 +5,18 @@ del ERP, ni siquiera a una rama, un informe, un comentario, una PR o un artefact
 Revisar tambien el historial que se vaya a enviar. Borrar un dato del ultimo archivo
 no lo borra de los commits anteriores. Ante una duda, detener la subida.
 
-Decision del bloque 7: las PR las abrira una cuenta de maquina separada para Codex,
-con nombre provisional **fernando-codex**; Fernando elegira el definitivo. Fernando
-y FERRUMTJA seguiran aprobando con sus propias cuentas. No se crea la cuenta aqui.
-El repositorio sigue siendo PUBLICO y propiedad de fernandoruizm-maker.
+Decision vigente del bloque 7: las PR las abrira **fenando-codex** (sin la primera
+r), cuenta de maquina que Fernando comunica ya creada, con dos pasos e invitacion
+aceptada. Fernando y FERRUMTJA aprueban con sus propias cuentas. El repositorio
+sigue siendo PUBLICO y propiedad de fernandoruizm-maker. El token NO esta creado.
+
+Fernando informa que el ruleset **main - dos aprobaciones sin excepciones**,
+ID **26650549**, esta activo. Segun su informe, Claude comprobo por la API publica:
+PR obligatoria, dos aprobaciones, invalidacion de aprobaciones antiguas, aprobacion
+del ultimo cambio por otra persona, conversaciones resueltas y prohibicion de borrar
+y force push. Bypass no visible sin credenciales: Fernando debe comprobar en pantalla
+que la lista esta vacia. Codex registra lo comunicado, sin comprobacion de red propia.
+La prueba funcional de la PR sigue pendiente; estos avances no autorizan envios.
 
 ## Permisos de Fernando
 
@@ -31,42 +39,41 @@ de JSON como sustituto de la verificacion real de Claude.
 
 ## Orden previo obligatorio: a, b, c y d
 
-### a) Fernando crea la cuenta y el token
+### a) Fernando crea el token clasico justo antes de la configuracion
 
-- Fernando sigue [GUIA-CUENTA-CODEX.md](github/GUIA-CUENTA-CODEX.md): correo distinto,
-  verificacion en dos pasos, invitacion Write y token de grano fino solo para
-  ERP-FACTORY, con Contents/Pull requests lectura-escritura y Metadata lectura.
-- La compatibilidad de ese token con una cuenta colaboradora de un repositorio
-  personal ajeno NO esta comprobada. Si no puede seleccionar exactamente ese
-  propietario/repositorio, detenerse: no usar token clasico, permisos mas amplios
-  ni credenciales de Fernando. Hace falta una decision posterior sobre otro diseño.
-- Fernando realiza cualquier configuracion local posterior solo en el clon
-  ERP-FACTORY-correcciones; no cambia identidades o credenciales globales. Codex
-  solo prepara la guia, no recibe ni almacena el token. No se comparte en chat.
-- Claude puede revisar en lectura las opciones no secretas. No pedirle capturas
-  con tokens, codigos de recuperacion, contraseñas o QR de autenticacion.
-- Como deshacer: Fernando revoca el token y retira el acceso de la cuenta nueva
-  siguiendo la guia; no borrar credenciales personales ni reescribir commits.
-- Este paso no rehabilita el envio: sigue DISABLED.
+- Cuenta e invitacion ya realizadas segun Fernando. Seguir
+  [GUIA-CUENTA-CODEX.md](github/GUIA-CUENTA-CODEX.md) desde fenando-codex:
+  token CLASICO, solo public_repo, 30 dias; sin workflow ni otros permisos.
+- Se sustituye el token de grano fino por la incompatibilidad que Fernando comunica
+  verificada por Claude en documentacion oficial. Codex no la contrasto por red aqui.
+- public_repo no tiene seleccion por repositorio: la escritura en repositorios
+  ajenos depende de las colaboraciones de la cuenta, actualmente solo ERP-FACTORY
+  segun Fernando. Otros accesos futuros ampliarian sus posibilidades. La proteccion
+  de main limita esa rama, no convierte el token en uno de alcance por repositorio.
+- Fernando introduce el token solo en la ventana segura de credenciales durante
+  la prueba autorizada. Nunca lo muestra a Codex/Claude ni lo pega en otro sitio.
+- Como deshacer: Fernando revoca el token clasico; no ampliar permisos ni sustituirlo
+  por el token personal. Este paso no rehabilita el envio: sigue DISABLED.
 
-### b) Fernando crea la regla de main
+### b) Codex configura el clon, con autorizacion expresa posterior
 
-- Fernando sigue [GUIA-PROTEGER-MAIN.md](github/GUIA-PROTEGER-MAIN.md) y utiliza
-  ruleset-main.json: PR obligatoria, dos aprobaciones, invalidacion tras cambios,
-  conversaciones resueltas, sin force push, borrado ni bypass.
-- Codex no aplica ni modifica la regla. Claude inspecciona en lectura lo que
-  Fernando haya configurado, sin afirmar que la prueba funcional ya esta hecha.
-- No agregar la cuenta de Codex a una lista de bypass. Write no debe confundirse
-  con una garantia tecnica de "solo crear PR"; las restricciones y el procedimiento
-  de integracion humana se mantienen.
-- Como deshacer: corregir una configuracion equivocada solo con autorizacion
-  expresa; nunca rebajar las dos aprobaciones ni desproteger main para continuar.
+- Seguir [CONFIG-LOCAL-CODEX.md](github/CONFIG-LOCAL-CODEX.md). Fernando no edita
+  archivos ni ejecuta comandos. Codex configura solo ERP-FACTORY-correcciones:
+  nombre fenando-codex, noreply real y gestor seguro, sin tocar opciones globales.
+- Claude verifica en lectura los ajustes no secretos y su alcance. La configuracion
+  no acredita aun una autenticacion remota. No se rehabilita el envio en este paso.
+- La regla de main ya esta creada segun Fernando; no recrearla ni cambiarla. La
+  [GUIA-PROTEGER-MAIN.md](github/GUIA-PROTEGER-MAIN.md) queda como referencia.
+  Antes de la prueba, Fernando confirma en pantalla que bypass esta vacio. No dar
+  acceso de excepcion a fenando-codex ni rebajar aprobaciones para continuar.
+- Como deshacer: con autorizacion, reponer solo las opciones locales cambiadas y
+  retirar solo la credencial de maquina identificada, sin borrar las de Fernando.
 
 ### c) Prueba ficticia con autorizacion expresa
 
 - Fernando autoriza concretamente rehabilitar el envio de ESTE clon solo hacia
   https://github.com/fernandoruizm-maker/ERP-FACTORY.git, subir una rama ficticia,
-  abrir la PR de prueba con la cuenta nueva y cerrarla despues SIN integrarla.
+  abrir la PR de prueba con fenando-codex y cerrarla despues SIN integrarla.
   Esta documentacion no ejecuta ni concede por si sola esa autorizacion.
 - Solo entonces Codex puede efectuar los cambios de envio autorizados, comprobar
   que no hay otro destino de push y subir la rama de prueba. Nunca incluir el token
@@ -75,7 +82,8 @@ de JSON como sustituto de la verificacion real de Claude.
   commit no bastan para demostrarlo. Fernando y FERRUMTJA usan sus cuentas personales.
 - Claude verifica en lectura repositorio, regla efectiva y estados de la PR:
   sin aprobaciones bloqueada, con una aun bloqueada, conversaciones abiertas
-  bloquean y un cambio nuevo invalida las aprobaciones previas. La prueba debe
+  bloquean y un cambio nuevo invalida las aprobaciones previas; se exige ademas
+  aprobacion del ultimo cambio por otra persona. La prueba debe
   incluir ese cambio ficticio autorizado. Se inspeccionan las prohibiciones de
   force push/borrado sin intentar ejecutarlos. No integrar ni pulsar auto-merge.
 - Documentar evidencia, SHA, cuenta autora y lo que no pudo verificarse. Un token

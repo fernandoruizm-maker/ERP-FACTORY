@@ -1,6 +1,7 @@
-# Estado actual: bloque 6, revision manual y automatizacion aparcada
+# Estado actual: bloque 7, cuenta Codex y publicacion pendiente
 
-Rama fix/bloque-6-revision-manual desde 55073009fc30c810c7c7ede8c1ff3352071a2fe0.
+Rama actual fix/bloque-7-cuenta-codex; actualizacion documental desde 893df54.
+La implementacion del bloque 6 procede de 31abe68.
 Claude revisa cada PR (solo cambios) en el chat y, antes de hitos importantes,
 toda la fabrica en una conversacion nueva. Registro en docs/revisiones/:
 Claude, chat, no autenticado. No es aprobacion humana ni prueba de cobertura real.
@@ -27,11 +28,35 @@ repositorio privado por ahora. Registrados para futura reactivacion: USD, 1.00 p
 llamada, 12.00 por ejecucion, 13.00 acumulado, 11 llamadas, opcion 1 manual. No es
 permiso de gasto; el adaptador sigue sin conectar. Configuracion local desactivada.
 
-Proteccion de main: JSON y guia preparados, NO aplicados ni verificados en GitHub.
-Cada subida sigue necesitando autorizacion expresa hasta que Claude verifique la
-proteccion efectiva. Faltan resolver la autoria de las PR (el autor no puede dar
-su propia aprobacion) y las dependencias de la publicacion selectiva sin carpeta privada.
-Plan en docs/PUBLICACION.md. Sin red, push, PR, integracion, secretos ni activacion.
+Avances comunicados por Fernando el 2026-11-05 (Codex no los verifico por red):
+
+- Cuenta **fenando-codex**, con dos pasos; invitacion de colaboradora aceptada.
+- Ruleset activo **main - dos aprobaciones sin excepciones**, ID **26650549**.
+  Segun Fernando, Claude verifico en lectura por API publica PR obligatoria,
+  dos aprobaciones, invalidacion de antiguas, aprobacion del ultimo cambio por
+  otra persona, conversaciones resueltas, prohibicion de borrar y force push.
+- Bypass no visible sin credenciales: Fernando lo comprueba en pantalla; no se
+  registra aun confirmacion de que este vacio. Prueba funcional de PR pendiente.
+- Token NO creado. Decision: clasico con solo public_repo y 30 dias. Sustituye
+  el de grano fino, incompatible en este caso segun la comprobacion de Claude
+  comunicada por Fernando. No se consulto documentacion externa en esta tarea.
+- public_repo no limita el token a un repositorio seleccionado: la escritura en
+  repositorios ajenos se acota por las colaboraciones actuales de la cuenta (solo
+  ERP-FACTORY segun Fernando). Nuevos accesos o repositorios propios publicos
+  ampliarian el alcance. Main protegida no restringe todas las acciones del token.
+
+Orden pendiente: token -> configuracion local por Codex autorizada y verificada
+por Claude -> PR ficticia autorizada, cerrar sin integrar -> bloque 1 con permiso
+expreso. Cada subida sigue necesitando autorizacion expresa hasta completar la
+verificacion funcional de proteccion, incluido bypass. Envio DISABLED sin cambios.
+Configuracion futura: fenando-codex y noreply real, solo en el clon, sin alterar
+lo global; Fernando solo crea e introduce el token en la ventana segura. Ver
+GUIA-CUENTA-CODEX.md y CONFIG-LOCAL-CODEX.md en docs/github/ y docs/PUBLICACION.md.
+Siguen pendientes las dependencias de publicacion selectiva sin carpeta privada.
+No hubo red, configuracion, credenciales, remotos, publicacion ni activacion.
+Verificacion documental local: lectura, enlaces relativos y git diff --check.
+No se repiten suites por cambios solo documentales. Los resultados siguientes
+son historicos del bloque 6, no una nueva ejecucion:
 Suites completas: 149 raiz + 113 privadas + 7 JS + 3 TS = 272, cero fallos,
 errores u omitidas. TS sin typecheck. Comandos y limites en docs/pr/bloque-6.md.
 
