@@ -25,8 +25,10 @@ ahora pertenece al repositorio privado, no al codigo publico.
 No hay intercambio entre trabajos. Entre preparar y validar se conserva una huella
 en el output del paso, y el consumidor la verifica antes de usar el material. Los
 artefactos finales tienen SHA256.json. Respuesta validada, hallazgos e informes van
-solo a artefactos privados con retencion propuesta de 7 dias. Respuestas invalidas
-o posiblemente sensibles no conservan texto libre: solo codigos y huella disponible.
+solo a artefactos privados con retencion propuesta de 7 dias. Los rechazos de
+formato, version o evidencia pueden conservar texto original solo bajo la decision
+restringida de Fernando que se detalla abajo. Errores de ejecucion, respuestas
+posiblemente sensibles o demasiado grandes conservan solo codigos y huella disponible.
 Nunca se suben estos datos al repositorio publico. Las pruebas usan solo ficticios.
 
 El commit adicional conserva evidencia tambien ante fallos tempranos: archivo de
@@ -68,7 +70,7 @@ El validador privado toma funciones de validacion del commit LOCAL
 b0da873b1dc3ff37bbafdf93eb6b8027d911885e, adaptadas a un paquete independiente,
 sin importar factory2 ni otro codigo del candidato. Su copia aun necesita revision
 antes de escoger el pin privado. La suite raiz es la de la base (49 Python);
-las 31 pruebas actuales cubren el diseño privado. No se confunden con las 60 de la
+las 57 pruebas actuales cubren el diseño privado. No se confunden con las 60 de la
 rama independiente del bloque 1 ni se afirma que aquel bloque desaparecio.
 
 ## Verificacion ejecutada
@@ -79,7 +81,7 @@ Desde ERP-FACTORY-correcciones/ERP-FACTORY-revision:
 & "$env:USERPROFILE\.cache\codex-runtimes\codex-primary-runtime\dependencies\python\python.exe" -B -m unittest discover -s tests -v
 ```
 
-Resultado final real: 31 pruebas, 0 fallos, 0 errores, 0 omitidas. Incluye lectura de tar
+Resultado final real de esta entrega: 57 pruebas, 0 fallos, 0 errores, 0 omitidas. Incluye lectura de tar
 malicioso, enlaces/rutas/tamaños, fuente no ejecutada, version exacta, controles de
 contexto, bloqueo antes de red, transporte SOLO simulado, datos fuera del system
 prompt, huellas alteradas, PARTIAL, respuestas invalidas y mutaciones del YAML.
@@ -89,7 +91,7 @@ Ocho pruebas nuevas comprueban salidas bloqueadas con sus huellas, errores de
 lectura simulados, material invalido, la ruta completa del CLI sin archivo,
 rechazo de reason_code libre, conservacion de evidencia previa y la ruta valida.
 
-La primera ejecucion del commit adicional tuvo 31 pruebas, 1 fallo y 22 errores
+Registro historico del ajuste a8cfa18: su primera ejecucion tuvo 31 pruebas, 1 fallo y 22 errores
 (incluidos subcasos), sin omitidas, por un operador ausente al concatenar el texto
 del informe. Se corrigio y se repitio la suite privada completa: 31/31. El resultado
 fallido no se presenta como validacion. Las suites de base y Node pasaron y sus
@@ -104,7 +106,7 @@ node --experimental-strip-types --test --test-reporter=tap pilot-js/tests/bottle
 ```
 
 Resultados reales: 49 Python, 5 JavaScript y 3 TypeScript, todos aprobados; 0 fallos,
-0 errores y 0 omitidas. TypeScript sin comprobacion estatica de tipos. Total: 88
+0 errores y 0 omitidas. TypeScript sin comprobacion estatica de tipos. Total: 114
 casos entre la suite nueva del revisor privado y la suite completa de la fabrica
 base documentada. upstream/ permanece intacto y su suite heredada no se ejecuto.
 Las pruebas Python se ejecutaron con la via autorizada del ejecutor para temporales;
@@ -144,10 +146,13 @@ Orden propuesto, sujeto a autorizacion posterior por destino y bloque:
    del diagnostico publico; mantener la fabrica y cualquier nuevo intento apagados.
 2. Bloque 2 actualizado: publicar exclusivamente el contenido de la carpeta nueva
    en ERP-FACTORY-revision PRIVADO. Revisar y fijar alli el commit del validador.
-3. Bloque 3: partir de fix/bloque-2-aislamiento ACTUALIZADA y desarrollar partes,
-   lineas numeradas y cobertura calculada exclusivamente sobre el revisor privado.
-   Integrar despues sus cambios en ese repositorio privado, no en el validador
-   publico. No incorporar como dependencia el bloque 1 publico completo.
+3. Bloque 3: por la ultima decision de Fernando, su rama local debe contener el
+   contenido de b0da873 (bloque 1) y TODO fix/bloque-2-aislamiento actualizado,
+   incluido a8cfa18 y la conservacion restringida. Resolver el registro compartido
+   y ejecutar todas las suites antes de añadir codigo. Desarrollar partes, lineas
+   y cobertura exclusivamente en el revisor privado; publicar solo su subarbol
+   privado, sin trasladar alli el validador publico. La integracion local conjunta
+   no autoriza fusionar la rama completa en ERP-FACTORY ni publicar nada.
 4. Bloque 4: integrar las condiciones operativas de la fabrica en ERP-FACTORY,
    con el importador vinculado a la evidencia del revisor privado. Resolver y
    revisar sus dependencias expresamente; no trasladar secretos o informes alli.
@@ -162,7 +167,7 @@ El choque de docs/ESTADO.md con el bloque 1 se resuelve conservando ambas seccio
 primero el registro del bloque 1 y despues el del bloque 2 como revision PRIVADA.
 No usar una sustitucion global de un lado por el otro ni borrar resultados previos.
 Conservar la distincion entre las 60 pruebas de la rama 1 y las 49 de la base de la
-rama 2, mas las 31 privadas. Como el bloque 2 no se fusiona entero en ERP-FACTORY,
+rama 2, mas las 57 privadas actuales. Como el bloque 2 no se fusiona entero en ERP-FACTORY,
 esa reconciliacion documental solo se aplica si se autoriza trasladar el registro;
 no es necesario fusionar codigo privado para resolverla. Reejecutar las pruebas
 pertinentes si la futura integracion modifica codigo, y entregar su nuevo SHA.
@@ -170,7 +175,47 @@ pertinentes si la futura integracion modifica codigo, y entregar su nuevo SHA.
 La rama provisional del bloque 3 creada antes de esta aclaracion no tiene cambios
 propios de codigo; solo copias locales de los commits 1 y 2. No se publicara ni se
 usara como base. Se conservara como referencia local y la rama de trabajo del
-bloque 3 partira del bloque 2 actualizado conforme a esta decision.
+bloque 3 partira del bloque 2 actualizado e incorporara el bloque 1 conforme a la
+ultima decision. Ningun codigo nuevo del bloque 3 se añade antes de verificarlo.
+
+## Decision adicional: conservar texto no validado exclusivamente en privado
+
+Fernando autoriza response.unvalidated.txt SOLO para un unico evento result
+exitoso (subtype success, is_error=false, 1-2 turnos, sin denegaciones ni otros
+eventos de error), texto UTF-8 de hasta 100.000 bytes y sin coincidencia del texto
+ORIGINAL completo con SECRET_PATTERN. Se comprueba antes de parsear o guardar.
+
+Lista cerrada: INVALID_JSON (incluido JSON envuelto en Markdown), REPORT_STRUCTURE,
+VERSION_MISMATCH, COVERAGE_STRUCTURE, INVALID_VERDICT, MISSING_LIMITATIONS,
+INVALID_FINDINGS, FINDING_STRUCTURE, INVALID_FINDING_EVIDENCE, CONTRADICTORY_PASS.
+
+Nunca se conserva para POSSIBLE_SECRET, OUTPUT_SAFETY_OR_SIZE,
+RESULT_MISSING_OR_TOO_LARGE, RESULT_EXECUTION_INVALID, ACTION_FAILED, eventos de
+error del proveedor o fallos tempranos de archivo, material o procedencia.
+Un codigo nuevo/no reconocido tampoco concede conservacion.
+
+El archivo guarda el texto original exacto, sin reserializarlo. Su SHA-256 coincide
+con response_sha256 de report.json y con su entrada en SHA256.json. report.json
+añade unvalidated_response_saved=true y conserva BLOCKED y reason_code, sin texto
+libre. INFORME.txt incluye la frase exacta solicitada:
+"Respuesta NO VALIDADA conservada solo para diagnóstico privado; no es una revisión aceptada."
+No hay revalidacion, reintento, aprobacion ni paso a PARTIAL/NEEDS_HUMAN_REVIEW
+automaticos. Ningun lector de este flujo consume response.unvalidated.txt.
+
+Pruebas nuevas: 26, todas con datos ficticios. Hay una prueba por cada uno de los
+10 codigos que conserva; se comprueban bytes, huellas, bandera y estado BLOCKED.
+Se comprueban los codigos excluidos, errores previos aun con resultado final
+exitoso, turnos/denegaciones, fallos tempranos (tambien cubiertos por la suite
+anterior), un token ficticio en JSON invalido, token escapado detectado al validar,
+el limite exacto y el exceso de 100.000 bytes, Markdown/Unicode/CRLF, ausencia de
+texto en report.json/INFORME.txt/diagnostic.json y consola, y como maximo una
+validacion sin reintento. Suite privada 57/57; raiz 49/49; JS 5/5; TS 3/3.
+No hubo fallos, errores u omitidas en esta nueva entrega de conservacion.
+
+Referencia anterior: a8cfa18680e238dbae3ba2f6283e82589e6eb5dd. El nuevo SHA se
+entrega al confirmar el commit y se registra en la nota de integracion de la rama
+3. Puede consultarse localmente con `git rev-parse fix/bloque-2-aislamiento`.
+No se incluye un SHA autorreferente imposible dentro de su propio commit.
 
 ## Entrega y comprobacion futura
 

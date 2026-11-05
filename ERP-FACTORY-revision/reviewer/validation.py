@@ -108,19 +108,45 @@ def validate_result(manifest, result):
             'publication_allowed': False, 'human_approvals': 0, 'review': result}
 
 
-def text_result(events):
+def successful_text(events):
+    """Return original text only after the successful-execution and size checks."""
+    if not isinstance(events, list):
+        raise ReviewRejected('EXECUTION_FORMAT')
     results = [e for e in events if isinstance(e, dict) and e.get('type') == 'result']
     if len(results) != 1:
         raise ReviewRejected('RESULT_EVENT_COUNT')
     event = results[0]
+    provider_error = any(isinstance(item, dict) and (
+        item.get('type') == 'error' or item.get('is_error') is True
+        or (isinstance(item.get('subtype'), str) and item['subtype'].startswith('error'))
+        or bool(item.get('error')) or bool(item.get('errors'))) for item in events)
     if (event.get('subtype') != 'success' or event.get('is_error') is not False
             or type(event.get('num_turns')) is not int or not 1 <= event['num_turns'] <= 2
-            or event.get('permission_denials') != []):
+            or event.get('permission_denials') != [] or provider_error):
         raise ReviewRejected('RESULT_EXECUTION_INVALID')
     raw = event.get('result')
-    if not isinstance(raw, str) or len(raw.encode('utf-8')) > MAX_RESULT_BYTES:
+    if not isinstance(raw, str):
         raise ReviewRejected('RESULT_MISSING_OR_TOO_LARGE')
-    return json.loads(raw)
+    try:
+        if len(raw.encode('utf-8')) > MAX_RESULT_BYTES:
+            raise ReviewRejected('RESULT_MISSING_OR_TOO_LARGE')
+    except UnicodeError:
+        raise ReviewRejected('RESULT_MISSING_OR_TOO_LARGE') from None
+    return raw
+
+
+def parse_result(raw):
+    # Scan ORIGINAL text before parsing or retaining it, including Markdown/invalid JSON.
+    if SECRET_PATTERN.search(raw):
+        raise ReviewRejected('POSSIBLE_SECRET')
+    try:
+        return json.loads(raw)
+    except (json.JSONDecodeError, RecursionError):
+        raise ReviewRejected('INVALID_JSON') from None
+
+
+def text_result(events):
+    return parse_result(successful_text(events))
 
 
 def safe_diagnostic(events):

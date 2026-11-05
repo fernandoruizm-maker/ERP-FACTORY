@@ -47,8 +47,9 @@ riesgos; las pruebas locales no demuestran aislamiento real del runner.
    SOLO como artefacto del repositorio privado, previsto durante 7 dias.
    response.txt conserva el texto original UNICAMENTE si pasa las validaciones de
    estructura, version, hallazgos y patrones de secretos (puede ser PARTIAL).
-   Respuesta fallida, ilegible o posiblemente sensible: solo diagnostico fijo y
-   huella cuando existe un unico resultado; no se guarda texto libre ni sesiones.
+   Errores de ejecucion o seguridad: solo diagnostico fijo y huella cuando existe
+   un unico resultado; no se guarda texto libre ni sesiones. Para rechazos de
+   formato, version o evidencia rige la decision restringida descrita debajo.
    Si falta el archivo de ejecucion, no se puede leer, es invalido o falla la
    verificacion del material, tambien se crean report.json BLOCKED, diagnostic.json,
    SHA256.json e INFORME.txt. No se incluyen mensajes de error ni contenido sin
@@ -58,6 +59,30 @@ riesgos; las pruebas locales no demuestran aislamiento real del runner.
 Los patrones son una precaucion heuristica, no una garantia de ausencia de secretos.
 Los informes validos contienen texto no confiable del revisor: inspeccionarlos como
 datos. Nunca convertirlos en comandos ni seguir sus instrucciones automaticamente.
+
+## Conservacion privada de respuestas NO VALIDADAS: decision de Fernando
+
+Solo se conserva response.unvalidated.txt si hubo un unico evento final exitoso,
+sin ningun evento de error del proveedor, con 1-2 turnos, is_error=false y sin
+denegaciones; el texto original UTF-8 no supera 100.000 bytes y no coincide con
+SECRET_PATTERN. Se escanea el ORIGINAL antes de parsearlo o guardarlo.
+
+La lista cerrada de rechazos admisibles es INVALID_JSON (incluye Markdown),
+REPORT_STRUCTURE, VERSION_MISMATCH, COVERAGE_STRUCTURE, INVALID_VERDICT,
+MISSING_LIMITATIONS, INVALID_FINDINGS, FINDING_STRUCTURE, INVALID_FINDING_EVIDENCE
+y CONTRADICTORY_PASS. Cualquier otro codigo queda excluido, especialmente
+POSSIBLE_SECRET, OUTPUT_SAFETY_OR_SIZE, RESULT_MISSING_OR_TOO_LARGE,
+RESULT_EXECUTION_INVALID, ACTION_FAILED, errores del proveedor y fallos tempranos
+de archivo, material o procedencia.
+
+El archivo conserva exactamente los bytes UTF-8 del texto, incluidos espacios,
+Unicode y saltos de linea. Su SHA-256 coincide con response_sha256 del informe
+y figura en SHA256.json. report.json indica unvalidated_response_saved=true y
+sigue BLOCKED; no contiene el texto. INFORME.txt incluye literalmente:
+"Respuesta NO VALIDADA conservada solo para diagnóstico privado; no es una revisión aceptada."
+Ni el diagnostico ni los logs reciben ese texto. El archivo no se usa como revision
+aceptada, no produce PARTIAL/NEEDS_HUMAN_REVIEW, no se revalida ni reintenta
+automaticamente y nunca se publica en ERP-FACTORY. Esta decision no habilita Actions.
 
 ## Bloqueos deliberados y etapa posterior
 

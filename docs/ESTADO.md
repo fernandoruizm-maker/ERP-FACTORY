@@ -97,3 +97,13 @@ Publicacion futura: exportar solo ERP-FACTORY-revision/ al repositorio PRIVADO;
 no fusionar esta rama en ERP-FACTORY. Bloque 3 partira de la rama 2 actualizada.
 El retiro del validador/workflow publico y secreto se reserva para la migracion
 autorizada al revisor privado. Ver orden y reconciliacion documental en la PR local.
+
+### Conservacion restringida autorizada por Fernando
+
+Respuestas no validadas solo para los codigos de formato/version/evidencia
+autorizados, tras comprobar evento exitoso, tamaño y SECRET_PATTERN del original.
+Se guardan exactamente en response.unvalidated.txt privado con huella; el informe
+sigue BLOCKED y no incluye el texto. Sin revalidacion ni reintento automaticos.
+57 pruebas privadas + 49 Python de base + 5 JS + 3 TS = 114 aprobadas, sin fallos
+ni omitidas. La futura base local del bloque 3 debe contener tambien el bloque 1
+y pasar sus suites completas antes de añadir funcionalidad de revision por partes.
