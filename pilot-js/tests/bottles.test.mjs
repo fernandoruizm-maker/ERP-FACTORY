@@ -25,3 +25,20 @@ test('revalida saldo entre dos solicitudes aprobadas', () => {
   const app = new Bottles(); for (const id of ['A', 'B']) {app.request(id, 6, operator); app.approve(id, manager);}
   app.dispatch('A', operator); assert.throws(() => app.dispatch('B', operator)); assert.equal(app.stock, 4);
 });
+
+test('un ID duplicado no reemplaza la solicitud original', () => {
+  const app = new Bottles(); app.request('S1', 2, operator);
+  assert.throws(() => app.request('S1', 9, operator));
+  app.approve('S1', manager);
+  assert.equal(app.dispatch('S1', operator).quantity, 2);
+  assert.equal(app.stock, 8);
+});
+
+test('otra area no puede despachar ni recuperar un comprobante', () => {
+  const app = new Bottles(); app.request('S1', 2, operator); app.approve('S1', manager);
+  const outsider = { ...operator, areas: ['ventas'] };
+  assert.throws(() => app.dispatch('S1', outsider)); assert.equal(app.stock, 10);
+  const receipt = app.dispatch('S1', operator);
+  assert.throws(() => app.dispatch('S1', outsider)); assert.equal(app.stock, 8);
+  assert.deepEqual(app.dispatch('S1', operator), receipt);
+});

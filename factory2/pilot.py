@@ -41,6 +41,12 @@ class BottlePilot:
             raise PilotError("Solicitud inexistente.")
         return self._requests[rid]
 
+    def _movement(self, rid):
+        found = [m for m in self.movements if m.get('request') == rid]
+        if len(found) != 1:
+            raise PilotError('Movimiento de ensayo ausente o duplicado.')
+        return found[0]
+
     def approve(self, rid, actor):
         with self._lock:
             request = self._get(rid)
@@ -56,7 +62,7 @@ class BottlePilot:
             request = self._get(rid)
             self.access(actor, request["area"], {"operador", "gerente", "subgerente"})
             if request["status"] == "DISPATCHED":
-                return deepcopy(next(m for m in self.movements if m["request"] == rid))
+                return deepcopy(self._movement(rid))
             if request["status"] != "APPROVED":
                 raise PilotError("Falta aprobación independiente.")
             if self.stock < request["quantity"]:
@@ -75,7 +81,7 @@ class BottlePilot:
             self.access(actor, request["area"], {"operador", "gerente", "subgerente"})
             if request["status"] != "DISPATCHED":
                 raise PilotError("Aún no hay salida registrada para imprimir.")
-            m = next(m for m in self.movements if m["request"] == rid)
+            m = self._movement(rid)
             return ("<!doctype html><html lang='es'><meta charset='utf-8'><title>Comprobante de ensayo</title>"
                     "<style>body{font:17px system-ui;max-width:760px;margin:48px auto;padding:24px}"
                     "td,th{text-align:left;padding:12px;border-bottom:1px solid #ccc}"
@@ -94,17 +100,51 @@ class BottlePilot:
 
     @classmethod
     def restore(cls, snapshot):
-        body = {k:v for k,v in snapshot.items() if k != "sha256"}
-        if digest(body) != snapshot.get("sha256") or set(body) != {"stock", "requests", "movements"}:
-            raise PilotError("Estado de ensayo alterado o incompleto.")
         try:
-            moves = body["movements"]
-            if (type(body["stock"]) is not int or not 0 <= body["stock"] <= 10 or
-                    body["stock"] != 10 - sum(m["quantity"] for m in moves) or
-                    len({m["request"] for m in moves}) != len(moves) or
-                    any(type(m["quantity"]) is not int or m["quantity"] <= 0 for m in moves)):
-                raise PilotError("Estado incoherente.")
-        except (TypeError, KeyError):
+            if not isinstance(snapshot, dict) or set(snapshot) != {'stock', 'requests', 'movements', 'sha256'}:
+                raise PilotError('Estado incompleto.')
+            body = deepcopy({k:v for k,v in snapshot.items() if k != 'sha256'})
+            if digest(body) != snapshot['sha256']:
+                raise PilotError('Huella de estado alterada.')
+            moves, requests = body['movements'], body['requests']
+            if (type(body['stock']) is not int or not 0 <= body['stock'] <= 10
+                    or not isinstance(moves, list) or not isinstance(requests, dict)):
+                raise PilotError('Estado incoherente.')
+            def valid_id(value):
+                return isinstance(value, str) and bool(value.strip())
+            for rid, request in requests.items():
+                if (not valid_id(rid) or not isinstance(request, dict)
+                        or set(request) != {'id', 'quantity', 'area', 'requester', 'approver', 'status'}
+                        or request['id'] != rid or request['area'] != 'bodega'
+                        or type(request['quantity']) is not int or not 1 <= request['quantity'] <= 10
+                        or not valid_id(request['requester']) or request['status'] not in {'PENDING', 'APPROVED', 'DISPATCHED'}):
+                    raise PilotError('Solicitud incoherente.')
+                if request['status'] == 'PENDING':
+                    if request['approver'] is not None:
+                        raise PilotError('Solicitud pendiente con aprobador.')
+                elif (not valid_id(request['approver'])
+                      or ''.join(request['approver'].split()).casefold() == ''.join(request['requester'].split()).casefold()):
+                    raise PilotError('Autorizacion independiente ausente.')
+            seen, balance = set(), 10
+            for index, movement in enumerate(moves, 1):
+                if (not isinstance(movement, dict) or set(movement) !=
+                        {'receipt', 'request', 'quantity', 'balance', 'area', 'approver', 'synthetic'}):
+                    raise PilotError('Movimiento incompleto.')
+                rid = movement['request']
+                if not valid_id(rid) or rid not in requests or rid in seen:
+                    raise PilotError('Movimiento sin solicitud unica.')
+                request = requests[rid]
+                balance -= request['quantity']
+                if (request['status'] != 'DISPATCHED' or movement['synthetic'] is not True
+                        or movement['receipt'] != f'ENSAYO-{index:04d}' or balance < 0
+                        or type(movement['balance']) is not int or movement['balance'] != balance
+                        or type(movement['quantity']) is not int
+                        or any(movement[key] != request[key] for key in ('quantity', 'area', 'approver'))):
+                    raise PilotError('Movimiento no corresponde a la solicitud.')
+                seen.add(rid)
+            if seen != {rid for rid, r in requests.items() if r['status'] == 'DISPATCHED'} or balance != body['stock']:
+                raise PilotError('Solicitudes, movimientos y saldo no coinciden.')
+        except (TypeError, KeyError, ValueError, AttributeError, RecursionError):
             raise PilotError("Estado incoherente.") from None
         result = cls()
         result.stock, result._requests, result.movements = deepcopy((body["stock"], body["requests"], moves))
