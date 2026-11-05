@@ -1,0 +1,101 @@
+import json
+from pathlib import Path
+import tempfile
+import unittest
+from unittest.mock import patch
+
+from factory2.actions_review import build_request, collect, prepare, validate_result
+from factory2.core import Blocked, canonical
+
+
+class ActionsReviewTests(unittest.TestCase):
+    def setUp(self):
+        self.manifest = {'source_sha': 'a' * 40, 'factory_digest': 'digest-a',
+                         'files': {'factory2/a.py': 'hash-a'}, 'file_lines': {'factory2/a.py': 3}}
+        self.result = {'source_sha': 'a' * 40, 'factory_digest': 'digest-a',
+                       'reviewed_files': ['factory2/a.py'], 'coverage': 'complete',
+                       'cross_component_review': True, 'verdict': 'PASS',
+                       'summary_es': 'Resultado simulado para comprobar el validador.',
+                       'findings': [], 'limitations_es': ['No se ejecutaron pruebas ni llamadas reales.']}
+        self.env = {'GITHUB_REPOSITORY': 'fernandoruizm-maker/ERP-FACTORY',
+                    'GITHUB_SHA': 'a' * 40, 'GITHUB_RUN_ID': '123', 'GITHUB_RUN_ATTEMPT': '1',
+                    'GITHUB_ACTOR': 'fernandoruizm-maker', 'CLAUDE_CONCLUSION': 'success',
+                    'CLAUDE_RESULT': canonical(self.result)}
+
+    def test_complete_review_never_grants_approval(self):
+        result = validate_result(self.manifest, self.result)
+        self.assertEqual(result['status'], 'NEEDS_HUMAN_REVIEW')
+        self.assertEqual(result['human_approvals'], 0)
+        self.assertFalse(result['publication_allowed'])
+
+    def test_stale_partial_duplicate_and_missing_cross_review_block(self):
+        for changes in ({'source_sha': 'b' * 40}, {'factory_digest': 'old'},
+                        {'reviewed_files': []}, {'reviewed_files': ['factory2/a.py'] * 2},
+                        {'coverage': 'incomplete'}, {'cross_component_review': False}):
+            with self.subTest(changes=changes), self.assertRaises(Blocked):
+                validate_result(self.manifest, {**self.result, **changes})
+
+    def test_bad_evidence_and_contradictory_pass_block(self):
+        finding = {'severity': 'high', 'file': 'factory2/a.py', 'line': 2,
+                   'evidence_es': 'Evidencia ficticia.', 'impact_es': 'Impacto ficticio.',
+                   'recommendation_es': 'Correccion ficticia.'}
+        for changes in ({}, {'severity': 'invalid'}, {'file': '../secreto'}, {'line': True}, {'line': 4}):
+            with self.subTest(changes=changes), self.assertRaises(Blocked):
+                validate_result(self.manifest, {**self.result, 'findings': [{**finding, **changes}]})
+        self.assertEqual(validate_result(self.manifest, {**self.result, 'verdict': 'BLOCK',
+                                                        'findings': [finding]})['status'], 'BLOCKED')
+
+    def test_invalid_types_missing_limits_and_secret_like_output_block(self):
+        for changes in ({'findings': None}, {'reviewed_files': [{}]}, {'limitations_es': []},
+                        {'summary_es': 'sk-' + 'x' * 40}, {'unexpected': 'value'}):
+            with self.subTest(changes=changes), self.assertRaises(Blocked):
+                validate_result(self.manifest, {**self.result, **changes})
+
+    def test_collection_failure_leaves_blocked_report_without_raw_content(self):
+        for changes in ({'CLAUDE_RESULT': 'not-json-sensitive-fixture'},
+                        {'CLAUDE_CONCLUSION': 'failure'}, {'GITHUB_RUN_ATTEMPT': '2'},
+                        {'GITHUB_SHA': 'b' * 40}, {'GITHUB_ACTOR': 'someone-else'}):
+            with self.subTest(changes=changes), tempfile.TemporaryDirectory() as temp:
+                dest = Path(temp)
+                (dest / 'manifest.json').write_text(canonical(self.manifest), encoding='utf-8')
+                self.assertEqual(collect(dest, {**self.env, **changes}), 1)
+                report = (dest / 'report.json').read_text(encoding='utf-8')
+                self.assertNotIn('not-json-sensitive-fixture', report)
+                self.assertEqual(json.loads(report)['status'], 'BLOCKED')
+
+    def test_valid_collection_preserves_provenance_not_approval(self):
+        with tempfile.TemporaryDirectory() as temp:
+            dest = Path(temp)
+            (dest / 'manifest.json').write_text(canonical(self.manifest), encoding='utf-8')
+            self.assertEqual(collect(dest, self.env), 0)
+            report = json.loads((dest / 'report.json').read_text(encoding='utf-8'))
+            self.assertEqual(report['provenance']['GITHUB_RUN_ID'], '123')
+            self.assertFalse(report['publication_allowed'])
+            self.assertTrue((dest / 'INFORME.txt').is_file())
+
+    def test_request_includes_workflow_but_excludes_state_and_credentials(self):
+        with tempfile.TemporaryDirectory() as temp:
+            root = Path(temp)
+            (root / 'config.json').write_text(canonical({k: False for k in
+                ('enabled', 'external_calls_enabled', 'erp_access_enabled', 'publication_enabled')}))
+            (root / '.github/workflows').mkdir(parents=True)
+            (root / '.github/workflows/claude-factory-review.yml').write_text('name: fixture')
+            (root / '.env').write_text('DO-NOT-INCLUDE')
+            (root / 'state').mkdir()
+            (root / 'state/old.json').write_text('OLD-TASK-DO-NOT-INCLUDE')
+            manifest, request = build_request(root, 'a' * 40)
+            self.assertIn('.github/workflows/claude-factory-review.yml', manifest['files'])
+            self.assertNotIn('DO-NOT-INCLUDE', request)
+            self.assertEqual(manifest['review_status'], 'NOT_RUN')
+            with patch.dict('os.environ', {'GITHUB_OUTPUT': str(root / 'job-output.txt')}):
+                prepare(root, root / 'outputs/claude-review', 'a' * 40)
+            args = (root / 'job-output.txt').read_text(encoding='utf-8')
+            self.assertIn('--disallowedTools "*"', args)
+            self.assertNotIn('--tools ""', args)
+            self.assertIn('--append-system-prompt-file', args)
+            with patch('factory2.actions_review.MAX_REQUEST_BYTES', 10), self.assertRaises(Blocked):
+                build_request(root, 'a' * 40)
+
+
+if __name__ == '__main__':
+    unittest.main()

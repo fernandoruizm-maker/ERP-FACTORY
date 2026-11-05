@@ -10,6 +10,7 @@ Codex propone código; Claude revisará mediante GitHub Actions tanto los produc
 - [Estado y pruebas ejecutadas](docs/ESTADO.md)
 - [Integración elegida: GitHub Actions](docs/CLAUDE-OPCIONES.md)
 - [Recuperación](docs/RECUPERACION.md)
+- [Primera revisión: alcance, activación y límites](docs/ACTIVAR-CLAUDE.md)
 
 Con Python y Node disponibles:
 
