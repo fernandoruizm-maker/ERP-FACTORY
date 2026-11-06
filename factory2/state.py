@@ -27,7 +27,7 @@ class Store:
     def __init__(self, path, *, config_path=None, coordinator=None, reviews_directory=None):
         self.path = Path(path)
         self.config_path = Path(config_path) if config_path else Path(__file__).resolve().parent.parent / 'config.json'
-        self.coordinator = coordinator or Coordinator(None)
+        self.coordinator = coordinator or Coordinator(self.path.parent)
         self.reviews_directory = (Path(reviews_directory) if reviews_directory else
                                   Path(__file__).resolve().parent.parent / 'docs/revisiones')
         self.path.parent.mkdir(parents=True, exist_ok=True)

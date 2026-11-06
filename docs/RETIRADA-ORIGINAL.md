@@ -36,20 +36,27 @@ La App original se declara retirada. Fernando confirma que no existia clave de
 OpenAI de esta fabrica; ese punto ya no esta pendiente. No se hizo una auditoria
 remota de credenciales ni se revoco ninguna clave en esta actualizacion.
 
-## Propuesta breve para la fabrica nueva (NO implementada)
+## Registro implementado localmente en el bloque 8
 
-1. En una futura PR autorizada, admitir un registro simple de retiro declarado:
-   fecha, responsable, VM eliminada, App ID 5603415 retirada, inventario Windows,
-   estado OpenAI confirmado y archivo=NO_POR_DECISION_DE_FERNANDO. No exigir archivo
-   ni firmas; identificar la evidencia como declaracion, no como autenticacion tecnica.
-2. Sustituir el bloqueo de coordinacion solo cuando ese registro este completo y
-   Fernando autorice expresamente el cambio. Datos pendientes o contradictorios
-   mantienen BLOCKED. Probar esos casos; no convertir la declaracion en prueba remota.
-3. Si se restaura/recrea la original o se le devuelven accesos, invalidar el registro
-   y bloquear la nueva antes de permitir cualquier operacion paralela.
-4. Conservar candado, revision, dos aceptaciones, presupuesto y permisos restantes:
-   resolver la coordinacion no activa fabrica, proveedores, publicaciones ni ERP.
+[retirada-original.json](retirada-original.json) recoge esta declaracion sin
+secretos ni firmas. `kind=DECLARACION_NO_AUTENTICADA` y
+`provenance_authenticated=false`: comprobar su coherencia no autentica a Fernando
+ni demuestra de nuevo el estado de VirtualBox, Windows o GitHub.
 
-**Hoy ORIGINAL_COORDINATION_NOT_VERIFIED permanece intacto.** No se cambia codigo,
-configuracion ni comportamiento. La fabrica nueva sigue desactivada. Esta tarea
-solo actualiza documentos locales; no consulta red, no revoca nada y no publica.
+El Coordinator relee el registro antes de tomar el candado, despues de tomarlo
+y antes de reservar cada llamada. Tambien lo comprueba antes de `recover()`.
+Sustituye `ORIGINAL_COORDINATION_NOT_VERIFIED` por esta comprobacion: ausencia,
+campos incompletos, datos invalidos o contradictorios mantienen BLOCKED.
+`original_restored=true` bloquea con `ORIGINAL_RESTORED`.
+
+Antes de restaurar/recrear la original o devolverle accesos, Fernando debe pedir
+que se marque `original_restored=true`. El registro no detecta restauraciones
+no comunicadas. Volver a `false` requiere comprobar y declarar otra vez la retirada;
+no basta con borrar el aviso. No se exige archivo oficial ni sistema de firmas.
+
+El candado sigue siendo obligatorio, situado junto al estado local de la fabrica.
+Un resultado de una llamada ya reservada puede terminar de registrarse aunque
+cambie la declaracion; no se autoriza una llamada nueva ni un reintento.
+Se conservan revision, dos aceptaciones, presupuesto y permisos del ERP.
+**La fabrica sigue desactivada; el registro no autoriza llamadas ni publicacion.**
+Pruebas y limites del cambio local: [bloque-8.md](pr/bloque-8.md).
