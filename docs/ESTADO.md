@@ -9,8 +9,9 @@ Fernando no conserva ese respaldo como archivo oficial, por decision expresa.
 No se crea otro archivo ni se promete restauracion; no se verifica borrado de discos
 u otras copias ni se afirma que el OVA se haya borrado fisicamente.
 GitHub App **RDC Factory Fernando**, **App ID 5603415**, eliminada con su clave y
-su instalacion en rdc, segun Fernando. OpenAI: **estado por confirmar**; el mensaje
-incluye [revocada / no existia / pendiente] sin elegir. No afirmar revocacion total.
+su instalacion en rdc, segun Fernando. OpenAI: **no existia** clave de la fabrica
+original, confirmado expresamente por Fernando; no corresponde revocacion. No
+se consulto el proveedor ni se realizo una auditoria remota para esta anotacion.
 Windows: el inventario previo de Codex no identifico tareas ni servicios propios
 de la fabrica; su alcance era limitado. pilot.pause se conserva segun Fernando.
 No se volvieron a consultar VM, Windows, Ubuntu, rdc, GitHub o proveedores aqui.

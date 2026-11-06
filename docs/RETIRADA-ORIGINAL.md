@@ -15,7 +15,7 @@ Este registro sustituye la guia de pasos pendientes; la historia se conserva en 
 | Windows | No se identificaron tareas ni servicios propios de la fabrica en el inventario anterior | Inventario acotado de Codex |
 | pilot.pause | Se conserva | Fernando; su existencia se observo en el inventario anterior |
 | GitHub App RDC Factory Fernando | Eliminada, junto con su clave y su instalacion en rdc; **App ID 5603415** | Fernando |
-| OpenAI | **ESTADO POR CONFIRMAR**: el mensaje contiene [revocada / no existia / pendiente], sin seleccionar una opcion | Fernando debe concretarlo |
+| OpenAI | **No existia** clave de OpenAI de la fabrica original; no corresponde revocacion | Confirmacion expresa de Fernando |
 
 No se interpreta la eliminacion de VirtualBox como prueba de borrado de todos los
 discos, instantaneas, copias o del OVA. No se verificaron esas ubicaciones. Tampoco
@@ -32,8 +32,9 @@ El historial de rdc queda segun lo comunicado por Fernando; no se ha consultado.
 
 No se usan las antiguas instrucciones de conservar/exportar la VM como tareas
 pendientes ni como motivo para revertir esta decision. El anexo largo es historico.
-La App original se declara retirada; no afirmar que todas las credenciales de
-proveedores estan resueltas mientras OpenAI siga sin estado confirmado. No pedir claves.
+La App original se declara retirada. Fernando confirma que no existia clave de
+OpenAI de esta fabrica; ese punto ya no esta pendiente. No se hizo una auditoria
+remota de credenciales ni se revoco ninguna clave en esta actualizacion.
 
 ## Propuesta breve para la fabrica nueva (NO implementada)
 
