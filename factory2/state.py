@@ -1,6 +1,7 @@
 """Estado propio; no importa la cola de la primera fábrica."""
 import json
 import math
+import re
 import sqlite3
 import time
 import unicodedata
@@ -82,13 +83,43 @@ class Store:
         except (OSError, ValueError):
             raise Blocked('OPERATION_CONFIG_INVALID') from None
 
-    def roster(self):
+    def roster(self, task):
+        # The target is part of the versioned brief, never a flag supplied to gate().
+        with self.connect() as db:
+            row = db.execute('SELECT version,brief FROM tasks WHERE id=?', (task,)).fetchone()
+        if row is None:
+            raise Blocked('APPROVAL_TARGET_REQUIRED')
+        brief = json.loads(row['brief'])
+        if not isinstance(brief, dict) or digest(brief) != row['version']:
+            raise Blocked('APPROVAL_TARGET_VERSION_MISMATCH')
+        target = brief.get('approval_target')
+        if not isinstance(target, dict) or set(target) != {'kind', 'repository'}:
+            raise Blocked('APPROVAL_TARGET_REQUIRED')
+        repository = target['repository']
+        if not isinstance(repository, str) or not re.fullmatch(r'[A-Za-z0-9_-]+/[A-Za-z0-9_.-]+', repository):
+            raise Blocked('APPROVAL_TARGET_INVALID')
+        is_factory = repository.casefold() == 'fernandoruizm-maker/erp-factory'
         config = self.config()
-        required = config.get('human_approvals_required')
+        if target['kind'] == 'factory' and is_factory:
+            required = config.get('human_approvals_required')
+            roles = config.get('human_approval_roles')
+            expected_roles = {'business'}
+        elif target['kind'] == 'accounting_product' and not is_factory:
+            policy = config.get('accounting_product_approvals')
+            if not isinstance(policy, dict):
+                raise Blocked('HUMAN_APPROVERS_PENDING')
+            required = policy.get('human_approvals_required')
+            roles = policy.get('roles')
+            expected_roles = {'business', 'accounting'}
+        else:
+            # Non-accounting products have no agreed exception; no implicit downgrade.
+            raise Blocked('APPROVAL_TARGET_INVALID_OR_UNDECIDED')
         people = config.get('human_approvers')
-        if (type(required) is not int or required < 2 or not isinstance(people, dict)
-                or len(people) != required or not {'business', 'accounting'} <= set(people)
-                or 'technical' in people):
+        if (type(required) is not int or required != len(expected_roles)
+                or not isinstance(roles, list) or not all(isinstance(role, str) for role in roles)
+                or len(roles) != required or set(roles) != expected_roles
+                or not isinstance(people, dict) or not expected_roles <= set(people)
+                or not set(people) <= {'business', 'accounting'}):
             raise Blocked('HUMAN_APPROVERS_PENDING')
         seen_names, seen_ids = set(), set()
         normalized = {}
@@ -103,7 +134,7 @@ class Store:
             seen_names.add(name)
             seen_ids.add(number)
             normalized[role] = {'login': name, 'id': number}
-        return required, normalized
+        return required, {role: normalized[role] for role in roles}
 
     def import_factory_review(self, directory, receipt):
         metadata, report, manifest, hashes = import_artifacts(
@@ -207,7 +238,7 @@ class Store:
     def accept(self, task, version, person, role, *, source_sha=None,
                factory_digest=None, review_id=None, expires_at=None, manual_review_id=None):
         # A local declaration only. Authentication is explicitly not implemented.
-        _, people = self.roster()
+        _, people = self.roster(task)
         name = identity(person)
         if role not in people or name != people[role]['login']:
             raise Blocked('ACCEPTANT_NOT_CONFIGURED')
@@ -254,7 +285,7 @@ class Store:
         if row is None or json.loads(row[1]).get("artifact_digest") != artifact_digest:
             reasons.append("El código no corresponde al expediente aceptado.")
         try:
-            required, people = self.roster()
+            required, people = self.roster(task)
             valid = [r for r in acceptances if r['role'] in people
                      and r['person'] == people[r['role']]['login'] and r['person_id'] == people[r['role']]['id']
                      and r['source_sha'] == source_sha and r['factory_digest'] == factory_digest

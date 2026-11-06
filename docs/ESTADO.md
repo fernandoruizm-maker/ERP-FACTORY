@@ -1,6 +1,60 @@
-# Estado vigente: bloque 8, retirada declarada (solo local)
+# Estado vigente: bloques 8 y 9 combinados localmente
 
-Rama `fix/bloque-8-retirada-registrada`, desde origin/main
+El 6-11-2026 se trajo origin/main mediante el unico fetch autorizado:
+54b5bda8170a886755c768b1e2b7bfba5ac5eae4 (merge del bloque 8). Se combina con
+docs/bloque-9-docker en 6ce6af02b8c885c320761923c670615151204777, conservando
+el Coordinator con retirada declarada y roster(task) con aprobaciones por niveles.
+Fernando comunica que Claude reviso 6ce6af0 sin objeciones tecnicas; esto no
+equivale a una revision del nuevo SHA combinado ni a una aprobacion autenticada.
+Unico conflicto textual: este documento; se conservan ambos bloques e historia.
+La prueba de retirada ahora declara destino factory para comprobar especificamente
+la falta de aceptaciones bajo la nueva politica, sin relajar el bloqueo.
+
+Fernando arranco el motor y declaro cumplir los
+limites de licencia gratuita. Descargas autorizadas: Python 3.13 slim y Node 24
+slim, fijadas por digest en DOCKER.md. Sin mas red ni proveedores.
+
+DockerRunner real, sin modificarlo: 13 pruebas Python, 7 JavaScript y 3 de
+aislamiento pasaron. Codigo montado de solo lectura, UID/GID 65534, sin privilegios,
+sin red del contenedor ni pulls durante el ensayo; huellas del host intactas.
+No se instalo/configuro/actualizo Docker; no se apago el motor de Fernando.
+
+Politica local: ERP-FACTORY requiere Fernando (1); productos con impacto contable
+requieren Fernando y FERRUMTJA (2). Destino no clasificado o nivel no decidido:
+BLOCKED. La clasificacion forma parte del expediente versionado; cambiarla invalida
+aceptaciones. No autentica personas. Revision, caducidad y controles restantes
+siguen vigentes; config.json mantiene sus cuatro interruptores false.
+No se cambiaron reglas de GitHub: la plantilla de dos aprobaciones es anterior
+y no debe confundirse con esta politica local. Guia vigente en GUIA-APROBAR.md.
+
+Suites completas del arbol combinado: raiz 178, privada 113, JS 7 y TS 3;
+301 pruebas en total, 0 fallos/errores, 0 omitidas. Todas con salida 0.
+Las anteriores fueron raiz 161, privada 113, JS 7 y TS 3 sin fallos/omitidas.
+Se conserva la evidencia anterior de 23 pruebas Docker: runner.py y el auxiliar
+no cambian y no se repite Docker por instruccion de Fernando.
+Comandos y limites: [pr/bloque-9.md](pr/bloque-9.md).
+Sin revision Claude de este SHA ni activacion/publicacion. Riesgo aceptado de no
+tener revisor tecnico humano y auditoria externa previa a datos reales/ERP vigentes.
+
+---
+
+# Historia: bloque 9, inventario Docker (solo documentacion local)
+
+Rama docs/bloque-9-docker desde la referencia local origin/main
+877dd757f83f5fece05e2216ddfdea36843f0c4a; sin fetch en esta fase sin red.
+Docker Desktop 4.98.0.245422 y cliente 29.9.2 instalados. WSL 3.0.3.0:
+Ubuntu-24.04 (predeterminada) y docker-desktop, ambas WSL 2 y detenidas.
+El motor Linux no responde en su tuberia local. No se arranco ningun componente.
+Inventario, limites y plan para Fernando: [DOCKER.md](DOCKER.md).
+Solo revision documental contra el runner y las pruebas; no suites ni contenedores
+ejecutados. Licencia actual, compatibilidad e integracion Docker NO VERIFICADAS.
+No hay instalacion, configuracion, activacion, descarga ni publicacion.
+
+---
+
+# Bloque 8: retirada declarada incorporada desde main
+
+Procedencia historica: rama `fix/bloque-8-retirada-registrada`, desde origin/main
 `877dd757f83f5fece05e2216ddfdea36843f0c4a`, obtenido mediante el unico fetch autorizado.
 `docs/retirada-original.json` registra la declaracion de Fernando del 5-11-2026:
 VM eliminada, App 5603415 eliminada con clave e instalacion, inventario acotado
@@ -14,7 +68,7 @@ Los cuatro interruptores de config.json siguen en false. Revision, aceptaciones,
 presupuesto y permisos no cambian. No hay activacion, publicacion ni proveedores.
 La revision automatica privada permanece aparcada y con sus tres bloqueos.
 
-Suites completas: raiz 166, privada 113, JS 7 y TS 3; 289 pruebas en total,
+Suites historicas del bloque 8: raiz 166, privada 113, JS 7 y TS 3; 289 pruebas en total,
 0 fallos/errores y 0 omitidas. Comandos y limitaciones: [bloque-8.md](pr/bloque-8.md).
 No se vuelven a verificar remotamente las declaraciones, ni se detecta una
 restauracion no comunicada. No se ha recibido revision de Claude de este cambio.

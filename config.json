@@ -8,7 +8,12 @@
   "reviewer": "claude",
   "review_mode": "manual_chat",
   "automatic_review_status": "PARKED",
-  "human_approvals_required": 2,
+  "human_approvals_required": 1,
+  "human_approval_roles": ["business"],
+  "accounting_product_approvals": {
+    "human_approvals_required": 2,
+    "roles": ["business", "accounting"]
+  },
   "human_approvers": {
     "business": {"login": "fernandoruizm-maker", "id": "342326625"},
     "accounting": {"login": "FERRUMTJA", "id": "352290329"}

@@ -9,7 +9,7 @@ from unittest.mock import patch
 from factory2.core import Blocked, canonical, digest
 from factory2.manual_review import CLEAR, REVIEWER, validate_document
 from factory2.state import Store
-from tests.operation_fixtures import config, coordinator
+from tests.operation_fixtures import config, coordinator, accounting_target
 
 ROOT = Path(__file__).resolve().parents[1]
 SOURCE = 'a'*40
@@ -31,7 +31,8 @@ class ManualReviewTests(unittest.TestCase):
                          coordinator=coordinator(self.root),reviews_directory=self.folder)
         self.factory=digest('fabrica-ficticia')
         self.product=digest('producto-ficticio')
-        self.version=self.store.put_task('T',{'artifact_digest':self.product})
+        self.version=self.store.put_task('T',{'artifact_digest':self.product,
+                                             'approval_target':accounting_target()})
         self.record={'schema_version':1,'pr':'LOCAL:pr-ficticia','base_sha':'b'*40,'reviewed_sha':SOURCE,
             'scope':{'mode':'CAMBIOS_PR','files':['src/ficticio.py'],'diff':'FICTICIO: base..revisado, solo src/ficticio.py'},
             'reviewer':REVIEWER,'findings':[],'conclusion':CLEAR,'date':'2026-11-05'}
@@ -102,7 +103,7 @@ class ManualReviewTests(unittest.TestCase):
         cfg=self.store.config()
         cfg['human_approvers']['technical']=cfg['human_approvers'].pop('accounting')
         self.store.config_path.write_text(canonical(cfg))
-        with self.assertRaises(Blocked): self.store.roster()
+        with self.assertRaises(Blocked): self.store.roster('T')
 
     def test_changed_review_invalidates_old_acceptances_even_at_same_source_sha(self):
         self.accept('business'); self.accept('accounting')

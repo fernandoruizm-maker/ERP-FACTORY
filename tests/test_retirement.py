@@ -200,7 +200,9 @@ class RetirementTests(unittest.TestCase):
 
     def test_valid_record_does_not_satisfy_review_or_human_gate(self):
         store = self.store()
-        version = store.put_task('FICTICIO', {})
+        version = store.put_task('FICTICIO', {
+            'artifact_digest': 'a'*64,
+            'approval_target': {'kind': 'factory', 'repository': 'fernandoruizm-maker/ERP-FACTORY'}})
         self.coordinator.check_active()
         result = store.gate('FICTICIO', version, 'a'*64, {}, [], source_sha='b'*40)
         self.assertEqual(result['status'], 'BLOCKED')
