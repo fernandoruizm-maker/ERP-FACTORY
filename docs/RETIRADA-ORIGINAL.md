@@ -1,77 +1,54 @@
-# Retirar y archivar la fabrica original: guia corta
+# Retirada de la fabrica original: registro de Fernando
 
-Solo es una guia: aun no se ha realizado ningun cambio operativo.
-Decision: rdc no seguira desarrollandose; cerrar PR sin integrar y conservar sus reglas.
-Inventario: RDC-Piloto-Aislado esta APAGADA, autostart desactivado y tiene una instantanea.
-No la encienda solo para seguir estos pasos. La fabrica nueva sigue desactivada.
+Fecha declarada: **5 de noviembre de 2026**. Responsable: **Fernando**.
+Fernando comunica la retirada completada. Codex registra su declaracion, sin
+repetir consultas a VirtualBox, Ubuntu, GitHub ni proveedores en esta tarea.
+Este registro sustituye la guia de pasos pendientes; la historia se conserva en Git.
 
-## 1. Cerrar las PR de rdc en la web
-1. Fernando entra en GitHub con su cuenta personal y abre el repositorio rdc correcto.
-2. Pulse Pull requests > Open; revise todas, incluidas las que estan en borrador.
-3. En cada PR, guarde su numero/enlace y cierre con Close pull request, SIN integrar.
-4. Conserve ramas, comentarios e historial. No cambie rulesets ni pulse Merge.
-5. Anote cuantas habia y que no quede ninguna abierta. No confundir rdc con ERP-FACTORY.
+## Acciones y decisiones comunicadas
 
-## 2. Pausar, solo si estuviera funcionando
-1. Si la VM sigue apagada, no hay nada que pausar: mantengala asi.
-2. Si estuviera encendida y la fabrica ofrece un boton de pausa conocido, uselo.
-3. Si no existe ese boton, Codex comprobara y solicitara la pausa con autorizacion
-   especifica; Fernando no ejecuta comandos de Linux. Pausar VirtualBox congela la
-   VM, pero no equivale a pausar de forma segura un trabajo o una llamada externa.
+| Elemento | Resultado registrado | Fuente |
+|---|---|---|
+| rdc | 0 PR abiertas y 25 cerradas; queda archivado; reglas sin cambios | Fernando |
+| VM RDC-Piloto-Aislado | Exportada a OVA sin errores y despues eliminada de VirtualBox por decision de Fernando | Fernando |
+| Archivo oficial | **SIN ARCHIVO**, por decision expresa de Fernando; el OVA no se conserva como respaldo oficial | Fernando |
+| Windows | No se identificaron tareas ni servicios propios de la fabrica en el inventario anterior | Inventario acotado de Codex |
+| pilot.pause | Se conserva | Fernando; su existencia se observo en el inventario anterior |
+| GitHub App RDC Factory Fernando | Eliminada, junto con su clave y su instalacion en rdc; **App ID 5603415** | Fernando |
+| OpenAI | **ESTADO POR CONFIRMAR**: el mensaje contiene [revocada / no existia / pendiente], sin seleccionar una opcion | Fernando debe concretarlo |
 
-## 3. Confirmar que no quede trabajo en curso
-1. Si hay una tarea visible en marcha, espere a que termine; no reinicie para probar.
-2. La VM apagada no ejecuta tareas dentro, pero puede haber trabajos previos inciertos.
-3. Codex, con autorizacion de lectura, reconciliara esos pendientes y los posibles
-   procesos de Windows; no repetira trabajos ni encendera la fabrica automaticamente.
-4. Si no puede confirmarse el fin del trabajo, detener la retirada y pedir ayuda.
+No se interpreta la eliminacion de VirtualBox como prueba de borrado de todos los
+discos, instantaneas, copias o del OVA. No se verificaron esas ubicaciones. Tampoco
+se afirma una auditoria de todos los procesos o componentes de Windows: el alcance
+del inventario previo esta en el [anexo tecnico](RETIRADA-ORIGINAL-ANEXO-TECNICO.md).
 
-## 4. Apagar y evitar el arranque automatico
-1. Abra VirtualBox y seleccione RDC-Piloto-Aislado. Si dice Apagada, no haga nada mas.
-2. Si estuviera encendida, use el apagado normal del menu del Ubuntu invitado o
-   Maquina > Cerrar > Enviar señal de apagado. Espere a que aparezca Apagada.
-3. No elija Guardar estado ni Apagar la maquina de forma forzada; si no responde,
-   detengase y pida ayuda. No borre la VM ni sus discos o instantaneas.
-4. El autostart de esta VM ya figura desactivado. Si cambia, Codex lo quitara solo
-   con autorizacion, sin pedirle a Fernando que use comandos.
-5. No se hallaron tareas Windows propias de la fabrica. Si despues se identifican,
-   Codex las deshabilitara con autorizacion. No tocar Autopilot, Copilot ni VBoxSDS:
-   son coincidencias del filtro, no workers confirmados de la fabrica.
+## Decision expresa: retirada SIN ARCHIVO
 
-## 5. Exportar la VM completa, sin borrar la original
-1. Fernando elige un disco/carpeta privada y protegida, con espacio suficiente.
-2. En VirtualBox: Archivo > Exportar servicio virtualizado; seleccione
-   RDC-Piloto-Aislado y el destino elegido; exporte como archivo OVA.
-3. Espere a que termine sin errores y anote ruta, fecha y tamaño. No marque opciones
-   para enviar a la nube. No suba el OVA a GitHub ni lo adjunte a un chat.
-4. El OVA puede contener datos y claves antiguas: mantengalo protegido. Conserva el
-   estado actual, no el historial de instantaneas; por eso NO se borra la VM original.
-5. Si falla, conserve la original y no marque la copia como valida. Una futura
-   prueba de restauracion sera aparte, aislada y sin arrancar ambas fabricas.
+La instruccion nueva sustituye el plan anterior de conservar una VM original y
+un archivo oficial. Se registra la decision, sin crear una copia alternativa ni
+borrar nada mas. No hay respaldo oficial disponible para prometer una restauracion.
+No consta comprobacion de recuperacion del OVA ni archivo final de SQLite/trabajos.
+El historial de rdc queda segun lo comunicado por Fernando; no se ha consultado.
 
-## 6. Retirar credenciales, despues de apagar y comprobar la exportacion
-1. En GitHub, cuenta propietaria de la App original: Settings > Developer settings >
-   GitHub Apps > App correcta > Private keys. Identifique y revoque su clave privada
-   sin mostrarla. Si afecta a otro sistema, detengase antes de revocar.
-2. Cuenta/organizacion de rdc: Settings > Applications / Installed GitHub Apps >
-   App original > Configure > Uninstall. Confirme la App y su alcance antes de quitarla.
-3. No elimine la cuenta fernandocodex64-sudo ni sus credenciales; son de la nueva.
-4. Si existia una clave OpenAI exclusiva: consola de OpenAI > proyecto correcto >
-   API keys > clave identificada > Revoke/Delete. Si no sabe cual es o es compartida,
-   pida ayuda y no borre otra. No muestre claves en capturas ni mensajes.
-5. Si quedo un webhook independiente de la App, Codex explicara su baja por clics
-   con autorizacion; no tocar integraciones ajenas. Guarde solo fecha y confirmacion.
-6. No cambiar reglas de rdc: sus checks antiguos pueden quedar pendientes y eso es
-   aceptable porque no habra nuevas integraciones. Los menus pueden variar; si duda, pare.
+No se usan las antiguas instrucciones de conservar/exportar la VM como tareas
+pendientes ni como motivo para revertir esta decision. El anexo largo es historico.
+La App original se declara retirada; no afirmar que todas las credenciales de
+proveedores estan resueltas mientras OpenAI siga sin estado confirmado. No pedir claves.
 
-## 7. Dejar un registro sencillo en la fabrica nueva
-1. Fernando comunica fecha, quien comprobo y resultado de los pasos 4, 5 y 6:
-   VM apagada/autostart desactivado; archivo OVA terminado; App/clave/OpenAI retiradas
-   o pendientes/no aplicables, con motivo. La ubicacion detallada queda en registro privado.
-2. Codex lo anota, con autorizacion, sin claves ni firmas. Hoy este registro es solo
-   documental: NO cambia ORIGINAL_COORDINATION_NOT_VERIFIED ni activa la fabrica nueva.
-3. Si falta algo, registrar Pendiente. No afirmar retirada completa ni reactivar nada.
-4. Para deshacer: conservar la VM y el archivo; pedir autorizacion antes de restaurar
-   o arrancar. Las claves revocadas necesitan reemplazo, no se recuperan automaticamente.
+## Propuesta breve para la fabrica nueva (NO implementada)
 
-Inventario y limites en [anexo tecnico](RETIRADA-ORIGINAL-ANEXO-TECNICO.md).
+1. En una futura PR autorizada, admitir un registro simple de retiro declarado:
+   fecha, responsable, VM eliminada, App ID 5603415 retirada, inventario Windows,
+   estado OpenAI confirmado y archivo=NO_POR_DECISION_DE_FERNANDO. No exigir archivo
+   ni firmas; identificar la evidencia como declaracion, no como autenticacion tecnica.
+2. Sustituir el bloqueo de coordinacion solo cuando ese registro este completo y
+   Fernando autorice expresamente el cambio. Datos pendientes o contradictorios
+   mantienen BLOCKED. Probar esos casos; no convertir la declaracion en prueba remota.
+3. Si se restaura/recrea la original o se le devuelven accesos, invalidar el registro
+   y bloquear la nueva antes de permitir cualquier operacion paralela.
+4. Conservar candado, revision, dos aceptaciones, presupuesto y permisos restantes:
+   resolver la coordinacion no activa fabrica, proveedores, publicaciones ni ERP.
+
+**Hoy ORIGINAL_COORDINATION_NOT_VERIFIED permanece intacto.** No se cambia codigo,
+configuracion ni comportamiento. La fabrica nueva sigue desactivada. Esta tarea
+solo actualiza documentos locales; no consulta red, no revoca nada y no publica.

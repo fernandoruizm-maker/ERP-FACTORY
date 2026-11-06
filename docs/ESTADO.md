@@ -1,23 +1,28 @@
 # Estado vigente: preparacion de PR unica de bloques 1 a 7
 
-## Decision vigente: retirada sencilla de la original (sin ejecutar cambios)
+## Retirada original comunicada por Fernando: 5-11-2026
 
-Fernando elige opcion A para rdc: cerrar sus PR sin integrar y no cambiar reglas.
-Guia por clics de hasta 80 lineas en docs/RETIRADA-ORIGINAL.md. La anterior se
-conserva como historia en RETIRADA-ORIGINAL-ANEXO-TECNICO.md; no se exige a Fernando
-usar Linux, backups SQLite por API ni firmas. Registro final simple, documental.
-Inventario autorizado solo lectura: una VM RDC-Piloto-Aislado, poweroff, autostart
-off y una instantanea. Sin tareas/servicios propios de fabrica identificados;
-coincidencias Autopilot/Copilot y VBoxSDS no se deben deshabilitar por ese filtro.
-Existe pilot.pause en la carpeta historica rdc-activation/state (ruta en anexo).
-Lecturas inicialmente denegadas por aislamiento se completaron por la via formal
-de aprobacion de solo lectura. Sin cambios operativos, red, Ubuntu ni GitHub.
-No se inspeccionaron trabajos dentro de la VM, procesos sueltos o todas las rutas
-de Windows. Inventario acotado, no prueba de ausencia total de componentes.
-ORIGINAL_COORDINATION_NOT_VERIFIED sigue intacto. No se implementa ningun cambio
-de coordinacion ni activacion. Verificacion documental de lineas, enlaces y diff;
-sin suites de proyecto. El archivo/exportacion y las bajas siguen pendientes.
+Fernando declara la retirada completada: rdc con 0 PR abiertas y 25 cerradas,
+archivado y con reglas sin cambios. VM RDC-Piloto-Aislado exportada a OVA sin
+errores y despues eliminada de VirtualBox por decision suya. **Retirada SIN ARCHIVO**:
+Fernando no conserva ese respaldo como archivo oficial, por decision expresa.
+No se crea otro archivo ni se promete restauracion; no se verifica borrado de discos
+u otras copias ni se afirma que el OVA se haya borrado fisicamente.
+GitHub App **RDC Factory Fernando**, **App ID 5603415**, eliminada con su clave y
+su instalacion en rdc, segun Fernando. OpenAI: **estado por confirmar**; el mensaje
+incluye [revocada / no existia / pendiente] sin elegir. No afirmar revocacion total.
+Windows: el inventario previo de Codex no identifico tareas ni servicios propios
+de la fabrica; su alcance era limitado. pilot.pause se conserva segun Fernando.
+No se volvieron a consultar VM, Windows, Ubuntu, rdc, GitHub o proveedores aqui.
 
+Registro y propuesta breve en docs/RETIRADA-ORIGINAL.md. El plan anterior queda
+como historia en el anexo tecnico y Git; sus exigencias de archivo no siguen
+vigentes. La propuesta futura es un registro de retiro DECLARADO, sin firmas ni
+archivo obligatorio, validado para coherencia y pendientes, no una prueba tecnica
+remota. Requiere otra autorizacion y revision antes de modificar codigo.
+**ORIGINAL_COORDINATION_NOT_VERIFIED sigue intacto**, al igual que configuracion
+y bloqueos restantes. No se activa la nueva fabrica. Solo documentacion local;
+verificacion de referencias y diff, sin suites por no cambiar comportamiento.
 
 Decision expresa de Fernando: publicacion/bloques-1-7 nace de origin/main
 930528e2aad40aace0903311fc997c3d34024bd6 y contiene la fuente completa
