@@ -1,5 +1,30 @@
 # Estado vigente: preparacion de PR unica de bloques 1 a 7
 
+## Retirada original comunicada por Fernando: 5-11-2026
+
+Fernando declara la retirada completada: rdc con 0 PR abiertas y 25 cerradas,
+archivado y con reglas sin cambios. VM RDC-Piloto-Aislado exportada a OVA sin
+errores y despues eliminada de VirtualBox por decision suya. **Retirada SIN ARCHIVO**:
+Fernando no conserva ese respaldo como archivo oficial, por decision expresa.
+No se crea otro archivo ni se promete restauracion; no se verifica borrado de discos
+u otras copias ni se afirma que el OVA se haya borrado fisicamente.
+GitHub App **RDC Factory Fernando**, **App ID 5603415**, eliminada con su clave y
+su instalacion en rdc, segun Fernando. OpenAI: **no existia** clave de la fabrica
+original, confirmado expresamente por Fernando; no corresponde revocacion. No
+se consulto el proveedor ni se realizo una auditoria remota para esta anotacion.
+Windows: el inventario previo de Codex no identifico tareas ni servicios propios
+de la fabrica; su alcance era limitado. pilot.pause se conserva segun Fernando.
+No se volvieron a consultar VM, Windows, Ubuntu, rdc, GitHub o proveedores aqui.
+
+Registro y propuesta breve en docs/RETIRADA-ORIGINAL.md. El plan anterior queda
+como historia en el anexo tecnico y Git; sus exigencias de archivo no siguen
+vigentes. La propuesta futura es un registro de retiro DECLARADO, sin firmas ni
+archivo obligatorio, validado para coherencia y pendientes, no una prueba tecnica
+remota. Requiere otra autorizacion y revision antes de modificar codigo.
+**ORIGINAL_COORDINATION_NOT_VERIFIED sigue intacto**, al igual que configuracion
+y bloqueos restantes. No se activa la nueva fabrica. Solo documentacion local;
+verificacion de referencias y diff, sin suites por no cambiar comportamiento.
+
 Decision expresa de Fernando: publicacion/bloques-1-7 nace de origin/main
 930528e2aad40aace0903311fc997c3d34024bd6 y contiene la fuente completa
 0ff127fd2a6fc65ec5d9064087c91b3bfcda6b91, incluido b0da873 del bloque 1.
