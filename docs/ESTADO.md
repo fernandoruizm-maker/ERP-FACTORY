@@ -1,4 +1,18 @@
-# Estado vigente: preparacion de PR unica de bloques 1 a 7
+# Estado vigente: bloque 9, inventario Docker (solo documentacion local)
+
+Rama docs/bloque-9-docker desde la referencia local origin/main
+877dd757f83f5fece05e2216ddfdea36843f0c4a; sin fetch en esta fase sin red.
+Docker Desktop 4.98.0.245422 y cliente 29.9.2 instalados. WSL 3.0.3.0:
+Ubuntu-24.04 (predeterminada) y docker-desktop, ambas WSL 2 y detenidas.
+El motor Linux no responde en su tuberia local. No se arranco ningun componente.
+Inventario, limites y plan para Fernando: [DOCKER.md](DOCKER.md).
+Solo revision documental contra el runner y las pruebas; no suites ni contenedores
+ejecutados. Licencia actual, compatibilidad e integracion Docker NO VERIFICADAS.
+No hay instalacion, configuracion, activacion, descarga ni publicacion.
+
+---
+
+# Historia: preparacion de PR unica de bloques 1 a 7
 
 ## Retirada original comunicada por Fernando: 5-11-2026
 
