@@ -1,7 +1,16 @@
-# Estado vigente: bloque 9, Docker real y aprobaciones por niveles
+# Estado vigente: bloques 8 y 9 combinados localmente
 
-Ampliacion desde be3e026 en docs/bloque-9-docker, sin actualizar origin/main ni
-incorporar la rama del bloque 8. Fernando arranco el motor y declaro cumplir los
+El 6-11-2026 se trajo origin/main mediante el unico fetch autorizado:
+54b5bda8170a886755c768b1e2b7bfba5ac5eae4 (merge del bloque 8). Se combina con
+docs/bloque-9-docker en 6ce6af02b8c885c320761923c670615151204777, conservando
+el Coordinator con retirada declarada y roster(task) con aprobaciones por niveles.
+Fernando comunica que Claude reviso 6ce6af0 sin objeciones tecnicas; esto no
+equivale a una revision del nuevo SHA combinado ni a una aprobacion autenticada.
+Unico conflicto textual: este documento; se conservan ambos bloques e historia.
+La prueba de retirada ahora declara destino factory para comprobar especificamente
+la falta de aceptaciones bajo la nueva politica, sin relajar el bloqueo.
+
+Fernando arranco el motor y declaro cumplir los
 limites de licencia gratuita. Descargas autorizadas: Python 3.13 slim y Node 24
 slim, fijadas por digest en DOCKER.md. Sin mas red ni proveedores.
 
@@ -18,9 +27,12 @@ siguen vigentes; config.json mantiene sus cuatro interruptores false.
 No se cambiaron reglas de GitHub: la plantilla de dos aprobaciones es anterior
 y no debe confundirse con esta politica local. Guia vigente en GUIA-APROBAR.md.
 
-Suites completas: raiz 161, privada 113, JS 7 y TS 3; 0 fallos/errores y 0
-omitidas. Ademas, 23 ejecuciones de prueba en Docker real (20 del mismo piloto
-y 3 negativas). Comandos y limites: [pr/bloque-9.md](pr/bloque-9.md).
+Suites completas del arbol combinado: raiz 178, privada 113, JS 7 y TS 3;
+301 pruebas en total, 0 fallos/errores, 0 omitidas. Todas con salida 0.
+Las anteriores fueron raiz 161, privada 113, JS 7 y TS 3 sin fallos/omitidas.
+Se conserva la evidencia anterior de 23 pruebas Docker: runner.py y el auxiliar
+no cambian y no se repite Docker por instruccion de Fernando.
+Comandos y limites: [pr/bloque-9.md](pr/bloque-9.md).
 Sin revision Claude de este SHA ni activacion/publicacion. Riesgo aceptado de no
 tener revisor tecnico humano y auditoria externa previa a datos reales/ERP vigentes.
 
@@ -37,6 +49,29 @@ Inventario, limites y plan para Fernando: [DOCKER.md](DOCKER.md).
 Solo revision documental contra el runner y las pruebas; no suites ni contenedores
 ejecutados. Licencia actual, compatibilidad e integracion Docker NO VERIFICADAS.
 No hay instalacion, configuracion, activacion, descarga ni publicacion.
+
+---
+
+# Bloque 8: retirada declarada incorporada desde main
+
+Procedencia historica: rama `fix/bloque-8-retirada-registrada`, desde origin/main
+`877dd757f83f5fece05e2216ddfdea36843f0c4a`, obtenido mediante el unico fetch autorizado.
+`docs/retirada-original.json` registra la declaracion de Fernando del 5-11-2026:
+VM eliminada, App 5603415 eliminada con clave e instalacion, inventario acotado
+de Windows sin tareas/servicios propios y pausa conservada, OpenAI NO_EXISTIA,
+archivo NO_POR_DECISION_DE_FERNANDO. No contiene firmas ni autentica personas.
+
+El Coordinator sustituye ORIGINAL_COORDINATION_NOT_VERIFIED por la validacion
+del registro. Ausente, incompleto, contradictorio, invalido o restauracion declarada
+bloquean. Se relee antes de recover y de reservar llamadas, manteniendo el candado.
+Los cuatro interruptores de config.json siguen en false. Revision, aceptaciones,
+presupuesto y permisos no cambian. No hay activacion, publicacion ni proveedores.
+La revision automatica privada permanece aparcada y con sus tres bloqueos.
+
+Suites historicas del bloque 8: raiz 166, privada 113, JS 7 y TS 3; 289 pruebas en total,
+0 fallos/errores y 0 omitidas. Comandos y limitaciones: [bloque-8.md](pr/bloque-8.md).
+No se vuelven a verificar remotamente las declaraciones, ni se detecta una
+restauracion no comunicada. No se ha recibido revision de Claude de este cambio.
 
 ---
 
@@ -58,14 +93,10 @@ Windows: el inventario previo de Codex no identifico tareas ni servicios propios
 de la fabrica; su alcance era limitado. pilot.pause se conserva segun Fernando.
 No se volvieron a consultar VM, Windows, Ubuntu, rdc, GitHub o proveedores aqui.
 
-Registro y propuesta breve en docs/RETIRADA-ORIGINAL.md. El plan anterior queda
-como historia en el anexo tecnico y Git; sus exigencias de archivo no siguen
-vigentes. La propuesta futura es un registro de retiro DECLARADO, sin firmas ni
-archivo obligatorio, validado para coherencia y pendientes, no una prueba tecnica
-remota. Requiere otra autorizacion y revision antes de modificar codigo.
-**ORIGINAL_COORDINATION_NOT_VERIFIED sigue intacto**, al igual que configuracion
-y bloqueos restantes. No se activa la nueva fabrica. Solo documentacion local;
-verificacion de referencias y diff, sin suites por no cambiar comportamiento.
+Registro y explicacion vigente en docs/RETIRADA-ORIGINAL.md. El plan anterior
+queda como historia en el anexo tecnico y Git; sus exigencias de archivo no siguen
+vigentes. En esta etapa historica solo se documento la propuesta, sin cambiar
+ORIGINAL_COORDINATION_NOT_VERIFIED; el bloque 8 descrito arriba la implementa.
 
 Decision expresa de Fernando: publicacion/bloques-1-7 nace de origin/main
 930528e2aad40aace0903311fc997c3d34024bd6 y contiene la fuente completa

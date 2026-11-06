@@ -1,9 +1,44 @@
 # Bloque 9: Docker real y aprobaciones por niveles
 
-Rama local docs/bloque-9-docker. Esta ampliacion parte de
+Rama local docs/bloque-9-docker. La ampliacion inicial partio de
 be3e026420bfc055296dc4478add970b2512eab3, sobre origin/main local
-877dd757f83f5fece05e2216ddfdea36843f0c4a. No fetch, push ni PR en esta tarea.
-La rama del bloque 8 no esta incorporada; no se ha revertido ni modificado.
+877dd757f83f5fece05e2216ddfdea36843f0c4a. Aquella ampliacion no incluyo el bloque 8.
+
+## Actualizacion sobre main (6-11-2026)
+
+Un fetch de origin autorizado trae main a
+54b5bda8170a886755c768b1e2b7bfba5ac5eae4 (merge del bloque 8). Se combina mediante
+merge local, conservando el historial revisado de 6ce6af0, sin rebase ni push.
+Segun Fernando, Claude reviso 6ce6af02b8c885c320761923c670615151204777 sin
+objeciones tecnicas. No se extiende esa revision al nuevo SHA combinado.
+
+- Conflicto textual: docs/ESTADO.md. Se concilian las secciones de los bloques
+  8 y 9, la evidencia historica y el estado combinado, sin elegir una sola version.
+- factory2/state.py se combina automaticamente: conserva Coordinator(self.path.parent)
+  del bloque 8 y roster(task) por niveles del bloque 9.
+- tests/test_operation.py se combina automaticamente. tests/test_retirement.py
+  requiere una adaptacion semantica: declarar el destino factory en el expediente
+  que comprueba la falta de aceptaciones. Conserva BLOCKED y la razon esperada;
+  no se rebaja la prueba ni se cambia la politica para admitir expedientes sin destino.
+- PUBLICACION.md y este informe se actualizan para no seguir diciendo que falta
+  incorporar el bloque 8. Los registros de retirada y su validador se conservan.
+
+runner.py y tests/docker_pilot_check.py no cambian respecto a 6ce6af0. No se
+repite el ensayo Docker ni se usa mas red. Configuracion desactivada, upstream/,
+revisor privado y reglas remotas intactos. Envio DISABLED.
+
+Suites completas del arbol combinado, ejecutadas sin red, todas con salida 0:
+
+| Suite | Pruebas | Fallos/errores | Omitidas |
+|---|---:|---:|---:|
+| Python raiz (incluye las 17 del bloque 8) | 178 | 0 | 0 |
+| Python privada | 113 | 0 | 0 |
+| JavaScript local | 7 | 0 | 0 |
+| TypeScript local, sin typecheck | 3 | 0 | 0 |
+| Total | 301 | 0 | 0 |
+
+Los comandos son los mismos de abajo; logs nuevos fuera del repositorio en
+../entregas-locales/bloque-9-main-*.log. No confundirlos con resultados historicos.
 
 ## Cambio
 
@@ -48,7 +83,8 @@ sin sustituciones silenciosas, pruebas y publicacion siempre false. La via V2
 sigue exigiendo procedencia/autenticacion; una sola aceptacion no la desbloquea.
 Los cuatro interruptores de config.json siguen false; solo cambia la politica
 de aceptaciones. No se modifica presupuesto, ERP, upstream/, credenciales ni
-workflows. El bloqueo de coordinacion de esta base se conserva.
+workflows. Tras incorporar el bloque 8, la coordinacion valida el registro de
+retirada declarada; no autentica la retirada ni activa la fabrica.
 
 Las guias, README/LEEME e instrucciones AGENTS se actualizan para no seguir
 exigiendo dos en todos los casos. La plantilla de ruleset anterior sigue con 2:
@@ -76,7 +112,7 @@ para fabrica, 2 para producto contable, roles equivocados, destino/impacto sin
 clasificar, cambios de destino, manipulacion del brief, SHA/huella/caducidad,
 CORREGIR, configuracion invalida, controles V2 y flags desactivados.
 
-Suites completas ejecutadas sobre este cambio, todas con salida 0:
+Suites historicas ejecutadas sobre 6ce6af0 antes de incorporar main, salida 0:
 
 | Suite | Pruebas | Fallos/errores | Omitidas |
 |---|---:|---:|---:|
@@ -88,7 +124,7 @@ Suites completas ejecutadas sobre este cambio, todas con salida 0:
 
 El ensayo Docker de 23 pruebas es una ejecucion adicional; 20 corresponden al
 mismo piloto ya cubierto localmente, no son 23 casos funcionales nuevos. La raiz
-de esta rama no incluye las 17 pruebas de retirada del bloque 8 (rama separada).
+de aquella revision no incluia las 17 pruebas de retirada del bloque 8.
 No se omitieron pruebas de su suite: se explicita la diferencia entre bases.
 
 Comandos completos (desde raiz salvo la suite privada):
@@ -115,8 +151,9 @@ DOCKER.md. No se presentan como ensayos completos aprobados.
   escribible y Docker usa disco local aunque el montaje del codigo sea readonly.
 - Licencia vigente no consultada en linea; elegibilidad declarada por Fernando.
 - TS local se ejecuta sin comprobacion estatica de tipos; no prueba TS en Docker.
-- Integracion con el main remoto actual y con el bloque 8 pendiente de comprobar
-  en una futura etapa autorizada. No se cambia la base para simular esa verificacion.
+- La integracion local con main 54b5bda se comprueba en la actualizacion de arriba;
+  cambios remotos posteriores, aprobaciones GitHub y revision Claude del nuevo SHA
+  no se han verificado. No se abre, aprueba ni integra ninguna PR.
 
 Reversion: revertir este commit local devuelve la politica anterior; no afecta
 a las imagenes descargadas ni al motor, cuyo borrado/parada requeriria otra

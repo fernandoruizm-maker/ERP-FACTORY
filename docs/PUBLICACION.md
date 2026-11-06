@@ -34,11 +34,14 @@ de force push/borrado y sin bypass. En productos contables se necesitan 2 y
 comprobar que las personas concretas son Fernando y FERRUMTJA: el contador de
 GitHub por si solo no impone esos nombres. No se han consultado reglas remotas.
 
-El bloque 9 continua en docs/bloque-9-docker, desde be3e026 sobre la referencia
-local origin/main 877dd75. No se hizo fetch ni se incorporo la rama del bloque 8:
-se debera comparar con main actualizado, con autorizacion, antes de publicar.
-No interpretar esta rama como una reversion del bloque 8. Docker se probo con
-datos ficticios; sus resultados y limites estan en DOCKER.md y pr/bloque-9.md.
+El bloque 9 continua en docs/bloque-9-docker. Tras el fetch autorizado del
+6-11-2026 se incorpora origin/main 54b5bda8170a886755c768b1e2b7bfba5ac5eae4,
+incluido el bloque 8. Se conservan Coordinator y roster(task); el unico conflicto
+textual resuelto fue docs/ESTADO.md. Los resultados sobre el arbol combinado se
+registran en pr/bloque-9.md. Claude reviso 6ce6af0 sin objeciones tecnicas segun
+Fernando; la revision del nuevo SHA combinado queda pendiente. No hay autorizacion
+de push. Docker no se repite: runner.py y el auxiliar siguen iguales al ensayo
+documentado en DOCKER.md. Una futura subida exige permiso para su SHA concreto.
 
 Para deshacer esta politica local, proponer una reversion revisada del commit;
 volver al requisito anterior no cambia reglas remotas ni activa nada.
