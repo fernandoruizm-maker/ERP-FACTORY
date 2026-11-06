@@ -203,7 +203,7 @@ class ManualPolicyFilesTests(unittest.TestCase):
             data=json.loads((ROOT/config_path).read_text())
             self.assertEqual(data['automatic_review_status'],'PARKED')
             self.assertEqual(data['budget_currency'],'USD')
-            expected = (None, None, None) if config_path == 'config.json' else ('1.00', '12.00', '13.00')
+            expected = ('1.00', '12.00', '13.00')
             self.assertEqual((data['max_budget_usd_per_call'], data['max_spend_per_execution'],
                               data['max_spend_total']), expected)
         policy=json.loads((ROOT/'ERP-FACTORY-revision/policy.json').read_text())

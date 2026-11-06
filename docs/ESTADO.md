@@ -1,3 +1,28 @@
+# Estado vigente: intento 1 preparado, sin ejecutar
+
+Rama piloto/intento-1 desde 5dc2a61fb8794439fa706f535e1d8e7e5ef96199.
+Documentacion oficial consultada en lectura el 6-11-2026: gpt-5.3-codex,
+Responses, json_schema strict, tools vacio/none, medium, store=false y 32000
+compatibles documentalmente. Tarifa estandar 1.75/14.00 USD por millon;
+service_tier=default explicito. Modelo con retirada prevista 1-4-2027.
+
+Configuracion preparada: importes 1/12/13 USD, modelo y precios definidos.
+Los cuatro interruptores siguen false. Clave NO leida. No se llamo a proveedores.
+Script scripts/ensayo-intento-1.ps1, modo por defecto Preparar, sin consumir
+attempt=1. Peticion de 4682 bytes; peor caso 0.456194 USD; limite completo
+100000 bytes + 32000 tokens: 0.623000 USD. No es gasto medido ni factura.
+
+No existe state/factory2.sqlite3 en este clon. No se inicializo ni se presume
+saldo cero: pendiente confirmar el registro permanente/reconciliado antes de
+cualquier ejecucion. Detalle, fuentes y limites: [pr/intento-1.md](pr/intento-1.md).
+Suites completas: raiz 219, privada 113, JS 7, TS 3: 342 pasadas, cero
+fallos/errores y cero omitidas. TS sin comprobacion de tipos. Parser PowerShell
+sin errores y modo Preparar ejecutado sin claves ni consumo del intento.
+
+---
+
+# Historia: bloque 10 y correccion
+
 # Estado vigente: bloque 10 preparado, no ejecutado
 
 Rama feat/bloque-10-piloto desde main verificado c55453edd9f04c7274a5fabfddc54c21eda53b30,

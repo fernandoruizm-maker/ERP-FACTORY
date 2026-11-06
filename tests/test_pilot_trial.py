@@ -426,10 +426,13 @@ class APIAdapterTests(unittest.TestCase):
                 ResponsesAPI()({'model': 'FICTICIO'})
             self.assertEqual(opener.return_value.open.call_count, 1)
 
-    def test_disabled_config_and_pending_prices_are_repository_defaults(self):
+    def test_prepared_config_keeps_execution_disabled(self):
         cfg = json.loads((Path(__file__).resolve().parents[1]/'config.json').read_text())
         for key in ('enabled', 'external_calls_enabled', 'erp_access_enabled', 'publication_enabled'):
             self.assertIs(cfg[key], False)
-        for key in ('max_budget_usd_per_call', 'max_spend_per_execution', 'max_spend_total',
-                    'pilot_model', 'pilot_cost_review'):
-            self.assertIsNone(cfg[key])
+        self.assertEqual(cfg['pilot_model'], 'gpt-5.3-codex')
+        self.assertEqual(cfg['pilot_cost_review']['reasoning_effort'], 'medium')
+        self.assertEqual(cfg['pilot_cost_review']['max_output_tokens'], 32000)
+        self.assertEqual(cfg['max_budget_usd_per_call'], '1.00')
+        self.assertEqual(cfg['max_spend_per_execution'], '12.00')
+        self.assertEqual(cfg['max_spend_total'], '13.00')
