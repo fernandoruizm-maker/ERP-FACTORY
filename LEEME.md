@@ -25,6 +25,13 @@ estar autenticados: la verificacion de personas y de GitHub no se simula como re
 
 ## Que se puede comprobar localmente
 
+El bloque 10 prepara UN ensayo futuro de las botellas con modelo Codex por API.
+No se ha ejecutado: el interruptor sigue apagado y los tres importes de gasto,
+el modelo y su revision de coste siguen null. Construccion y pruebas serian en
+Docker sin red; solo la peticion al proveedor saldria del host con autorizacion.
+Despues se detiene para Claude en el chat y las aceptaciones del producto.
+La lista de permisos y limites reales esta en docs/pr/bloque-10.md.
+
 Con Python y Node ya disponibles, Codex puede ejecutar las suites y el piloto
 ficticio autorizado. No instala programas ni llama a proveedores para hacerlo.
 Las pruebas con dobles verifican reglas locales, no una integracion real.

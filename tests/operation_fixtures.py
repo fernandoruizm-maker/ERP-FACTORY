@@ -24,7 +24,7 @@ def config(root):
     path.write_text(canonical({'human_approvals_required': 1,
         'human_approval_roles': ['business'],
         'accounting_product_approvals': {'human_approvals_required': 2, 'roles': ['business', 'accounting']},
-        'budget_currency': 'TST', 'max_calls_per_execution': 11,
+        'budget_currency': 'TST', 'max_calls_per_execution': 11, 'max_budget_usd_per_call': '1',
         'max_spend_per_execution': '2', 'max_spend_total': '4',
         'human_approvers': {'business': {'login': 'persona-a', 'id': '101'},
                             'accounting': {'login': 'persona-b', 'id': '202'}},

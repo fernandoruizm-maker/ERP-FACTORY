@@ -32,6 +32,7 @@ def limits(config):
         raise Blocked('BUDGET_CURRENCY_PENDING')
     if type(calls) is not int or calls < 1:
         raise Blocked('CALL_LIMIT_PENDING')
+    units(config.get('max_budget_usd_per_call'))
     return currency, calls, units(config.get('max_spend_per_execution')), units(config.get('max_spend_total'))
 
 
@@ -91,6 +92,8 @@ class BudgetLedger:
         if not isinstance(payload, str) or not payload:
             raise Blocked('BUDGET_PAYLOAD_REQUIRED')
         reserve = units(max_cost)
+        if reserve > units(config.get('max_budget_usd_per_call')):
+            raise Blocked('PER_CALL_SPEND_LIMIT')
         row = db.execute('SELECT * FROM paid_executions WHERE id=?', (execution,)).fetchone()
         if row is None or row['source_sha'] != source_sha or row['currency'] != currency:
             raise Blocked('EXECUTION_VERSION_OR_CURRENCY_MISMATCH')
