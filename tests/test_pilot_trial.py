@@ -13,7 +13,7 @@ from factory2.core import Blocked, canonical, digest
 from factory2.manual_review import CLEAR, REVIEWER
 from factory2.state import Store
 from factory2.orchestrator import PilotTrial, bottle_input
-from factory2.codex_adapter import DockerCodexBuilder, ResponsesAPI, PYTHON_IMAGE
+from factory2.codex_adapter import DockerCodexBuilder, ResponsesAPI, PYTHON_IMAGE, usage_record, token_cost, request_bytes
 from factory2.docker_materialize import materialize
 from tests.operation_fixtures import config, coordinator
 
@@ -22,7 +22,8 @@ PROPOSAL = {'summary_es': 'FICTICIO', 'edits': [{'path': 'src/bottles.mjs', 'con
 
 
 def response(proposal=PROPOSAL):
-    return {'status': 'completed', 'output': [{'type': 'message', 'role': 'assistant',
+    return {'status': 'completed', 'usage': {'input_tokens': 100, 'output_tokens': 20,
+        'output_tokens_details': {'reasoning_tokens': 5}}, 'output': [{'type': 'message', 'role': 'assistant',
         'content': [{'type': 'output_text', 'text': canonical(proposal)}]}]}
 
 
@@ -32,7 +33,9 @@ def enabled_fixture(store):
                budget_currency='USD', max_budget_usd_per_call='1.00', max_spend_per_execution='12.00',
                max_spend_total='13.00', pilot_model='codex-FICTICIO',
                pilot_cost_review={'model': 'codex-FICTICIO', 'basis': 'FICTICIO, NO TARIFA REAL',
-                                  'max_request_bytes': 100000, 'max_output_tokens': 1024, 'max_call_usd': '1.00'})
+                                  'max_request_bytes': 100000, 'max_output_tokens': 1024, 'max_call_usd': '1.00',
+                                  'reasoning_effort': 'high', 'input_usd_per_million': '1.00',
+                                  'output_usd_per_million': '2.00'})
     store.config_path.write_text(canonical(cfg))
     return cfg
 
@@ -54,7 +57,7 @@ class TrialTests(unittest.TestCase):
         class Builder:
             def generate(self, context):
                 owner.seen.append('provider')
-                owner.assertEqual(owner.store.budget.summary()['attempts'], 1)
+                self.last_usage = usage_record(response(), owner.cfg['pilot_cost_review'])
                 return owner.generate(context)
 
             def materialize(self, proposal, directory):
@@ -73,7 +76,7 @@ class TrialTests(unittest.TestCase):
                                head=lambda directory: SOURCE if directory is None else CANDIDATE)
         factory_path = self.review('factory', SOURCE, ['factory2/orchestrator.py'])
         factory = self.store.import_manual_review(factory_path)
-        self.auth = {'source_sha': SOURCE, 'context_digest': digest(bottle_input()),
+        self.auth = {'attempt': 1, 'source_sha': SOURCE, 'context_digest': digest(bottle_input()),
                      'config_digest': digest(self.cfg), 'authorized_by': 'Fernando',
                      'expires_at': time.time()+600, 'factory_review_id': factory['review_id']}
 
@@ -117,6 +120,77 @@ class TrialTests(unittest.TestCase):
         with self.assertRaises(Blocked): self.trial.gate()
         self.assertEqual(self.store.budget.summary()['attempts'], 1)
 
+    def test_attempt_number_required_and_preflight_failure_is_consumed(self):
+        for bad in (None, 0, -1, True, '2'):
+            with self.subTest(bad=bad), self.assertRaisesRegex(Blocked, 'ATTEMPT_INVALID'):
+                self.trial.start({**self.auth, 'attempt': bad})
+        self.change_config(external_calls_enabled=False)
+        with self.assertRaisesRegex(Blocked, 'SWITCH_OFF'): self.trial.start(self.auth)
+        self.change_config(external_calls_enabled=True)
+        with self.assertRaisesRegex(Blocked, 'NO_RETRY'): self.trial.start(self.auth)
+        self.assertEqual(self.seen, [])
+        data = self.trial.start({**self.auth, 'attempt': 2})
+        self.assertEqual(data['attempt'], 2)
+        self.assertEqual(data['status'], 'WAITING_FOR_MANUAL_REVIEW')
+
+    def test_new_authorized_attempt_after_failure_preserves_old_evidence(self):
+        original = self.tester
+        self.tester = lambda *_: {'status': 'FAIL', 'exit_code': 1}
+        first = self.trial.start(self.auth)
+        self.assertEqual(first['status'], 'BLOCKED')
+        with self.assertRaisesRegex(Blocked, 'NO_RETRY'): self.trial.start(self.auth)
+        self.tester = original
+        second = self.trial.start({**self.auth, 'attempt': 2})
+        self.assertEqual(second['status'], 'WAITING_FOR_MANUAL_REVIEW')
+        self.assertEqual(self.seen.count('provider'), 2)
+        self.assertEqual(self.store.budget.summary()['conservative_charge_units'], 2000000)
+        with self.store.connect() as db:
+            self.assertEqual(json.loads(db.execute("SELECT data FROM pilot_trials WHERE id='bottles-1'").fetchone()[0]), first)
+        with self.assertRaisesRegex(Blocked, 'UNFINISHED'):
+            self.trial.start({**self.auth, 'attempt': 3})
+
+    def test_thirteen_dollars_remains_shared_across_authorized_attempts(self):
+        self.tester = lambda *_: {'status': 'FAIL', 'exit_code': 1}
+        for attempt in range(1, 14):
+            self.assertEqual(self.trial.start({**self.auth, 'attempt': attempt})['status'], 'BLOCKED')
+        blocked = self.trial.start({**self.auth, 'attempt': 14})
+        self.assertEqual(blocked['reason_code'], 'SPEND_LIMIT')
+        self.assertEqual(self.seen.count('provider'), 13)
+        self.assertEqual(self.store.budget.summary()['conservative_charge_units'], 13000000)
+
+    def test_usage_is_saved_in_trial_and_paid_ledger(self):
+        self.change_config(pilot_cost_review={**self.cfg['pilot_cost_review'], 'max_output_tokens': 32000})
+        result = self.trial.start(self.auth)
+        self.assertEqual(result['status'], 'WAITING_FOR_MANUAL_REVIEW')
+        self.assertEqual(result['calculated_cost_usd'], '0.000140')
+        self.assertEqual(result['usage']['reasoning_tokens'], 5)
+        with self.store.connect() as db:
+            self.assertEqual(db.execute('SELECT actual_units FROM paid_attempts').fetchone()[0], 140)
+            self.assertEqual(db.execute('SELECT output_limit FROM calls').fetchone()[0], 32000)
+
+    def test_over_budget_usage_stops_before_docker_and_blocks_later_attempts(self):
+        huge = response()
+        huge['usage']['output_tokens'] = 600000
+        self.trial.builder = DockerCodexBuilder(self.cfg, transport=lambda _: huge)
+        data = self.trial.start(self.auth)
+        self.assertEqual(data['reason_code'], 'CODEX_USAGE_EXCEEDS_AUTHORIZED_BOUND')
+        self.assertEqual(data['calculated_cost_usd'], '1.200100')
+        self.assertEqual(self.seen, [])
+        with self.store.connect() as db:
+            self.assertEqual(db.execute('SELECT status FROM paid_attempts').fetchone()[0], 'OVER_BUDGET')
+        following = self.trial.start({**self.auth, 'attempt': 2})
+        self.assertEqual(following['reason_code'], 'BUDGET_RECONCILIATION_REQUIRED')
+
+    def test_incomplete_usage_persisted_without_free_text_or_retry(self):
+        item = response()
+        item.update(status='incomplete', secret_text='FICTICIO_NO_GUARDAR')
+        self.trial.builder = DockerCodexBuilder(self.cfg, transport=lambda _: item)
+        data = self.trial.start(self.auth)
+        self.assertEqual(data['status'], 'BLOCKED')
+        self.assertEqual(data['calculated_cost_usd'], '0.000140')
+        self.assertNotIn('FICTICIO_NO_GUARDAR', canonical(data))
+        self.assertEqual(self.store.budget.summary()['unknown'], 1)
+
     def test_switch_off_never_reaches_ports(self):
         self.change_config(external_calls_enabled=False)
         with self.assertRaisesRegex(Blocked, 'PILOT_SWITCH_OFF'): self.trial.start(self.auth)
@@ -127,6 +201,7 @@ class TrialTests(unittest.TestCase):
         original = copy.deepcopy(self.cfg)
         for key in ('max_budget_usd_per_call', 'max_spend_per_execution', 'max_spend_total',
                     'pilot_model', 'pilot_cost_review'):
+            self.auth['attempt'] += 1
             self.cfg = copy.deepcopy(original)
             self.change_config(**{key: None})
             with self.subTest(key=key), self.assertRaises(Blocked): self.trial.start(self.auth)
@@ -204,14 +279,15 @@ class TrialTests(unittest.TestCase):
         self.trial.accept('persona-a', 'business', time.time()+60)
         self.trial.accept('persona-b', 'accounting', time.time()+60)
         self.assertEqual(self.trial.gate()['status'], 'READY_FOR_MANUAL_REVIEW')
-        with self.assertRaisesRegex(Blocked, 'PILOT_SWITCH_OFF'): self.trial.start(self.auth)
+        with self.assertRaisesRegex(Blocked, 'NO_RETRY'): self.trial.start(self.auth)
         self.assertEqual(self.seen.count('provider'), 1)
 
     def test_authorization_binds_source_context_and_configuration(self):
         for key in ('source_sha', 'context_digest', 'config_digest', 'factory_review_id'):
+            self.auth['attempt'] += 1
             with self.subTest(key=key), self.assertRaises(Blocked):
                 self.trial.start({**self.auth, key: 'bad'})
-        with self.assertRaises(Blocked): self.trial.start({**self.auth, 'expires_at': 0})
+        with self.assertRaises(Blocked): self.trial.start({**self.auth, 'attempt': 99, 'expires_at': 0})
         self.assertEqual(self.seen, [])
 
 
@@ -222,6 +298,66 @@ class APIAdapterTests(unittest.TestCase):
         self.root = Path(temp.name)
         self.store = Store(self.root/'state.sqlite3', config_path=config(self.root))
         self.cfg = enabled_fixture(self.store)
+
+    def test_32000_output_and_reasoning_effort_are_sent(self):
+        self.cfg['pilot_cost_review'].update(max_output_tokens=32000, reasoning_effort='xhigh')
+        payload = DockerCodexBuilder(self.cfg).request(bottle_input())
+        self.assertEqual(payload['max_output_tokens'], 32000)
+        self.assertEqual(payload['reasoning'], {'effort': 'xhigh'})
+        for changes in ({'max_output_tokens': 32001}, {'max_output_tokens': True},
+                        {'reasoning_effort': 'arbitrary'}, {'reasoning_effort': None}):
+            cfg = copy.deepcopy(self.cfg)
+            cfg['pilot_cost_review'].update(changes)
+            with self.subTest(changes=changes), self.assertRaises(Blocked):
+                DockerCodexBuilder(cfg).request(bottle_input())
+
+    def test_worst_case_uses_exact_serialized_bytes_and_boundary(self):
+        review = self.cfg['pilot_cost_review']
+        payload = DockerCodexBuilder(self.cfg).request({'fiction': 'ñ漢'})
+        cost = token_cost(review, len(request_bytes(payload)), payload['max_output_tokens'])
+        review['max_call_usd'] = cost
+        self.assertEqual(DockerCodexBuilder(self.cfg).request({'fiction': 'ñ漢'}), payload)
+        from factory2.budget import units
+        lower = units(cost) - 1
+        review['max_call_usd'] = f'{lower // 1000000}.{lower % 1000000:06d}'
+        with self.assertRaisesRegex(Blocked, 'WORST_CASE_EXCEEDS_CAP'):
+            DockerCodexBuilder(self.cfg).request({'fiction': 'ñ漢'})
+
+    def test_missing_or_invalid_prices_block_without_transport(self):
+        for key in ('input_usd_per_million', 'output_usd_per_million'):
+            for invalid in (None, '0', '-1', 'NaN', 1.5):
+                cfg = copy.deepcopy(self.cfg)
+                cfg['pilot_cost_review'][key] = invalid
+                with self.subTest(key=key, invalid=invalid), self.assertRaises(Blocked):
+                    DockerCodexBuilder(cfg).request(bottle_input())
+
+    def test_usage_cost_reasoning_not_double_counted_and_no_free_text(self):
+        item = response()
+        item['usage']['secret_text'] = 'FICTICIO_NO_GUARDAR'
+        record = usage_record(item, self.cfg['pilot_cost_review'])
+        self.assertEqual(record['usage'], {'input_tokens': 100, 'output_tokens': 20, 'reasoning_tokens': 5})
+        self.assertEqual(record['calculated_cost_usd'], '0.000140')
+        self.assertNotIn('FICTICIO_NO_GUARDAR', canonical(record))
+        self.assertEqual(token_cost({'input_usd_per_million': '0.000001',
+                                     'output_usd_per_million': '0.000001'}, 1, 0), '0.000001')
+
+    def test_incomplete_response_keeps_numeric_usage_but_not_proposal(self):
+        item = response()
+        item['status'] = 'incomplete'
+        adapter = DockerCodexBuilder(self.cfg, transport=lambda _: item)
+        with self.assertRaises(Blocked): adapter.generate(bottle_input())
+        self.assertEqual(adapter.last_usage['calculated_cost_usd'], '0.000140')
+
+    def test_malformed_usage_is_rejected_and_stale_usage_cleared(self):
+        item = response()
+        adapter = DockerCodexBuilder(self.cfg, transport=lambda _: item)
+        adapter.generate(bottle_input())
+        for bad in (None, {}, {'input_tokens': True, 'output_tokens': 1,
+                              'output_tokens_details': {'reasoning_tokens': 0}},
+                    {'input_tokens': 1, 'output_tokens': 1, 'output_tokens_details': {'reasoning_tokens': 2}}):
+            item['usage'] = bad
+            with self.subTest(bad=bad), self.assertRaises(Blocked): adapter.generate(bottle_input())
+            self.assertIsNone(adapter.last_usage)
 
     def test_api_contract_has_no_tools_or_storage_and_validates_response(self):
         def fake(payload):
