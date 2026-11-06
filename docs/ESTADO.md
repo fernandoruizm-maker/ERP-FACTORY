@@ -1,4 +1,41 @@
-# Estado vigente: bloques 8 y 9 combinados localmente
+# Estado vigente: bloque 10 preparado, no ejecutado
+
+Rama feat/bloque-10-piloto desde main verificado c55453edd9f04c7274a5fabfddc54c21eda53b30,
+mediante el unico fetch autorizado. Fernando eligio modelo Codex por API; no CLI
+dentro de Docker. La peticion futura sale solo del host, con una reserva previa,
+sin herramientas/reintentos/redirecciones. El codigo se materializa y prueba en
+Docker sin red; despues se detiene para revision manual y aceptaciones.
+
+external_calls_enabled permanece false y es el unico interruptor previsto para
+el ensayo. enabled, erp_access_enabled y publication_enabled tambien siguen false.
+Importes por llamada/ejecucion/acumulado: null. Propuesta pendiente USD 1.00/12.00/13.00.
+Modelo y revision de coste: null. La reserva de una llamada (como maximo USD 1.00)
+no se presenta como garantia de la factura API; exige verificacion antes de autorizar.
+
+El registro durable bottles-N y el candado evitan repetir un intento. Cada numero
+nuevo exige autorizacion nueva; todos comparten el tope acumulado de USD 13.
+Fallos/resultado incierto bloquean sin reintento ni devolucion de reserva. La
+revision usa SHA del candidato y huellas, con business y accounting; nunca publica
+ni autentica personas. Apagar el interruptor despues de las pruebas permite
+completar solo la revision/aceptaciones pendientes, sin nuevas llamadas.
+
+Solo pruebas con dobles explicitos: ningun proveedor, Docker, credencial real,
+descarga o publicacion. Contrato API/modelo/coste e integracion nueva NO VERIFICADOS.
+Suites historicas de 0d51883: raiz 199, privada 113, JavaScript 7, TypeScript 3; total 322,
+sin fallos/errores ni omitidas. TypeScript no comprueba tipos. Resultados,
+comandos y permisos pendientes: [pr/bloque-10.md](pr/bloque-10.md).
+
+Correccion local posterior a la revision de Claude: max_output_tokens hasta
+32000, esfuerzo configurable, peor coste calculado con bytes/precios declarados,
+registro numerico de uso/coste y autorizaciones por numero. Las tarifas siguen
+sin verificar; no se activan importes ni modelo. Resultados de la correccion:
+raiz 211, privada 113, JavaScript 7 y TypeScript 3: 334 pasadas, cero fallos/errores
+y cero omitidas. TypeScript sin comprobacion de tipos. Los costes calculados no
+son facturas autenticadas. Sin red ni proveedores; config sin cambios.
+
+---
+
+# Historia: bloques 8 y 9 combinados localmente
 
 El 6-11-2026 se trajo origin/main mediante el unico fetch autorizado:
 54b5bda8170a886755c768b1e2b7bfba5ac5eae4 (merge del bloque 8). Se combina con

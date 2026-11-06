@@ -21,7 +21,7 @@ class BudgetTests(unittest.TestCase):
         self.addCleanup(self.temp.cleanup)
         self.path = Path(self.temp.name) / 'budget.sqlite3'
         self.ledger = BudgetLedger(self.path)
-        self.config = {'budget_currency': 'TST', 'max_calls_per_execution': 11,
+        self.config = {'budget_currency': 'TST', 'max_calls_per_execution': 11, 'max_budget_usd_per_call': '1',
                        'max_spend_per_execution': '2', 'max_spend_total': '3'}
 
     def reserve(self, call, run='e1', amount='1', config=None, source=SOURCE):
@@ -39,6 +39,12 @@ class BudgetTests(unittest.TestCase):
         for value in (None, 1.0, True, '-1', 'NaN', '1e3', '0.0000001', '0'):
             with self.subTest(value=value), self.assertRaises(Blocked):
                 units(value)
+
+    def test_per_call_cap_blocks_before_reservation(self):
+        self.ledger.begin('e1', SOURCE, self.config)
+        with self.assertRaisesRegex(Blocked, 'PER_CALL_SPEND_LIMIT'):
+            self.reserve('c1', amount='1.000001')
+        self.assertEqual(self.ledger.summary()['attempts'], 0)
 
     def test_eleven_calls_then_block_with_sufficient_fictitious_money(self):
         config = {**self.config, 'max_spend_per_execution': '20', 'max_spend_total': '20'}

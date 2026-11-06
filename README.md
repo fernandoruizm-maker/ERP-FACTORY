@@ -40,9 +40,17 @@ localmente: no crear un repositorio privado ahora. Siguen if false,
 execution_enabled=false y el pin de ceros. El workflow publico historico tampoco
 se modifica ni ejecuta aqui. No se ha comprobado su estado remoto.
 
-Para una futura reactivacion se registran USD, 1.00 por llamada, 12.00 por ejecucion,
-13.00 acumulado, 11 llamadas y autorizacion manual (opcion 1). Son limites para
-cuando se autorice; no autorizan gasto. Falta conectar y revisar el adaptador.
+Bloque 10: un ensayo ficticio preparado con modelo Codex por API, una llamada
+desde el host y construccion/pruebas Docker sin red, seguido de revision manual.
+Sigue bloqueado: external_calls_enabled=false, modelo/revision de coste null y
+los tres importes de config.json **null**. USD 1.00/llamada, 12.00/ejecucion y
+13.00/acumulado son valores propuestos, no activados. El ensayo permitiria solo
+una llamada por intento expresamente autorizado, con calculo previo del peor coste
+y registro numerico del uso. Cada nuevo numero necesita nueva autorizacion y
+comparte el tope acumulado de USD 13. Las tarifas declaradas deben verificarse;
+una reserva local no garantiza el importe de la factura del proveedor.
+Detalles y autorizaciones pendientes: [bloque-10.md](docs/pr/bloque-10.md).
+El revisor automatico privado conserva su configuracion aparcada anterior.
 
 Docker local: dos imagenes oficiales descargadas con autorizacion y piloto
 ficticio comprobado sin red dentro de contenedores. Digests, resultados y limites

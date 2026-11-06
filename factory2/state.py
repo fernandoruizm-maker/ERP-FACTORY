@@ -196,7 +196,7 @@ class Store:
             db.execute("INSERT INTO calls VALUES(?,?,?,?,?,?,?)",
                        (call_id, task, provider, payload_hash, "IN_FLIGHT", output_limit, time.time()))
 
-    def finish_call(self, call_id, status):
+    def finish_call(self, call_id, status, actual_cost=None):
         # Persist an already-started result under the same lock even if the
         # active marker expired meanwhile. Expiry still prevents the NEXT call.
         self.coordinator.require_worker(check_active=False)
@@ -205,10 +205,11 @@ class Store:
         with self.connect() as db:
             db.execute('BEGIN IMMEDIATE')
             if db.execute('SELECT 1 FROM paid_attempts WHERE id=?', (call_id,)).fetchone():
-                self.budget.finish_in(db, call_id, status)
+                status = self.budget.finish_in(db, call_id, status, actual_cost)
             updated = db.execute("UPDATE calls SET status=? WHERE id=? AND status='IN_FLIGHT'", (status, call_id))
             if updated.rowcount != 1:
                 raise Blocked("La llamada no estaba en curso.")
+        return status
 
     def recover(self):
         with self.worker():
@@ -222,7 +223,7 @@ class Store:
     def reserve_paid_call(self, call_id, task, provider, payload_hash, *, execution_id,
                           source_sha, max_cost, output_limit):
         self.coordinator.require_worker()
-        if type(output_limit) is not int or not 1 <= output_limit <= 4096:
+        if type(output_limit) is not int or not 1 <= output_limit <= 32000:
             raise Blocked('OUTPUT_LIMIT_INVALID')
         with self.connect() as db:
             db.execute('BEGIN IMMEDIATE')
