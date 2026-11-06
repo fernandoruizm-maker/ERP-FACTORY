@@ -21,7 +21,9 @@ def coordinator(root):
 
 def config(root):
     path = Path(root) / 'fixture-config.json'
-    path.write_text(canonical({'human_approvals_required': 2,
+    path.write_text(canonical({'human_approvals_required': 1,
+        'human_approval_roles': ['business'],
+        'accounting_product_approvals': {'human_approvals_required': 2, 'roles': ['business', 'accounting']},
         'budget_currency': 'TST', 'max_calls_per_execution': 11,
         'max_spend_per_execution': '2', 'max_spend_total': '4',
         'human_approvers': {'business': {'login': 'persona-a', 'id': '101'},
@@ -29,6 +31,10 @@ def config(root):
         'private_review_trust': {'repository': PRIVATE_REPOSITORY, 'validator_sha': 'b' * 40,
                                  'actor_id': '999'}}), encoding='utf-8')
     return path
+
+
+def accounting_target():
+    return {'kind': 'accounting_product', 'repository': 'ficticio/producto'}
 
 
 def artifacts(root, *, run='123', changes=None):

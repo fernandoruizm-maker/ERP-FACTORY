@@ -5,7 +5,7 @@ revisa toda la fabrica en una conversacion nueva. Sus informes se registran en
 `docs/revisiones/`, como revision tecnica **no autenticada y nunca aprobacion humana**.
 No se afirma que Claude ya haya revisado esta version.
 
-Las dos personas aprobadoras son:
+Las personas declaradas para los distintos niveles son:
 
 - **Negocio (business):** fernandoruizm-maker, ID 342326625.
 - **Contable y funcional (accounting):** FERRUMTJA, ID 352290329, contador con experiencia en ERP.
@@ -14,7 +14,12 @@ Ninguna programa. Fernando acepta el riesgo de no tener una persona revisora
 tecnica. **Antes de usar datos reales de clientes o conectar el ERP se requiere
 una auditoria tecnica externa.** El contador y Claude no sustituyen esa auditoria.
 
-La puerta manual exige el SHA exacto de la revision y dos aceptaciones vigentes,
+ERP-FACTORY requiere 1 aceptacion de Fernando; productos con impacto contable,
+2 (Fernando y FERRUMTJA). Un destino sin clasificar queda bloqueado; no se ha
+decidido otro nivel para productos sin impacto contable. Las reglas remotas de
+GitHub no se modifican con esta politica local.
+
+La puerta manual exige el SHA exacto de la revision y las aceptaciones de su nivel,
 ligadas a la revision, version y huella evaluadas. Su resultado puede quedar listo
 para revision manual, pero siempre declara provenance_authenticated=false y
 publication_allowed=false. Los registros locales no autentican personas.
@@ -39,7 +44,11 @@ Para una futura reactivacion se registran USD, 1.00 por llamada, 12.00 por ejecu
 13.00 acumulado, 11 llamadas y autorizacion manual (opcion 1). Son limites para
 cuando se autorice; no autorizan gasto. Falta conectar y revisar el adaptador.
 
-Trabajo actual exclusivamente local: sin red, publicacion ni activacion. Main,
+Docker local: dos imagenes oficiales descargadas con autorizacion y piloto
+ficticio comprobado sin red dentro de contenedores. Digests, resultados y limites
+en [DOCKER.md](docs/DOCKER.md). No se activa la fabrica por probar su ejecutor.
+
+Fuera de esas descargas autorizadas, trabajo local sin publicacion ni activacion. Main,
 upstream/ y la fabrica original permanecen intactos. El repositorio es publico:
 nunca subir datos de clientes, credenciales ni informacion del ERP, tampoco a ramas.
 Hasta verificar la proteccion real de main, cada subida necesita autorizacion expresa.

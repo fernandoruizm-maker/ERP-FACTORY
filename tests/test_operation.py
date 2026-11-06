@@ -16,7 +16,7 @@ from factory2.comparison_permit import ComparisonPermit
 from factory2.operations import Coordinator
 from factory2.providers import ClaudeReviewer, CodexBuilder, Permit
 from factory2.state import Store, identity
-from tests.operation_fixtures import accept, artifacts, coordinator, store_fixture
+from tests.operation_fixtures import accept, artifacts, coordinator, store_fixture, accounting_target
 
 ROOT = Path(__file__).resolve().parents[1]
 BRIEF = json.loads((ROOT / 'fixtures/cliente.json').read_text(encoding='utf-8'))
@@ -29,7 +29,8 @@ class OperationalTests(unittest.TestCase):
         self.root = Path(self.temp.name)
         self.store, self.imported = store_fixture(self.root)
         self.code = digest('producto-ficticio')
-        self.version = self.store.put_task('T', {'artifact_digest': self.code})
+        self.version = self.store.put_task('T', {'artifact_digest': self.code,
+                                               'approval_target': accounting_target()})
 
     def config(self, **changes):
         path = self.store.config_path
@@ -107,20 +108,22 @@ class OperationalTests(unittest.TestCase):
             self.assertIn('HUMAN_ACCEPTANCES_MISSING_STALE_OR_EXPIRED', self.outcome()['reasons'])
 
     def test_config_required_count_is_read_not_hardcoded(self):
-        self.config(human_approvals_required=3)
+        self.config(accounting_product_approvals={'human_approvals_required': 3,
+                                                  'roles': ['business', 'accounting']})
         with self.assertRaises(Blocked):
             self.acceptance()
-        self.config(human_approvers={'business': {'login': 'persona-a', 'id': '101'},
-                    'accounting': {'login': 'persona-b', 'id': '202'},
-                    'audit': {'login': 'persona-c', 'id': '303'}})
-        self.assertEqual(self.store.roster()[0], 3)
+        self.config(accounting_product_approvals={'human_approvals_required': 2,
+                                                  'roles': ['business', 'accounting']})
+        self.assertEqual(self.store.roster('T')[0], 2)
         self.acceptance()
-        accept(self.store, 'T', self.version, 'accounting', self.imported)
         self.assertIn('HUMAN_ACCEPTANCES_MISSING_STALE_OR_EXPIRED', self.outcome()['reasons'])
 
     def test_missing_people_or_invalid_count_block(self):
-        for changes in ({'human_approvers': None}, {'human_approvals_required': None},
-                        {'human_approvals_required': 1}, {'human_approvals_required': True}):
+        for changes in ({'human_approvers': None}, {'accounting_product_approvals': None},
+                        {'accounting_product_approvals': {'human_approvals_required': 1,
+                                                         'roles': ['business', 'accounting']}},
+                        {'accounting_product_approvals': {'human_approvals_required': True,
+                                                         'roles': ['business', 'accounting']}}):
             with self.subTest(changes=changes):
                 self.config(**changes)
                 with self.assertRaises(Blocked):

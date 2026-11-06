@@ -13,7 +13,7 @@ from factory2.runner import DockerRunner, assess, test_command
 from factory2.state import Store
 from factory2.workflow import prepare, stage
 from factory2.comparison_permit import ComparisonPermit
-from tests.operation_fixtures import store_fixture, coordinator, accept, config
+from tests.operation_fixtures import store_fixture, coordinator, accept, config, accounting_target
 
 ROOT = Path(__file__).resolve().parent.parent
 BRIEF = json.loads((ROOT / 'fixtures/cliente.json').read_text(encoding='utf-8'))
@@ -63,7 +63,8 @@ class StateTests(unittest.TestCase):
         self.store, self.imported = store_fixture(self.temp.name)
         self.artifact = {'src/demo.py': 'print(1)'}
         self.artifact_hash = digest(self.artifact)
-        self.version = self.store.put_task('T1', {'brief': BRIEF, 'artifact_digest': self.artifact_hash})
+        self.version = self.store.put_task('T1', {'brief': BRIEF, 'artifact_digest': self.artifact_hash,
+                                                'approval_target': accounting_target()})
 
     def test_two_distinct_people_and_version_bound(self):
         accept(self.store, 'T1', self.version, 'business', self.imported)

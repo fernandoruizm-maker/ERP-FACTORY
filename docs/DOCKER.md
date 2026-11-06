@@ -1,4 +1,88 @@
-# Docker: inventario y opciones (bloque 9, fase 1)
+# Docker: ensayo real autorizado del bloque 9
+
+Fernando arranco Docker Desktop y declaro cumplir los limites de licencia gratuita
+(menos de 250 empleados y menos de USD 10 millones anuales). Se registra su
+declaracion: no es auditoria de la empresa ni verificacion en linea de la licencia.
+No se instalo, actualizo ni configuro Desktop/WSL. Solo se descargaron las dos
+imagenes autorizadas; despues los ensayos usaron el motor local, sin red externa.
+
+## Imagenes aprobadas y descargadas una vez
+
+Ambas oficiales de Docker Hub, plataforma linux/amd64, variantes slim:
+
+| Imagen descargada | Referencia inmutable utilizada por DockerRunner |
+|---|---|
+| docker.io/library/python:3.13-slim | `python@sha256:09a17cad02668ae61ece136b4fd36ac3849e14f670ebedb637ea3e15580525bc` |
+| docker.io/library/node:24-slim | `node@sha256:01d566e8d94d8c619591d78652babfccd3c6992a3dffa9ed5ab39e11cf6c70e9` |
+
+Se comprobaron esos RepoDigests mediante image inspect local. Tamanos informados:
+Python 176201667 bytes; Node 330375508 bytes (no son bytes medidos de descarga).
+No se consulto la red para resolver versiones adicionales ni vulnerabilidades.
+Comandos ejecutados, cada pull una sola vez:
+
+```powershell
+docker --host npipe:////./pipe/dockerDesktopLinuxEngine pull --platform linux/amd64 docker.io/library/python:3.13-slim
+docker --host npipe:////./pipe/dockerDesktopLinuxEngine pull --platform linux/amd64 docker.io/library/node:24-slim
+```
+
+## Resultado real del ensayo
+
+Motor comprobado: **29.9.2, linux/amd64**. El entorno filtrado de DockerRunner
+usa el canal local `npipe:////./pipe/docker_engine`; se comprobo que su ID coincide
+con el de `dockerDesktopLinuxEngine`. No se cambio ningun contexto ni configuracion.
+
+| Pruebas dentro de contenedores | Ejecutadas | Fallos | Omitidas |
+|---|---:|---:|---:|
+| Piloto Python | 13 | 0 | 0 |
+| Piloto JavaScript | 7 | 0 | 0 |
+| Aislamiento ficticio Python | 3 | 0 | 0 |
+
+Se uso DockerRunner.run sin modificar factory2/runner.py: --pull=never,
+--network=none, --read-only, --user=65534:65534, --cap-drop=ALL y
+no-new-privileges. UID/GID 65534, capacidades efectivas cero y NoNewPrivs=1
+comprobados dentro del contenedor. Se rechazaron crear/modificar archivos en
+/workspace y crear archivos en la raiz; las huellas de todos los archivos
+temporales del host coincidieron antes/despues. Solo existia la interfaz lo:
+conectar a 192.0.2.1:9 (direccion ficticia TEST-NET-1) fallo con ENETUNREACH.
+No se intento contactar un servicio real para probarlo.
+
+Comprobacion de descargas: cada comando run llevaba --pull=never; la consulta
+local de eventos de imagen pull durante el ensayo final devolvio **0 eventos**.
+Las imagenes se inspeccionaron antes; ningun comando del ensayo hace pull/build.
+Los tres contenedores de prueba se retiraron con comandos por su nombre unico.
+No se tocaron otros contenedores ni se apago el motor iniciado por Fernando.
+
+Comando ejecutado desde la raiz (no repetir sin autorizacion):
+
+```powershell
+& "$env:USERPROFILE\.cache\codex-runtimes\codex-primary-runtime\dependencies\python\python.exe" -B -m tests.docker_pilot_check --python-image python@sha256:09a17cad02668ae61ece136b4fd36ac3849e14f670ebedb637ea3e15580525bc --node-image node@sha256:01d566e8d94d8c619591d78652babfccd3c6992a3dffa9ed5ab39e11cf6c70e9 --output ..\entregas-locales\bloque-9-docker-real-3
+```
+
+El auxiliar es optativo; unittest discover no lo ejecuta. Prepara solo fixtures
+temporales de codigo/pruebas, sin montar el repositorio ni credenciales. Guarda
+evidence.json y commands-and-output.json fuera del repositorio; no invoca proveedores.
+Usa Docker local y exige un directorio de salida nuevo para no sobrescribir evidencia.
+
+Incidencias conservadas: el intento 1 no creo contenedores porque el auxiliar
+exigia solo el nombre dockerDesktopLinuxEngine; se corrigio para admitir tambien
+docker_engine despues de comprobar el mismo ID de motor. En el intento 2 pasaron
+las 23 pruebas, pero fallo el formato `.ID` de la consulta de eventos. Se corrigio
+solo esa lectura usando un marcador literal por evento. Intento 3: ensayo completo
+PASS, incluida ausencia de pulls. No hubo nuevas descargas ni cambios al ejecutor.
+
+Limites: se prueba este piloto y estas imagenes en este PC, no contencion de todo
+codigo malicioso ni ausencia absoluta de vulnerabilidades. No Docker en GitHub,
+ERP, proveedores, datos reales o TS dentro de Docker. El motor puede tener red;
+la restriccion comprobada es la de los contenedores del ensayo. La politica de
+licencia vigente sigue sin verificarse en linea. Configuracion de activacion intacta.
+
+---
+
+# Historia: inventario y opciones (fase 1, antes del arranque y las descargas)
+
+Los estados detenido, digests pendientes y pruebas no ejecutadas que siguen
+describen la fase anterior. Los resultados vigentes son los de arriba. Los pasos
+futuros conservados no autorizan nuevas instalaciones, descargas ni configuraciones.
 
 Solo preparacion documental. No se ha arrancado, instalado, actualizado ni
 configurado Docker, WSL o Windows. Tampoco se han descargado imagenes, ejecutado

@@ -1,4 +1,54 @@
-# Publicacion vigente: una sola PR para los bloques 1 a 7
+# Publicacion vigente: aprobaciones por niveles
+
+Decision posterior de Fernando: en **fernandoruizm-maker/ERP-FACTORY** basta
+1 aprobacion de negocio de Fernando (fernandoruizm-maker, 342326625). Los productos
+con impacto contable requieren 2: Fernando y FERRUMTJA (352290329), cada uno con
+su cuenta. No es una autorizacion de publicacion ni de cambios remotos.
+
+La puerta local distingue los niveles a partir del destino declarado en el
+expediente y ligado a su version. No deduce que todo producto sea la fabrica.
+Un destino ausente, incoherente o un nivel no decidido bloquea. El informe manual
+de Claude sigue ligado al SHA exacto y nunca es una aprobacion humana autenticada.
+Los registros locales tampoco autentican a las personas ni autorizan publicar.
+
+Reglas que siguen vigentes:
+
+1. La cuenta fernandocodex64-sudo NUNCA aprueba ni integra. No usar su nombre
+   visible fenando-codex como si fuera otra persona aprobadora.
+2. Nadie integra sin decision expresa de Fernando tras revision de Claude del
+   SHA vigente y aprobaciones de su nivel. No integracion automatica ni bypass.
+3. Cada subida requiere autorizacion expresa; destino unico ERP-FACTORY y envio
+   de vuelta a DISABLED. Codex prepara enlace, titulo y texto; no abre PR aqui.
+4. Si cambia el contenido, destino o SHA: renovar revision, aceptaciones y decision.
+5. Nunca publicar credenciales, datos de clientes o informacion del ERP. Activar
+   fabrica/workflows, conectar ERP, cambiar permisos o gastar dinero requiere
+   autorizacion especifica. Se mantiene la auditoria tecnica externa previa a
+   datos reales o conexion ERP y el riesgo aceptado de no tener revisor tecnico humano.
+
+**GitHub no se modifico.** La plantilla `docs/github/ruleset-main.json` conserva
+el esquema anterior de 2 y no debe importarse como si reflejara esta decision.
+Queda pendiente, con otra autorizacion: preparar/verificar la regla remota de
+ERP-FACTORY con 1, manteniendo PR obligatoria, invalidacion tras nuevos cambios,
+ultimo cambio aprobado por otra persona, conversaciones resueltas, prohibicion
+de force push/borrado y sin bypass. En productos contables se necesitan 2 y
+comprobar que las personas concretas son Fernando y FERRUMTJA: el contador de
+GitHub por si solo no impone esos nombres. No se han consultado reglas remotas.
+
+El bloque 9 continua en docs/bloque-9-docker, desde be3e026 sobre la referencia
+local origin/main 877dd75. No se hizo fetch ni se incorporo la rama del bloque 8:
+se debera comparar con main actualizado, con autorizacion, antes de publicar.
+No interpretar esta rama como una reversion del bloque 8. Docker se probo con
+datos ficticios; sus resultados y limites estan en DOCKER.md y pr/bloque-9.md.
+
+Para deshacer esta politica local, proponer una reversion revisada del commit;
+volver al requisito anterior no cambia reglas remotas ni activa nada.
+
+---
+
+# Historia: PR unica para los bloques 1 a 7 (politica de dos aprobaciones anterior)
+
+Los planes y cifras de aprobaciones siguientes son antecedentes, no instrucciones
+para sustituir el esquema vigente de arriba ni permisos para ejecutar acciones.
 
 Decision posterior de Fernando: este plan sustituye la publicacion selectiva y
 la retirada separada. El plan anterior se conserva abajo como historia, NO como

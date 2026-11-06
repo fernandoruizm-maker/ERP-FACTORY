@@ -1,4 +1,32 @@
-# Estado vigente: bloque 9, inventario Docker (solo documentacion local)
+# Estado vigente: bloque 9, Docker real y aprobaciones por niveles
+
+Ampliacion desde be3e026 en docs/bloque-9-docker, sin actualizar origin/main ni
+incorporar la rama del bloque 8. Fernando arranco el motor y declaro cumplir los
+limites de licencia gratuita. Descargas autorizadas: Python 3.13 slim y Node 24
+slim, fijadas por digest en DOCKER.md. Sin mas red ni proveedores.
+
+DockerRunner real, sin modificarlo: 13 pruebas Python, 7 JavaScript y 3 de
+aislamiento pasaron. Codigo montado de solo lectura, UID/GID 65534, sin privilegios,
+sin red del contenedor ni pulls durante el ensayo; huellas del host intactas.
+No se instalo/configuro/actualizo Docker; no se apago el motor de Fernando.
+
+Politica local: ERP-FACTORY requiere Fernando (1); productos con impacto contable
+requieren Fernando y FERRUMTJA (2). Destino no clasificado o nivel no decidido:
+BLOCKED. La clasificacion forma parte del expediente versionado; cambiarla invalida
+aceptaciones. No autentica personas. Revision, caducidad y controles restantes
+siguen vigentes; config.json mantiene sus cuatro interruptores false.
+No se cambiaron reglas de GitHub: la plantilla de dos aprobaciones es anterior
+y no debe confundirse con esta politica local. Guia vigente en GUIA-APROBAR.md.
+
+Suites completas: raiz 161, privada 113, JS 7 y TS 3; 0 fallos/errores y 0
+omitidas. Ademas, 23 ejecuciones de prueba en Docker real (20 del mismo piloto
+y 3 negativas). Comandos y limites: [pr/bloque-9.md](pr/bloque-9.md).
+Sin revision Claude de este SHA ni activacion/publicacion. Riesgo aceptado de no
+tener revisor tecnico humano y auditoria externa previa a datos reales/ERP vigentes.
+
+---
+
+# Historia: bloque 9, inventario Docker (solo documentacion local)
 
 Rama docs/bloque-9-docker desde la referencia local origin/main
 877dd757f83f5fece05e2216ddfdea36843f0c4a; sin fetch en esta fase sin red.

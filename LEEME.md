@@ -12,8 +12,10 @@ se operan ambas a la vez. Las pruebas usan ejemplos ficticios, no el ERP real.
    fabrica en una conversacion nueva. No se trata de una aprobacion humana.
 4. Codex conserva la revision recibida en docs/revisiones/ usando la plantilla.
    Un registro *.local.md no se agrega al commit evaluado: cambiarlo cambiaria el SHA.
-5. Fernando aprueba como negocio (business); FERRUMTJA como contable y funcional
-   (accounting). El antiguo rol technical ya no sirve. Ambos revisan la version vigente.
+5. En ERP-FACTORY aprueba Fernando como negocio (business). En productos con
+   impacto contable tambien aprueba FERRUMTJA como contable y funcional (accounting).
+   El antiguo rol technical ya no sirve. Se comprueba la version vigente y su
+   destino; si este no esta clasificado, se bloquea. Ver docs/GUIA-APROBAR.md.
 6. Publicar o integrar solo sigue las condiciones de docs/PUBLICACION.md. Estar
    listo para revision manual nunca significa publicar o activar automaticamente.
 

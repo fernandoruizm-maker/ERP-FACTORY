@@ -4,26 +4,46 @@ Una PR es una propuesta de cambios. Aprobar una propuesta no activa la fabrica
 ni autoriza usar datos reales. Claude revisa la parte tecnica en el chat; Fernando
 y FERRUMTJA comprueban que el resultado sirve para el negocio y la contabilidad.
 
+## Aprobaciones por niveles: decision vigente de Fernando
+
+| Propuesta | Aprobacion necesaria |
+|---|---|
+| Cambios de la propia fabrica en fernandoruizm-maker/ERP-FACTORY | Fernando, como negocio: 1 |
+| Producto con impacto contable | Fernando y FERRUMTJA, negocio y contabilidad: 2 personas distintas |
+
+Antes de revisar, comprobar en la propuesta a que repositorio/producto pertenece
+y si afecta asientos, saldos, stock valorado, impuestos, cobros o comprobantes.
+Un producto no se convierte en cambio de la fabrica por usarla para construirse.
+Si el destino o el impacto no estan claros, no aprobar: pedir su clasificacion.
+Para productos declarados sin impacto contable no se ha decidido otro nivel;
+la puerta local los mantiene bloqueados, sin suponer una excepcion.
+
+Este cambio modifica la puerta local. **No cambia las reglas de GitHub.** La
+regla y plantilla anteriores exigen 2; no se han consultado ni modificado en esta
+tarea. Si GitHub pide 2 para ERP-FACTORY, detener la integracion y pedir a Fernando
+autorizar una actualizacion de esa regla, sin excepciones ni integracion forzada.
+
 ## Dos reglas que nunca se saltan
 
 - **La cuenta fernandocodex64-sudo NUNCA aprueba ni integra.** Puede abrir las PR.
   fenando-codex es su nombre visible; no es la cuenta personal de Fernando.
 - **Nadie integra sin decision expresa de Fernando despues de la revision de
-  Claude del SHA vigente, aunque GitHub muestre el boton disponible.** Las dos
-  aprobaciones tampoco sustituyen esa decision. No activar integracion automatica.
+  Claude del SHA vigente, aunque GitHub muestre el boton disponible.** Las
+  aprobaciones del nivel correspondiente no sustituyen esa decision. No activar integracion automatica.
 
 Si una propuesta dice NO INTEGRAR, se cierra sin integrar. La prueba de proteccion
 no es una entrega del producto. Ante una duda, no pulse el boton de integrar.
 Fernando decide con su cuenta personal; FERRUMTJA no integra por iniciativa propia.
 
-## PR unica de bloques 1 a 7
+## Antecedente: PR unica de bloques 1 a 7
 
 La entrega propuesta agrupa los siete bloques, incluye el revisor automatico
 aparcado sin activarlo y elimina el aviso de prueba dentro de la misma PR.
 No integrar por separado la retirada anterior. Las revisiones previas de Claude
 no prueban que ya reviso el nuevo SHA combinado: comparar el informe de revision
 final con el SHA exacto propuesto. Fernando decide expresamente despues de esa
-revision y de las dos aprobaciones; que el boton este disponible no basta.
+revision y de las aprobaciones entonces exigidas. Para cambios nuevos se aplica
+el esquema por niveles de arriba; que el boton este disponible no basta.
 
 ## Fernando: revision de negocio
 
@@ -81,11 +101,12 @@ El autor de una PR no puede ser uno de sus propios aprobadores. Para las PR de
 esta via, Fernando abre la propuesta desde la web con **fernandocodex64-sudo**.
 Para revisar y aprobar cambia a su cuenta personal **fernandoruizm-maker**;
 FERRUMTJA usa la suya. No aprobar ni integrar desde la sesion de la cuenta de maquina.
-Comprueben los nombres de las dos personas en la PR: dos aprobaciones cualquiera
-no prueban que sean negocio y contabilidad. No reducir el numero ni crear excepciones.
+En ERP-FACTORY debe figurar Fernando; en productos contables deben figurar Fernando
+y FERRUMTJA. Dos aprobaciones cualquiera no prueban que sean negocio y contabilidad.
+No crear excepciones para saltarse la regla configurada en GitHub.
 
 Antes de integrar, Fernando debe dejar una decision expresa para esa PR y su SHA
-completo, despues de la revision de Claude y con ambas aprobaciones vigentes.
+completo, despues de la revision de Claude y con las aprobaciones de su nivel vigentes.
 Solo entonces Fernando o FERRUMTJA, desde su cuenta personal, puede integrar.
 Si cambia el SHA, detenerse: nueva revision y nueva decision. Codex nunca integra.
 La disponibilidad del boton de GitHub no es una instruccion ni una autorizacion.
