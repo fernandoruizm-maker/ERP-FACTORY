@@ -1,4 +1,27 @@
-# Estado vigente: preparacion de PR unica de bloques 1 a 7
+# Estado vigente: bloque 8, retirada declarada (solo local)
+
+Rama `fix/bloque-8-retirada-registrada`, desde origin/main
+`877dd757f83f5fece05e2216ddfdea36843f0c4a`, obtenido mediante el unico fetch autorizado.
+`docs/retirada-original.json` registra la declaracion de Fernando del 5-11-2026:
+VM eliminada, App 5603415 eliminada con clave e instalacion, inventario acotado
+de Windows sin tareas/servicios propios y pausa conservada, OpenAI NO_EXISTIA,
+archivo NO_POR_DECISION_DE_FERNANDO. No contiene firmas ni autentica personas.
+
+El Coordinator sustituye ORIGINAL_COORDINATION_NOT_VERIFIED por la validacion
+del registro. Ausente, incompleto, contradictorio, invalido o restauracion declarada
+bloquean. Se relee antes de recover y de reservar llamadas, manteniendo el candado.
+Los cuatro interruptores de config.json siguen en false. Revision, aceptaciones,
+presupuesto y permisos no cambian. No hay activacion, publicacion ni proveedores.
+La revision automatica privada permanece aparcada y con sus tres bloqueos.
+
+Suites completas: raiz 166, privada 113, JS 7 y TS 3; 289 pruebas en total,
+0 fallos/errores y 0 omitidas. Comandos y limitaciones: [bloque-8.md](pr/bloque-8.md).
+No se vuelven a verificar remotamente las declaraciones, ni se detecta una
+restauracion no comunicada. No se ha recibido revision de Claude de este cambio.
+
+---
+
+# Historia: preparacion de PR unica de bloques 1 a 7
 
 ## Retirada original comunicada por Fernando: 5-11-2026
 
@@ -16,14 +39,10 @@ Windows: el inventario previo de Codex no identifico tareas ni servicios propios
 de la fabrica; su alcance era limitado. pilot.pause se conserva segun Fernando.
 No se volvieron a consultar VM, Windows, Ubuntu, rdc, GitHub o proveedores aqui.
 
-Registro y propuesta breve en docs/RETIRADA-ORIGINAL.md. El plan anterior queda
-como historia en el anexo tecnico y Git; sus exigencias de archivo no siguen
-vigentes. La propuesta futura es un registro de retiro DECLARADO, sin firmas ni
-archivo obligatorio, validado para coherencia y pendientes, no una prueba tecnica
-remota. Requiere otra autorizacion y revision antes de modificar codigo.
-**ORIGINAL_COORDINATION_NOT_VERIFIED sigue intacto**, al igual que configuracion
-y bloqueos restantes. No se activa la nueva fabrica. Solo documentacion local;
-verificacion de referencias y diff, sin suites por no cambiar comportamiento.
+Registro y explicacion vigente en docs/RETIRADA-ORIGINAL.md. El plan anterior
+queda como historia en el anexo tecnico y Git; sus exigencias de archivo no siguen
+vigentes. En esta etapa historica solo se documento la propuesta, sin cambiar
+ORIGINAL_COORDINATION_NOT_VERIFIED; el bloque 8 descrito arriba la implementa.
 
 Decision expresa de Fernando: publicacion/bloques-1-7 nace de origin/main
 930528e2aad40aace0903311fc997c3d34024bd6 y contiene la fuente completa

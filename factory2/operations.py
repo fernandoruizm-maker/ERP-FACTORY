@@ -1,7 +1,7 @@
-"""One OS worker lock; real cross-factory coordination remains unconfigured.
+"""One OS worker lock and a declared retirement; no remote authentication.
 
 No marker is created/changed by this module. Simulation never grants permission
-for a real transport. The original factory does not yet participate in this lock.
+for a real transport. A declaration cannot detect an unreported restoration.
 """
 from contextlib import contextmanager
 import json
@@ -12,6 +12,7 @@ import threading
 import time
 
 from .core import Blocked
+from .retirement import RECORD_PATH, read_retirement
 
 
 @contextmanager
@@ -40,21 +41,24 @@ def worker_lock(path):
 
 
 class Coordinator:
-    """Explicit fixture coordinator, not evidence of the original's live state."""
-    def __init__(self, directory, *, simulation=False):
+    """Simulation markers or a declared retirement, never proof of live state."""
+    def __init__(self, directory, *, simulation=False, retirement_path=None):
         self.directory = Path(directory) if directory is not None else None
         self.simulation = simulation
+        self.retirement_path = Path(retirement_path) if retirement_path is not None else RECORD_PATH
         self._owner = threading.local()
 
     def check_active(self):
+        declaration = None
         if not self.simulation:
-            # No offline JSON can establish that Ubuntu/Windows is stopped.
-            raise Blocked('ORIGINAL_COORDINATION_NOT_VERIFIED')
+            declaration = read_retirement(self.retirement_path)
         if self.directory is None or not self.directory.is_dir():
             raise Blocked('ACTIVE_FACTORY_NOT_CONFIGURED')
         for path in (self.directory, *self.directory.parents):
             if path.is_symlink() or (hasattr(path, 'is_junction') and path.is_junction()):
                 raise Blocked('COORDINATION_PATH_UNSAFE')
+        if not self.simulation:
+            return declaration
         path = self.directory / 'active-factory.json'
         try:
             if path.is_symlink() or path.stat().st_size > 4096:

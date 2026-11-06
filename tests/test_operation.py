@@ -288,9 +288,10 @@ class OperationalTests(unittest.TestCase):
         with self.assertRaises(Blocked):
             self.store.recover()
 
-    def test_real_coordination_blocks_even_with_valid_fixture_marker(self):
-        real = Coordinator(self.store.coordinator.directory)
-        with self.assertRaisesRegex(Blocked, 'NOT_VERIFIED'):
+    def test_real_coordination_requires_retirement_not_fixture_marker(self):
+        real = Coordinator(self.store.coordinator.directory,
+                           retirement_path=self.root / 'missing-retirement.json')
+        with self.assertRaisesRegex(Blocked, 'ORIGINAL_RETIREMENT_MISSING'):
             with real.worker():
                 self.fail('Real worker must stay blocked')
 

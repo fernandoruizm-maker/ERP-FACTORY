@@ -1,0 +1,27 @@
+{
+  "schema_version": 1,
+  "kind": "DECLARACION_NO_AUTENTICADA",
+  "declared_on": "2026-11-05",
+  "declared_by": "Fernando",
+  "provenance_authenticated": false,
+  "vm": {
+    "name": "RDC-Piloto-Aislado",
+    "removed": true
+  },
+  "github_app": {
+    "id": 5603415,
+    "removed": true,
+    "private_key_removed": true,
+    "installation_removed": true
+  },
+  "windows_inventory": {
+    "checked_on": "2026-11-05",
+    "scope": "TAREAS_Y_SERVICIOS_FILTRADOS_EN_ESTE_PC",
+    "factory_tasks_found": false,
+    "factory_services_found": false,
+    "pilot_pause_preserved": true
+  },
+  "openai": "NO_EXISTIA",
+  "archive": "NO_POR_DECISION_DE_FERNANDO",
+  "original_restored": false
+}
