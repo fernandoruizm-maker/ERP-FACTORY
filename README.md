@@ -43,7 +43,7 @@ se modifica ni ejecuta aqui. No se ha comprobado su estado remoto.
 Bloque 10: un ensayo ficticio preparado con modelo Codex por API, una llamada
 desde el host y construccion/pruebas Docker sin red, seguido de revision manual.
 Sigue bloqueado: external_calls_enabled=false y los otros tres interruptores false.
-En piloto/intento-1 se prepararon gpt-5.3-codex y precios estandar verificados
+En piloto/intento-1 se prepararon gpt-6.1-sol y precios estandar verificados
 documentalmente, con USD 1.00/llamada, 12.00/ejecucion y 13.00/acumulado.
 No se ejecuto el ensayo. Ver [preparacion del intento 1](docs/pr/intento-1.md). El ensayo permitiria solo
 una llamada por intento expresamente autorizado, con calculo previo del peor coste

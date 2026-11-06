@@ -45,22 +45,25 @@ class PreparationTests(unittest.TestCase):
     def test_exact_requested_contract_and_standard_cost(self):
         data = prepare(self.root)
         payload = data['request']
-        self.assertEqual(payload['model'], 'gpt-5.3-codex')
+        self.assertEqual(payload['model'], 'gpt-6.1-sol')
         self.assertEqual(payload['reasoning'], {'effort': 'medium'})
         self.assertEqual(payload['max_output_tokens'], 32000)
         self.assertEqual(payload['tools'], [])
         self.assertEqual(payload['tool_choice'], 'none')
         self.assertEqual(payload['service_tier'], 'default')
+        self.assertEqual(payload['prompt_cache_options'], {'mode': 'explicit'})
+        self.assertIsInstance(payload['input'], str)
+        self.assertNotIn('prompt_cache_breakpoint', payload['text']['format']['schema'])
         self.assertIs(payload['store'], False)
         self.assertEqual(payload['text']['format']['type'], 'json_schema')
         self.assertIs(payload['text']['format']['strict'], True)
         self.assertEqual(data['request_bytes'], len(request_bytes(payload)))
         self.assertEqual(data['worst_case_cost_usd'], token_cost(self.cfg['pilot_cost_review'], data['request_bytes'], 32000))
-        self.assertEqual(data['maximum_request_cost_usd'], '0.623000')
+        self.assertEqual(data['maximum_request_cost_usd'], '0.520000')
 
     def test_wrong_model_effort_price_or_global_activation_blocks(self):
         original = copy.deepcopy(self.cfg)
-        cases = [('pilot_model', 'other'), ('enabled', True), ('erp_access_enabled', True),
+        cases = [('pilot_model', 'gpt-5.3-codex'), ('enabled', True), ('erp_access_enabled', True),
                  ('publication_enabled', True), ('max_spend_total', '14.00')]
         for key, value in cases:
             self.cfg = {**copy.deepcopy(original), key: value}

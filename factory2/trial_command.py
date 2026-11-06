@@ -20,11 +20,11 @@ def prepare(root=ROOT):
     cfg = json.loads((root / 'config.json').read_text(encoding='utf-8-sig'))
     if any(cfg.get(k) is not False for k in ('enabled', 'erp_access_enabled', 'publication_enabled')):
         raise Blocked('PILOT_MUST_REMAIN_ISOLATED')
-    if cfg.get('pilot_model') != 'gpt-5.3-codex':
+    if cfg.get('pilot_model') != 'gpt-6.1-sol':
         raise Blocked('ATTEMPT_1_MODEL_MISMATCH')
     review = cfg['pilot_cost_review']
     expected = {'max_output_tokens': 32000, 'reasoning_effort': 'medium',
-                'input_usd_per_million': '1.75', 'output_usd_per_million': '14.00',
+                'input_usd_per_million': '2.00', 'output_usd_per_million': '10.00',
                 'max_call_usd': '1.00'}
     if any(review.get(k) != v for k, v in expected.items()):
         raise Blocked('ATTEMPT_1_COST_REVIEW_MISMATCH')

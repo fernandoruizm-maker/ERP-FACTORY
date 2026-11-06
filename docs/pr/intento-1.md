@@ -8,7 +8,7 @@ sin sesion, claves ni peticiones a la API. No se hizo fetch, push ni PR.
 
 | Elemento solicitado | Resultado documental |
 |---|---|
-| gpt-5.3-codex y Responses | La ficha incluye Responses y salidas estructuradas |
+| gpt-6.1-sol y Responses | La ficha incluye Responses y salidas estructuradas |
 | json_schema strict | `text.format` admite `type=json_schema`, esquema y `strict=true` |
 | Esquema local BUILD_SCHEMA | Objetos con `additionalProperties=false`, campos requeridos y tipos admitidos |
 | tools=[]; tool_choice=none | Lista de herramientas opcional sin minimo indicado; none impide seleccion de herramientas |
@@ -17,24 +17,33 @@ sin sesion, claves ni peticiones a la API. No se hizo fetch, push ni PR.
 | max_output_tokens=32000 | Dentro del maximo de 128000; incluye salida visible y razonamiento |
 
 No se encontro incompatibilidad documental en esos parametros. Esto no es una
-llamada de prueba ni certifica permisos de cuenta. La ficha marca el modelo como
-obsoleto; la pagina de retiradas indica cierre el **1 de abril de 2027**. Se
-conserva el modelo elegido; no se cambia el modelo permitido en el proyecto.
+llamada de prueba ni certifica permisos de cuenta. Fernando sustituyo gpt-5.3-codex por **gpt-6.1-sol**. La ficha del nuevo modelo
+no lo marca como obsoleto. No se modificaron los permisos del proyecto: Fernando
+declara que solo permitira gpt-6.1-sol; no se verifico esa configuracion remota.
 
-Tarifa **estandar**, por millon: entrada USD 1.75, salida USD 14.00. No se aplica
+Tarifa **estandar**, por millon: entrada USD 2.00, salida USD 10.00. No se aplica
 descuento por cache. Se agrega `service_tier=default` a la peticion para no heredar
 un nivel distinto del proyecto mediante el valor automatico. La referencia lo
 define como nivel de precio/rendimiento estandar. No se cambia el proyecto.
 
+Para gpt-6.1-sol se fija ademas prompt_cache_options.mode=explicit, sin puntos
+prompt_cache_breakpoint. La guia indica que asi no se usa cache ni se generan
+escrituras de cache; estas tienen tarifa adicional si se habilitan. Es necesario
+para aplicar el calculo ordinario de entrada/salida sin omitir ese cargo.
+La entrada maxima de 100000 bytes, estimada como tokens, queda por debajo del
+umbral de contexto largo de 272000 tokens. No se usa modo rapido ni endpoint
+regional. Se mantienen store=false, tools=[], tool_choice=none, medium y 32000.
+
 Fuentes exactas leidas:
 
-1. Modelo y limites: https://developers.openai.com/api/docs/models/gpt-5.3-codex
+1. Modelo y limites: https://developers.openai.com/api/docs/models/gpt-6.1-sol
 2. Precios: https://developers.openai.com/api/docs/pricing
 3. Contrato Responses, version Markdown publica:
    https://developers.openai.com/api/reference/resources/responses/methods/create.md
 4. Salida estructurada y restricciones del esquema:
    https://developers.openai.com/api/docs/guides/structured-outputs
-5. Retirada del modelo: https://developers.openai.com/api/docs/deprecations
+5. Cache y su desactivacion: https://developers.openai.com/api/docs/guides/prompt-caching
+6. Consulta historica para el modelo anterior: https://developers.openai.com/api/docs/deprecations
 
 Tambien se intentaron estas dos vistas HTML: el lector devolvio limite de tamano,
 por lo que se leyo la version Markdown del punto 3, sin autenticacion:
@@ -48,8 +57,8 @@ documentacion completa al repositorio publico.
 
 ## Configuracion preparada
 
-`config.json`: modelo gpt-5.3-codex, esfuerzo medium, 32000 tokens de salida,
-precios 1.75/14.00, max_call_usd=1.00 y topes USD 1.00/12.00/13.00.
+`config.json`: modelo gpt-6.1-sol, esfuerzo medium, 32000 tokens de salida,
+precios 2.00/10.00, max_call_usd=1.00 y topes USD 1.00/12.00/13.00.
 `max_request_bytes=100000`. La configuracion general de 4096 tokens sigue siendo
 la de los adaptadores antiguos; este ensayo usa exclusivamente el limite de
 `pilot_cost_review.max_output_tokens=32000` y su prueba lo comprueba.
@@ -64,16 +73,16 @@ La fecha exacta de vencimiento sigue pendiente; no se infiere a partir de hoy.
 
 ## Calculo local reproducible
 
-El mismo serializador del adaptador produjo **4682 bytes UTF-8**, incluyendo
+El mismo serializador del adaptador produjo **4723 bytes UTF-8**, incluyendo
 instrucciones, requisitos ficticios, pruebas, esquema y parametros. Un byte se
 cuenta conservadoramente como un token de entrada:
 
-    (4682 * 1.75 + 32000 * 14.00) / 1000000 = 0.4561935 USD
-    Redondeado hacia arriba al millonesimo: 0.456194 USD
+    (4723 * 2.00 + 32000 * 10.00) / 1000000 = 0.329446 USD
+    Redondeado hacia arriba al millonesimo: 0.329446 USD
 
 Para el limite completo de entrada:
 
-    (100000 * 1.75 + 32000 * 14.00) / 1000000 = 0.623000 USD
+    (100000 * 2.00 + 32000 * 10.00) / 1000000 = 0.520000 USD
 
 Ambos valores son inferiores al tope de una llamada de USD 1.00. La reserva del
 intento seguira siendo USD 1.00; no es una factura ni una medicion de gasto.
@@ -97,7 +106,7 @@ serializar la peticion hipotetica; no modifica ni activa config.json.
 
 Se ejecuto solamente este modo. Salida: PREPARED_NOT_EXECUTED,
 execution_enabled=false, attempt_consumed=false. Evidencia fuera del repositorio:
-`../entregas-locales/intento-1-preparado.json`.
+`../entregas-locales/intento-1-sol-preparado.json` (la salida anterior conserva el modelo anterior).
 
 El modo futuro `Ejecutar` esta preparado pero **no se ejecuto**. Exige:
 
@@ -138,7 +147,7 @@ inventa una autorizacion nueva ni incrementa el numero para reintentar.
 - Confirmar vencimiento de la clave, limites de cuenta y disponibilidad real.
   No se comprobo cuenta, factura, acceso al modelo ni permisos de la clave.
 
-## Verificacion local
+## Verificacion local de la preparacion inicial (8f69fe9)
 
 Pruebas focales: 40 pasadas, cero fallos/errores y cero omitidas.
 Parser de PowerShell: cero errores. Script en modo Preparar: salida correcta,
@@ -173,3 +182,31 @@ credencial, modelo accesible en la cuenta, Docker del nuevo constructor, ruta
 Ejecutar de PowerShell y entrada privada en uso real, GitHub/ERP. Las pruebas
 de ejecucion usan dobles y claves ficticias en temporales. TypeScript no comprueba
 tipos. upstream/ no se prueba ni modifica. No se publico ni activo nada.
+
+
+## Cambio a gpt-6.1-sol
+
+Actualizacion sobre 8f69fe97ff7c7ad5d7fe9e0829cb075ee4af58d8, en la misma rama.
+Se cambian modelo, tarifas, comprobaciones del script Python y pruebas. El
+PowerShell sigue siendo el mismo lanzador, con Preparar como modo por defecto.
+Se comprobo de nuevo la ficha oficial y la guia de salidas estructuradas; para
+store, tool_choice y limites se reutilizo la referencia oficial descargada en
+esta misma fecha (enlace exacto del punto 3), sin ninguna llamada a la API.
+
+La preparacion se ejecuto y devolvio 4723 bytes, coste 0.329446, techo 0.520000,
+execution_enabled=false y attempt_consumed=false. Todas las huellas anteriores
+quedan obsoletas para este modelo; hay que regenerar cualquier autorizacion
+futura a partir del SHA/config/contexto definitivo. El intento 1 sigue sin consumo.
+
+Suites completas repetidas tras cambiar el modelo: raiz 219, privada 113,
+JavaScript 7 y TypeScript 3; **342 pasadas, cero fallos/errores y cero omitidas**.
+Todas terminaron con salida 0. Se usaron los mismos comandos completos de arriba.
+Logs: ../entregas-locales/intento-1-sol-root.log, intento-1-sol-private.log,
+intento-1-sol-js.log e intento-1-sol-ts.log. TS sin comprobacion de tipos.
+La prueba del contrato comprueba expresamente el nuevo modelo, el modo de cache,
+la salida strict, los parametros y el coste; el modelo anterior queda rechazado
+por la comprobacion especifica del intento 1.
+
+No se modificaron permisos del proyecto, claves, interruptores, presupuesto
+acumulado ni upstream/. La compatibilidad es documental: no acredita acceso
+real, facturacion, Docker o una ejecucion real con este modelo.

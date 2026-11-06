@@ -430,7 +430,7 @@ class APIAdapterTests(unittest.TestCase):
         cfg = json.loads((Path(__file__).resolve().parents[1]/'config.json').read_text())
         for key in ('enabled', 'external_calls_enabled', 'erp_access_enabled', 'publication_enabled'):
             self.assertIs(cfg[key], False)
-        self.assertEqual(cfg['pilot_model'], 'gpt-5.3-codex')
+        self.assertEqual(cfg['pilot_model'], 'gpt-6.1-sol')
         self.assertEqual(cfg['pilot_cost_review']['reasoning_effort'], 'medium')
         self.assertEqual(cfg['pilot_cost_review']['max_output_tokens'], 32000)
         self.assertEqual(cfg['max_budget_usd_per_call'], '1.00')

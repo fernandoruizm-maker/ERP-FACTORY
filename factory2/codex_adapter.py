@@ -130,6 +130,9 @@ class DockerCodexBuilder:
             'input': canonical(context),
             'text': {'format': {'type': 'json_schema', 'name': 'bottle_proposal',
                                 'strict': True, 'schema': BUILD_SCHEMA}}}
+        if model == 'gpt-6.1-sol':
+            # No breakpoints: disable automatic cache writes and their surcharge.
+            payload['prompt_cache_options'] = {'mode': 'explicit'}
         raw = request_bytes(payload)
         if len(raw) > review['max_request_bytes'] or SECRET_PATTERN.search(raw.decode('utf-8')):
             raise Blocked('CODEX_INPUT_REJECTED')

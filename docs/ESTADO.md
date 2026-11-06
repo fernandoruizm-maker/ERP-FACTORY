@@ -1,3 +1,24 @@
+# Estado vigente: intento 1 con gpt-6.1-sol, sin ejecutar
+
+Cambio autorizado el 6-11-2026 sobre 8f69fe9, misma rama piloto/intento-1.
+Compatibilidad documental confirmada para Responses, json_schema strict,
+tools=[] y tool_choice=none, medium, store=false y 32000 tokens.
+Precios estandar 2.00/10.00 USD por millon. service_tier=default y cache en
+modo explicit sin puntos de cache para evitar cargos de escritura.
+
+Calculo local: 4723 bytes, peor coste 0.329446 USD; al limite completo de
+100000 bytes, 0.520000 USD. No es coste medido. Todos los interruptores false,
+intento 1 no consumido, clave no leida, ninguna llamada a proveedores ni push.
+Las huellas anteriores se invalidan al cambiar modelo y configuracion.
+Suites completas tras el cambio: raiz 219, privada 113, JS 7, TS 3. Total 342
+pasadas, sin fallos/errores ni omitidas. TS no comprueba tipos.
+Sigue pendiente el registro acumulado permanente y la revision del SHA final.
+Fuentes y resultados: [pr/intento-1.md](pr/intento-1.md).
+
+---
+
+# Historia: preparacion anterior con gpt-5.3-codex
+
 # Estado vigente: intento 1 preparado, sin ejecutar
 
 Rama piloto/intento-1 desde 5dc2a61fb8794439fa706f535e1d8e7e5ef96199.
