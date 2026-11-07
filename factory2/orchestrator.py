@@ -78,7 +78,10 @@ class PilotTrial:
 
     def config(self):
         from .pilot_preflight import validate_config
-        return validate_config(self.store.config())
+        from .arming import validate_arm
+        cfg = validate_config(self.store.config())
+        validate_arm(self.store.config_path.parent / 'state/armado.json', cfg, self.encargo, self.attempt)
+        return cfg
 
     def save(self, data):
         with self.store.connect() as db:
@@ -165,13 +168,17 @@ class PilotTrial:
             self.config(), authorization,
             source_reader=lambda: self.head(None) if self.head else clean_head(Path(__file__).resolve().parents[1]),
             review_reader=self.store.manual_review, work_root=self.root,
-            simulation=self.store.coordinator.simulation, encargo=self.encargo, encargos_root=self.encargos_root)
-        adapter = self.builder or DockerCodexBuilder(cfg)
+            simulation=self.store.coordinator.simulation, encargo=self.encargo, encargos_root=self.encargos_root,
+            arm_path=self.store.config_path.parent / 'state/armado.json')
+        from .dependencies import load_catalog, validate_dependencies
+        catalog = load_catalog()
+        adapter = self.builder or DockerCodexBuilder({**cfg, 'external_calls_enabled': True})
         self.root.mkdir(parents=True, exist_ok=True)
         data = {'status': 'PREPARED', 'attempt': authorization['attempt'], 'encargo': self.encargo,
             'context_digest': digest(context), 'factory_source_sha': source,
             'config_digest': digest(cfg), 'factory_digest': digest({'source': source, 'config': digest(cfg)}),
             'disarmed_config_digest': digest({**cfg, 'external_calls_enabled': False}),
+            'dependency_catalog_digest': digest(catalog),
             'tests': [], 'files': {}, 'publication_allowed': False,
             'provenance_authenticated': False, 'human_acceptances_authenticated': False,
             'evidence_mode': 'SIMULATED' if self.store.coordinator.simulation else 'REAL_TRIAL'}
@@ -222,6 +229,7 @@ class PilotTrial:
             reserved = False
             if paid_status == 'OVER_BUDGET':
                 raise Blocked('CODEX_USAGE_EXCEEDS_AUTHORIZED_BOUND')
+            validate_dependencies(proposal, context['profile'], catalog)
             self.store.coordinator.require_worker()
             if digest(self.config()) != data['config_digest']:
                 raise Blocked('PILOT_CONFIG_CHANGED')
@@ -268,6 +276,8 @@ class PilotTrial:
                      'DOCKER_BUILD_CONTENT_MISMATCH', 'PILOT_CONFIG_CHANGED',
                      'PILOT_CANDIDATE_CHANGED', 'PILOT_SNAPSHOT_INVALID',
                      'PILOT_AUTHORIZATION_CHANGED_OR_EXPIRED'}
+            codes.update({'DEPENDENCY_NOT_APPROVED', 'DEPENDENCY_ANALYSIS_BLOCKED', 'DEPENDENCY_CATALOG_INVALID'})
+            codes.update({'PILOT_ARM_INVALID', 'PILOT_SWITCH_OFF', 'PILOT_CONFIG_MUST_REMAIN_DISARMED'})
             reason = str(exc) if isinstance(exc, Blocked) and str(exc) in codes else 'PILOT_STAGE_FAILED_NO_RETRY'
             data.update(failed_stage=data['status'], status='BLOCKED', reason_code=reason)
         self.save(data)

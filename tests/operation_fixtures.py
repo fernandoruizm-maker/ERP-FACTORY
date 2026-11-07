@@ -10,6 +10,19 @@ from factory2.review_import import PRIVATE_REPOSITORY, private_contract
 from factory2.state import Store
 
 
+def arm_fixture(root, cfg, *, encargo='botellas', attempt=1):
+    """Explicit fictitious arm in the test's temporary root only."""
+    root = Path(root)
+    if root.resolve() == Path(__file__).resolve().parents[1]:
+        raise ValueError('TEST_ARM_MUST_BE_TEMPORARY')
+    path = root / 'state/armado.json'
+    path.parent.mkdir(exist_ok=True)
+    now = time.time()
+    path.write_text(canonical({'encargo': encargo, 'attempt': attempt,
+        'issued_at': now, 'expires_at': now + 600, 'config_digest': digest(cfg)}), encoding='utf-8')
+    return path
+
+
 def disabled_repository_config(root):
     """Copy the repository config into a test temporary directory; only disarm calls."""
     source = Path(__file__).resolve().parents[1] / 'config.json'

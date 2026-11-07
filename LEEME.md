@@ -1,5 +1,10 @@
 # Guia de la fabrica local
 
+Desde el bloque 14, armar un ensayo no cambia Git: se usa state/armado.json.
+Ver docs/ARMADO-LOCAL.md antes de preparar otro intento. Los cuatro interruptores
+siguen false; la autorización de Fernando y la revisión continúan siendo obligatorias.
+El código generado pasa por el catálogo descrito en docs/CATALOGO-DEPENDENCIAS.md.
+
 La segunda fabrica sigue desactivada. La original fue retirada por Fernando;
 su declaracion consta en docs/RETIRADA-ORIGINAL.md. Este bloque no la modifica.
 Las pruebas usan ejemplos ficticios, no el ERP real.

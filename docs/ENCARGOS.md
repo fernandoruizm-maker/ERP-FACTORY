@@ -1,5 +1,9 @@
 # Encargos ficticios, sin activar la fabrica
 
+Bloque 14: el armado es local, en state/armado.json, sin commit ni cambios de
+config.json. Consultar [armado](ARMADO-LOCAL.md) y [dependencias](CATALOGO-DEPENDENCIAS.md).
+La salida no se construye si importa paquetes no aprobados o no puede analizarse.
+
 Un encargo es una carpeta `encargos/<nombre>/` con tres elementos:
 
 - `requisitos.json`: version 1, declaracion `synthetic: true` y ficha `brief`

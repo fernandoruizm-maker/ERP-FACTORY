@@ -13,7 +13,7 @@ from factory2.codex_adapter import token_cost, request_bytes
 from factory2.trial_command import prepare, preflight, execute, ROOT
 from factory2.state import Store
 from factory2.manual_review import CLEAR, REVIEWER
-from tests.operation_fixtures import disabled_repository_config
+from tests.operation_fixtures import disabled_repository_config, arm_fixture
 
 
 class PreparationTests(unittest.TestCase):
@@ -94,7 +94,7 @@ class PreparationTests(unittest.TestCase):
         self.assertFalse((self.root / 'state').exists())
 
     def authorized_fixture(self):
-        self.cfg['external_calls_enabled'] = True  # Fictitious temp config only.
+        arm_fixture(self.root, self.cfg)
         self.write_config()
         prepared = prepare(self.root)
         auth = {**prepared['authorization_draft'], 'source_sha': 'a'*40,
@@ -118,7 +118,7 @@ class PreparationTests(unittest.TestCase):
         with patch('factory2.trial_command.clean_head', return_value='a'*40):
             with self.assertRaisesRegex(Blocked, 'EXISTING_RECONCILED_LEDGER'):
                 preflight(auth, 'a'*40, self.root)
-        self.assertFalse((self.root/'state').exists())
+        self.assertFalse((self.root/'state/factory2.sqlite3').exists())
 
     def test_preflight_review_sha_expiry_and_reuse(self):
         auth = self.authorized_fixture()
@@ -265,6 +265,7 @@ class PreparationTests(unittest.TestCase):
 
     def second_attempt_fixture(self):
         auth = {**self.authorized_fixture(), 'attempt': 2}
+        arm_fixture(self.root, self.cfg, attempt=2)
         store = self.reviewed_ledger(auth)
         with store.connect() as db:
             db.execute('CREATE TABLE pilot_trials(id TEXT PRIMARY KEY, data TEXT)')
@@ -297,6 +298,7 @@ class PreparationTests(unittest.TestCase):
 
     def test_attempt_one_remains_rejected_after_its_block(self):
         auth, store = self.second_attempt_fixture()
+        arm_fixture(self.root, self.cfg, attempt=1)
         before = store.path.read_bytes()
         with patch('factory2.trial_command.clean_head', return_value='a'*40):
             with self.assertRaisesRegex(Blocked, '^PILOT_ALREADY_RECORDED_NO_RETRY$'):
@@ -308,6 +310,7 @@ class PreparationTests(unittest.TestCase):
         auth, store = self.second_attempt_fixture()
         before = store.path.read_bytes()
         for parameter, authorized in ((1,2), (2,1), (2,True), (2,'2')):
+            arm_fixture(self.root, self.cfg, attempt=parameter)
             with self.subTest(parameter=parameter, authorized=authorized), \
                  patch('factory2.trial_command.clean_head', return_value='a'*40):
                 with self.assertRaisesRegex(Blocked, '^PILOT_AUTHORIZATION_REQUIRED$'):
@@ -391,6 +394,7 @@ class PreparationTests(unittest.TestCase):
 
     def test_different_job_authorization_rejected_before_key(self):
         auth = self.authorized_fixture()
+        arm_fixture(self.root, self.cfg, encargo='caja-chica')
         store = self.reviewed_ledger(auth)
         before = store.path.read_bytes()
         with patch('factory2.trial_command.clean_head', return_value='a'*40):
@@ -401,6 +405,7 @@ class PreparationTests(unittest.TestCase):
 
     def test_new_job_preflight_ignores_other_job_history_but_keeps_budget(self):
         self.authorized_fixture()
+        arm_fixture(self.root, self.cfg, encargo='caja-chica')
         auth = {**prepare(self.root, encargo='caja-chica')['authorization_draft'],
                 'source_sha':'a'*40, 'authorized_by':'Fernando', 'expires_at':time.time()+600}
         store = self.reviewed_ledger(auth)

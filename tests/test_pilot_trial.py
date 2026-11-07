@@ -15,7 +15,7 @@ from factory2.state import Store
 from factory2.orchestrator import PilotTrial, bottle_input
 from factory2.codex_adapter import DockerCodexBuilder, ResponsesAPI, PYTHON_IMAGE, usage_record, token_cost, request_bytes
 from factory2.docker_materialize import materialize
-from tests.operation_fixtures import config, coordinator, disabled_repository_config
+from tests.operation_fixtures import config, coordinator, disabled_repository_config, arm_fixture
 
 SOURCE, CANDIDATE = 'a'*40, 'c'*40
 PROPOSAL = {'summary_es': 'FICTICIO', 'edits': [{'path': 'src/bottles.mjs', 'content': 'export class Bottles {}\n'}]}
@@ -50,6 +50,9 @@ class TrialTests(unittest.TestCase):
         self.store = Store(self.root/'state.sqlite3', config_path=config(self.root),
                            coordinator=coordinator(self.root), reviews_directory=self.reviews)
         self.cfg = enabled_fixture(self.store)
+        self.cfg['external_calls_enabled'] = False
+        self.store.config_path.write_text(canonical(self.cfg))
+        arm_fixture(self.root, self.cfg)
         self.usage_response = response()
         self.seen = []
         self.generate = lambda context: copy.deepcopy(PROPOSAL)
@@ -93,6 +96,7 @@ class TrialTests(unittest.TestCase):
         self.cfg.update(changes)
         self.store.config_path.write_text(canonical(self.cfg))
         self.auth['config_digest'] = digest(self.cfg)
+        arm_fixture(self.root, self.cfg, attempt=self.auth['attempt'], encargo=self.auth['encargo'])
 
     def test_happy_path_pauses_for_chat_then_requires_two_people(self):
         data = self.trial.start(self.auth)
@@ -125,12 +129,13 @@ class TrialTests(unittest.TestCase):
         for bad in (None, 0, -1, True, '2'):
             with self.subTest(bad=bad), self.assertRaisesRegex(Blocked, 'ATTEMPT_INVALID'):
                 self.trial.start({**self.auth, 'attempt': bad})
-        self.change_config(external_calls_enabled=False)
+        (self.root/'state/armado.json').unlink()
         with self.assertRaisesRegex(Blocked, 'SWITCH_OFF'): self.trial.start(self.auth)
         self.assertEqual(self.trial.load()['reason_code'], 'PILOT_SWITCH_OFF')
-        self.change_config(external_calls_enabled=True)
+        arm_fixture(self.root, self.cfg)
         with self.assertRaisesRegex(Blocked, 'NO_RETRY'): self.trial.start(self.auth)
         self.assertEqual(self.seen, [])
+        arm_fixture(self.root, self.cfg, attempt=2)
         data = self.trial.start({**self.auth, 'attempt': 2})
         self.assertEqual(data['attempt'], 2)
         self.assertEqual(data['status'], 'WAITING_FOR_MANUAL_REVIEW')
@@ -142,6 +147,7 @@ class TrialTests(unittest.TestCase):
         self.assertEqual(first['status'], 'BLOCKED')
         with self.assertRaisesRegex(Blocked, 'NO_RETRY'): self.trial.start(self.auth)
         self.tester = original
+        arm_fixture(self.root, self.cfg, attempt=2)
         second = self.trial.start({**self.auth, 'attempt': 2})
         self.assertEqual(second['status'], 'WAITING_FOR_MANUAL_REVIEW')
         self.assertEqual(self.seen.count('provider'), 2)
@@ -158,7 +164,9 @@ class TrialTests(unittest.TestCase):
         # Each completed valid response costs 0.75. The next full 1.00 reservation
         # after 17 calls would exceed 13.00; failed product tests do not undo usage.
         for attempt in range(1, 18):
+            arm_fixture(self.root, self.cfg, attempt=attempt)
             self.assertEqual(self.trial.start({**self.auth, 'attempt': attempt})['status'], 'BLOCKED')
+        arm_fixture(self.root, self.cfg, attempt=18)
         blocked = self.trial.start({**self.auth, 'attempt': 18})
         self.assertEqual(blocked['reason_code'], 'SPEND_LIMIT')
         self.assertEqual(self.seen.count('provider'), 17)
@@ -179,20 +187,21 @@ class TrialTests(unittest.TestCase):
     def test_over_budget_usage_stops_before_docker_and_blocks_later_attempts(self):
         huge = response()
         huge['usage']['output_tokens'] = 600000
-        self.trial.builder = DockerCodexBuilder(self.cfg, transport=lambda _: huge)
+        self.trial.builder = DockerCodexBuilder({**self.cfg, 'external_calls_enabled': True}, transport=lambda _: huge)
         data = self.trial.start(self.auth)
         self.assertEqual(data['reason_code'], 'CODEX_USAGE_EXCEEDS_AUTHORIZED_BOUND')
         self.assertEqual(data['calculated_cost_usd'], '1.200100')
         self.assertEqual(self.seen, [])
         with self.store.connect() as db:
             self.assertEqual(db.execute('SELECT status FROM paid_attempts').fetchone()[0], 'OVER_BUDGET')
+        arm_fixture(self.root, self.cfg, attempt=2)
         following = self.trial.start({**self.auth, 'attempt': 2})
         self.assertEqual(following['reason_code'], 'BUDGET_RECONCILIATION_REQUIRED')
 
     def test_incomplete_usage_persisted_without_free_text_or_retry(self):
         item = response()
         item.update(status='incomplete', secret_text='FICTICIO_NO_GUARDAR')
-        self.trial.builder = DockerCodexBuilder(self.cfg, transport=lambda _: item)
+        self.trial.builder = DockerCodexBuilder({**self.cfg, 'external_calls_enabled': True}, transport=lambda _: item)
         data = self.trial.start(self.auth)
         self.assertEqual(data['status'], 'BLOCKED')
         self.assertEqual(data['calculated_cost_usd'], '0.000140')
@@ -201,7 +210,7 @@ class TrialTests(unittest.TestCase):
         self.assertEqual(self.store.budget.summary()['conservative_charge_units'], 1000000)
 
     def test_switch_off_never_reaches_ports(self):
-        self.change_config(external_calls_enabled=False)
+        (self.root/'state/armado.json').unlink()
         with self.assertRaisesRegex(Blocked, 'PILOT_SWITCH_OFF'): self.trial.start(self.auth)
         self.assertEqual(self.seen, [])
         self.assertEqual(self.store.budget.summary()['attempts'], 0)
@@ -209,7 +218,7 @@ class TrialTests(unittest.TestCase):
     def test_missing_provider_usage_keeps_full_reserve(self):
         item = response()
         del item['usage']
-        self.trial.builder = DockerCodexBuilder(self.cfg, transport=lambda _: item)
+        self.trial.builder = DockerCodexBuilder({**self.cfg, 'external_calls_enabled': True}, transport=lambda _: item)
         data = self.trial.start(self.auth)
         self.assertEqual(data['status'], 'BLOCKED')
         self.assertEqual(data['reason_code'], 'CODEX_RESPONSE_INVALID_OR_UNCERTAIN')
@@ -220,7 +229,7 @@ class TrialTests(unittest.TestCase):
     def test_invalid_provider_usage_keeps_full_reserve(self):
         item = response()
         item['usage']['input_tokens'] = -1
-        self.trial.builder = DockerCodexBuilder(self.cfg, transport=lambda _: item)
+        self.trial.builder = DockerCodexBuilder({**self.cfg, 'external_calls_enabled': True}, transport=lambda _: item)
         data = self.trial.start(self.auth)
         self.assertEqual(data['status'], 'BLOCKED')
         self.assertEqual(data['reason_code'], 'CODEX_RESPONSE_INVALID_OR_UNCERTAIN')
@@ -324,7 +333,7 @@ class TrialTests(unittest.TestCase):
 
     def test_disarming_after_tests_preserves_manual_gate_but_blocks_new_call(self):
         data = self.trial.start(self.auth)
-        self.store.config_path.write_text(canonical({**self.cfg, 'external_calls_enabled': False}))
+        (self.root/'state/armado.json').unlink()
         path = self.review('product', CANDIDATE, list(data['files']))
         self.assertEqual(self.trial.attach_review(path)['status'], 'WAITING_FOR_ACCEPTANCES')
         self.trial.accept('persona-a', 'business', time.time()+60)
@@ -395,13 +404,13 @@ class APIAdapterTests(unittest.TestCase):
     def test_incomplete_response_keeps_numeric_usage_but_not_proposal(self):
         item = response()
         item['status'] = 'incomplete'
-        adapter = DockerCodexBuilder(self.cfg, transport=lambda _: item)
+        adapter = DockerCodexBuilder({**self.cfg, 'external_calls_enabled': True}, transport=lambda _: item)
         with self.assertRaises(Blocked): adapter.generate(bottle_input())
         self.assertEqual(adapter.last_usage['calculated_cost_usd'], '0.000140')
 
     def test_malformed_usage_is_rejected_and_stale_usage_cleared(self):
         item = response()
-        adapter = DockerCodexBuilder(self.cfg, transport=lambda _: item)
+        adapter = DockerCodexBuilder({**self.cfg, 'external_calls_enabled': True}, transport=lambda _: item)
         adapter.generate(bottle_input())
         for bad in (None, {}, {'input_tokens': True, 'output_tokens': 1,
                               'output_tokens_details': {'reasoning_tokens': 0}},
@@ -418,7 +427,7 @@ class APIAdapterTests(unittest.TestCase):
             self.assertEqual(payload['text']['format']['type'], 'json_schema')
             return response()
         with patch('factory2.codex_adapter.os.environ.get', side_effect=AssertionError('No credentials')):
-            self.assertEqual(DockerCodexBuilder(self.cfg, transport=fake).generate(bottle_input()), PROPOSAL)
+            self.assertEqual(DockerCodexBuilder({**self.cfg, 'external_calls_enabled': True}, transport=fake).generate(bottle_input()), PROPOSAL)
 
     def test_invalid_incomplete_tool_or_secret_output_is_rejected(self):
         cases = [None, {'status': 'incomplete'}, {'status': 'completed', 'output': [{'type': 'function_call'}]},
@@ -426,7 +435,7 @@ class APIAdapterTests(unittest.TestCase):
                  response({'summary_es': 'FICTICIO', 'edits': [{'path': '../escape.py', 'content': 'x'}]})]
         for item in cases:
             with self.subTest(item=type(item).__name__), self.assertRaisesRegex(Blocked, 'INVALID_OR_UNCERTAIN'):
-                DockerCodexBuilder(self.cfg, transport=lambda _: item).generate(bottle_input())
+                DockerCodexBuilder({**self.cfg, 'external_calls_enabled': True}, transport=lambda _: item).generate(bottle_input())
 
     def test_materialization_command_is_offline_and_pinned(self):
         commands = []

@@ -1,5 +1,10 @@
 # ERP-FACTORY — revision manual, fabrica desactivada
 
+Bloque 14: [armado local](docs/ARMADO-LOCAL.md) en state/armado.json, ligado al
+encargo/intento y con vigencia máxima de 24 horas, sin cambiar config.json.
+[Catálogo de dependencias](docs/CATALOGO-DEPENDENCIAS.md) con análisis estático
+antes de construir el candidato. No hay paquetes externos aprobados ni ensayo armado.
+
 Bloque 13: encargos ficticios en `encargos/<nombre>/`, con requisitos, pruebas
 fijas y una lista cerrada de salida. Ejemplos: botellas (JavaScript) y caja chica
 (Python). Preparacion local: `scripts/ensayo.ps1 -Encargo botellas -Intento 1`.

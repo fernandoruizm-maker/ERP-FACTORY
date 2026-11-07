@@ -11,10 +11,12 @@ from .manual_review import CLEAR, hex_value
 from .codex_adapter import DockerCodexBuilder, PYTHON_IMAGE, NODE_IMAGE
 from .runner import bounded_process
 from .encargos import ROOT as ENCARGOS_ROOT, load_encargo, attempt_ids
+from .arming import validate_arm, FLAGS
 
 
 REASON_CODES = frozenset('''
 PILOT_SWITCH_OFF PILOT_MUST_REMAIN_ISOLATED PILOT_USD_REQUIRED
+PILOT_ARM_INVALID PILOT_CONFIG_MUST_REMAIN_DISARMED DEPENDENCY_CATALOG_INVALID
 PILOT_AUTHORIZED_CAP_EXCEEDED PILOT_AUTHORIZATION_REQUIRED PILOT_ATTEMPT_INVALID
 PILOT_FACTORY_SHA_CHANGED PILOT_FACTORY_REVIEW_REQUIRED PILOT_WORK_ROOT_UNSAFE
 PILOT_CANDIDATE_ALREADY_EXISTS PILOT_ALREADY_RECORDED_NO_RETRY
@@ -56,10 +58,8 @@ def reason_code(exc):
 
 
 def validate_config(cfg):
-    if cfg.get('external_calls_enabled') is not True:
-        raise Blocked('PILOT_SWITCH_OFF')
-    if any(cfg.get(k) is not False for k in ('enabled', 'erp_access_enabled', 'publication_enabled')):
-        raise Blocked('PILOT_MUST_REMAIN_ISOLATED')
+    if any(cfg.get(k) is not False for k in FLAGS):
+        raise Blocked('PILOT_CONFIG_MUST_REMAIN_DISARMED')
     limits(cfg)
     if cfg['budget_currency'] != 'USD':
         raise Blocked('PILOT_USD_REQUIRED')
@@ -80,9 +80,13 @@ def docker_query(command):
 
 
 def inspect_start(cfg, authorization, *, source_reader, review_reader, work_root, simulation=False,
-                  encargo='botellas', encargos_root=ENCARGOS_ROOT):
+                  encargo='botellas', encargos_root=ENCARGOS_ROOT, arm_path=None):
     """Called under the worker lock by both check and start. Reads only."""
     cfg = validate_config(cfg)
+    validate_arm(arm_path or Path(__file__).resolve().parents[1] / 'state/armado.json',
+                 cfg, encargo, authorization.get('attempt') if isinstance(authorization, dict) else None)
+    from .dependencies import load_catalog
+    load_catalog()  # check and start reject a malformed policy before any call
     context = load_encargo(encargo, encargos_root)
     discover(context['brief'])
     expected = {'source_sha', 'context_digest', 'config_digest', 'authorized_by',
@@ -104,7 +108,7 @@ def inspect_start(cfg, authorization, *, source_reader, review_reader, work_root
     if (reviewed['review_id'] != authorization['factory_review_id']
             or reviewed['source_sha'] != source or reviewed['conclusion'] != CLEAR):
         raise Blocked('PILOT_FACTORY_REVIEW_REQUIRED')
-    request = DockerCodexBuilder(cfg).request(context)
+    request = DockerCodexBuilder({**cfg, 'external_calls_enabled': True}).request(context)
     if not simulation:
         code, endpoint = docker_query(['docker', 'context', 'inspect', '--format', '{{.Endpoints.docker.Host}}'])
         if code or endpoint.strip() not in ('npipe:////./pipe/docker_engine', 'npipe:////./pipe/dockerDesktopLinuxEngine'):
