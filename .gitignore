@@ -2,6 +2,7 @@ __pycache__/
 *.pyc
 .env*
 state/*.sqlite*
+/state/worker.lock
 work/
 node_modules/
 outputs/

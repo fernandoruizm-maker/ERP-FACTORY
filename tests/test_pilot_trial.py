@@ -15,7 +15,7 @@ from factory2.state import Store
 from factory2.orchestrator import PilotTrial, bottle_input
 from factory2.codex_adapter import DockerCodexBuilder, ResponsesAPI, PYTHON_IMAGE, usage_record, token_cost, request_bytes
 from factory2.docker_materialize import materialize
-from tests.operation_fixtures import config, coordinator
+from tests.operation_fixtures import config, coordinator, disabled_repository_config
 
 SOURCE, CANDIDATE = 'a'*40, 'c'*40
 PROPOSAL = {'summary_es': 'FICTICIO', 'edits': [{'path': 'src/bottles.mjs', 'content': 'export class Bottles {}\n'}]}
@@ -126,6 +126,7 @@ class TrialTests(unittest.TestCase):
                 self.trial.start({**self.auth, 'attempt': bad})
         self.change_config(external_calls_enabled=False)
         with self.assertRaisesRegex(Blocked, 'SWITCH_OFF'): self.trial.start(self.auth)
+        self.assertEqual(self.trial.load()['reason_code'], 'PILOT_SWITCH_OFF')
         self.change_config(external_calls_enabled=True)
         with self.assertRaisesRegex(Blocked, 'NO_RETRY'): self.trial.start(self.auth)
         self.assertEqual(self.seen, [])
@@ -194,6 +195,16 @@ class TrialTests(unittest.TestCase):
     def test_switch_off_never_reaches_ports(self):
         self.change_config(external_calls_enabled=False)
         with self.assertRaisesRegex(Blocked, 'PILOT_SWITCH_OFF'): self.trial.start(self.auth)
+        self.assertEqual(self.seen, [])
+        self.assertEqual(self.store.budget.summary()['attempts'], 0)
+
+    def test_unrecognized_preflight_error_is_recorded_without_free_text(self):
+        with patch.object(self.trial, '_start', side_effect=RuntimeError('FICTICIO_PRIVATE')):
+            with self.assertRaises(RuntimeError):
+                self.trial.start(self.auth)
+        data = self.trial.load()
+        self.assertEqual(data['reason_code'], 'PILOT_PREFLIGHT_UNEXPECTED_NO_RETRY')
+        self.assertNotIn('FICTICIO_PRIVATE', canonical(data))
         self.assertEqual(self.seen, [])
         self.assertEqual(self.store.budget.summary()['attempts'], 0)
 
@@ -426,10 +437,13 @@ class APIAdapterTests(unittest.TestCase):
                 ResponsesAPI()({'model': 'FICTICIO'})
             self.assertEqual(opener.return_value.open.call_count, 1)
 
-    def test_disabled_config_and_pending_prices_are_repository_defaults(self):
-        cfg = json.loads((Path(__file__).resolve().parents[1]/'config.json').read_text())
+    def test_prepared_config_keeps_execution_disabled(self):
+        cfg = json.loads(disabled_repository_config(self.root).read_text())
         for key in ('enabled', 'external_calls_enabled', 'erp_access_enabled', 'publication_enabled'):
             self.assertIs(cfg[key], False)
-        for key in ('max_budget_usd_per_call', 'max_spend_per_execution', 'max_spend_total',
-                    'pilot_model', 'pilot_cost_review'):
-            self.assertIsNone(cfg[key])
+        self.assertEqual(cfg['pilot_model'], 'gpt-6.1-sol')
+        self.assertEqual(cfg['pilot_cost_review']['reasoning_effort'], 'medium')
+        self.assertEqual(cfg['pilot_cost_review']['max_output_tokens'], 32000)
+        self.assertEqual(cfg['max_budget_usd_per_call'], '1.00')
+        self.assertEqual(cfg['max_spend_per_execution'], '12.00')
+        self.assertEqual(cfg['max_spend_total'], '13.00')

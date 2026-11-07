@@ -1,3 +1,144 @@
+# Estado vigente: bloque 11 preparado localmente, ensayo concluido y desarmado
+
+7-11-2026. Rama feat/bloque-11-ensayo desde piloto/intento-1 en aa6fcb1.
+Fetch autorizado: origin/main confirmado en f7d973c. No se sube ni integra.
+El intento 1 quedo bloqueado por el candado antes del proveedor, sin gasto.
+El intento 2 completo el piloto ficticio con gpt-6.1-sol: 1153 tokens de entrada,
+1364 de salida, USD 0.015946 calculados y 7/7 pruebas del candidato aprobadas.
+Claude declaro SIN OBJECIONES TECNICAS, con un hallazgo minimo sobre decidir
+la separacion de aprobacion y despacho antes de usarlo con clientes reales.
+Fernando y FERRUMTJA declararon sus aceptaciones locales no autenticadas.
+La puerta devolvio READY_FOR_MANUAL_REVIEW, sin bloqueos; publicacion desactivada.
+
+Los cuatro interruptores estan false. Se ajusta la prueba de configuracion
+real para exigir este estado final. Suites del bloque: raiz 242, privada 113,
+JS 7 y TS 3: 365 pasadas, cero fallos, errores u omitidas. TS sin comprobar tipos.
+Las suites locales no repiten el ensayo real. Sin proveedor, clave, Docker real
+ni cambios al registro durante este bloque. state/, work/, entregas-locales/ y
+revisiones *.local.md no se incorporan a Git. Envio DISABLED.
+Resultado publico, comandos y limites: [pr/bloque-11.md](pr/bloque-11.md).
+
+---
+
+# Historia: numero de intento generalizado; intento 2 pendiente
+
+7-11-2026, rama piloto/intento-1, base 42c0c23. El lanzador conserva su nombre
+ensayo-intento-1.ps1 y ahora recibe -Intento N; Python recibe --attempt N.
+Autorizacion con el mismo numero, bottles-N sin registros previos y todos los
+intentos 1..N-1 existentes como BLOCKED. PilotTrial recibe attempt=N.
+El intento 1 sigue cerrado. No se elige numero automaticamente ni se reintenta.
+
+Sin cambios en configuracion, interruptores, modelo, topes o logica de gasto.
+Suites completas: raiz 242, privada 113, JS 7, TS 3 = 365 pasadas; otras 5
+pruebas ficticias del auxiliar externo. Cero fallos, errores y omitidas.
+TS sin comprobacion estatica de tipos; sin proveedor ni Docker reales.
+Ver comandos, evidencias y limites en [pr/intento-2.md](pr/intento-2.md).
+
+Fuera del repositorio quedan la plantilla de revision del SHA nuevo (PENDIENTE),
+el borrador de autorizacion attempt=2 sin firmar y gestionar-paso-3.py adaptado.
+No se importan ni firman documentos reales. El auxiliar externo necesita revision
+separada; no se atribuye a Claude la revision de este nuevo SHA ni del auxiliar.
+Registro real intacto, sin red, clave, ensayo o subida; envio DISABLED.
+
+---
+
+# Historia: intento 1 cerrado; fase previa corregida
+
+7-11-2026, rama piloto/intento-1, base 5850899. Causa reproducida:
+state/worker.lock no estaba excluido de Git; _start lo encontraba despues de
+tomar el candado. Docker y ambas imagenes responden correctamente bajo el
+entorno reducido, mediante consultas locales de lectura autorizadas.
+
+Se excluye solo ese candado; check y _start comparten las comprobaciones de
+configuracion/autorizacion/Git/revision/Docker/candidato. PowerShell usa el
+mismo constructor de entorno reducido para check y run. Fallos concretos de
+lista cerrada, sin texto libre ni reintentos. Un OK no garantiza estados futuros:
+las comprobaciones se repiten antes de la llamada y bajo el candado.
+
+Suites: raiz 233 + privada 113 + JS 7 + TS 3 = 356 pasadas, cero fallos,
+errores u omitidas. TS sin comprobacion estatica de tipos. Sin proveedor real,
+red ni contenedores. Ver evidencia, comandos y limites en
+[pr/intento-1-preflight.md](pr/intento-1-preflight.md).
+
+El registro real no se modifica: SHA-256 intacto, 0 llamadas, 0 intentos
+pagados. bottles-1 conserva BLOCKED/PILOT_PREFLIGHT_BLOCKED_NO_RETRY.
+El siguiente sera attempt 2, con nuevo expediente/autorizacion y revision de
+Claude; no se prepara ni ejecuta aqui. El lanzador del intento 1 no se reutiliza.
+Config.json y sus interruptores intactos; no se pide clave, firma, importa
+revision ni publica. Envio DISABLED. upstream/ y fabrica original intactos.
+
+---
+
+# Historia: correccion de pruebas tras def4b58, sin ejecutar
+
+7-11-2026, rama piloto/intento-1. Se corrigen seis pruebas para usar una copia
+temporal de config.json con external_calls_enabled=false. Se conservan todas
+las aserciones anteriores. Una nueva prueba comprueba la configuracion real:
+external_calls_enabled=true; enabled, erp_access_enabled y publication_enabled=false.
+No se cambia config.json ni codigo de produccion en esta correccion.
+
+Suites completas: raiz 220, privada 113, JavaScript 7 y TypeScript 3:
+343 pasadas, 0 fallos, 0 errores, 0 omitidas. Python se ejecuto con el auxiliar
+externo ejecutar-suite-sin-red.py, que bloquea conexiones y procesos externos
+reales y elimina credenciales heredadas del entorno. Comandos y logs en
+docs/pr/intento-1.md. TS ejecuta pruebas sin comprobacion estatica de tipos.
+
+El registro permanente ya existe: 1 declaracion de Fernando (6-11-2026),
+0 llamadas, 0 intentos pagados, 0 ejecuciones pagadas y 0 revisiones importadas.
+No se reinicializa. PowerShell 7.6.9 ya estaba instalado: Codex solo consulto
+pwsh --version; no instalo nada. Revision del nuevo SHA y autorizacion concreta
+siguen pendientes. Sin red, proveedor real, Docker real, clave, ejecucion del
+ensayo ni publicacion. El envio sigue DISABLED. Los auxiliares de entregas-locales
+estan fuera del commit y requieren revision separada antes de usarlos.
+
+---
+
+# Historia: intento 1 con gpt-6.1-sol antes del paso 3
+
+Cambio autorizado el 6-11-2026 sobre 8f69fe9, misma rama piloto/intento-1.
+Compatibilidad documental confirmada para Responses, json_schema strict,
+tools=[] y tool_choice=none, medium, store=false y 32000 tokens.
+Precios estandar 2.00/10.00 USD por millon. service_tier=default y cache en
+modo explicit sin puntos de cache para evitar cargos de escritura.
+
+Calculo local: 4723 bytes, peor coste 0.329446 USD; al limite completo de
+100000 bytes, 0.520000 USD. No es coste medido. Todos los interruptores false,
+intento 1 no consumido, clave no leida, ninguna llamada a proveedores ni push.
+Las huellas anteriores se invalidan al cambiar modelo y configuracion.
+Suites completas tras el cambio: raiz 219, privada 113, JS 7, TS 3. Total 342
+pasadas, sin fallos/errores ni omitidas. TS no comprueba tipos.
+Sigue pendiente el registro acumulado permanente y la revision del SHA final.
+Fuentes y resultados: [pr/intento-1.md](pr/intento-1.md).
+
+---
+
+# Historia: preparacion anterior con gpt-5.3-codex
+
+# Estado vigente: intento 1 preparado, sin ejecutar
+
+Rama piloto/intento-1 desde 5dc2a61fb8794439fa706f535e1d8e7e5ef96199.
+Documentacion oficial consultada en lectura el 6-11-2026: gpt-5.3-codex,
+Responses, json_schema strict, tools vacio/none, medium, store=false y 32000
+compatibles documentalmente. Tarifa estandar 1.75/14.00 USD por millon;
+service_tier=default explicito. Modelo con retirada prevista 1-4-2027.
+
+Configuracion preparada: importes 1/12/13 USD, modelo y precios definidos.
+Los cuatro interruptores siguen false. Clave NO leida. No se llamo a proveedores.
+Script scripts/ensayo-intento-1.ps1, modo por defecto Preparar, sin consumir
+attempt=1. Peticion de 4682 bytes; peor caso 0.456194 USD; limite completo
+100000 bytes + 32000 tokens: 0.623000 USD. No es gasto medido ni factura.
+
+No existe state/factory2.sqlite3 en este clon. No se inicializo ni se presume
+saldo cero: pendiente confirmar el registro permanente/reconciliado antes de
+cualquier ejecucion. Detalle, fuentes y limites: [pr/intento-1.md](pr/intento-1.md).
+Suites completas: raiz 219, privada 113, JS 7, TS 3: 342 pasadas, cero
+fallos/errores y cero omitidas. TS sin comprobacion de tipos. Parser PowerShell
+sin errores y modo Preparar ejecutado sin claves ni consumo del intento.
+
+---
+
+# Historia: bloque 10 y correccion
+
 # Estado vigente: bloque 10 preparado, no ejecutado
 
 Rama feat/bloque-10-piloto desde main verificado c55453edd9f04c7274a5fabfddc54c21eda53b30,

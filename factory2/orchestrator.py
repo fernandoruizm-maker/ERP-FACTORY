@@ -79,20 +79,8 @@ class PilotTrial:
             db.execute('CREATE TABLE IF NOT EXISTS pilot_authorizations(id TEXT PRIMARY KEY, digest TEXT NOT NULL)')
 
     def config(self):
-        from .budget import limits, units
-        cfg = self.store.config()
-        if cfg.get('external_calls_enabled') is not True:
-            raise Blocked('PILOT_SWITCH_OFF')
-        if any(cfg.get(k) is not False for k in ('enabled', 'erp_access_enabled', 'publication_enabled')):
-            raise Blocked('PILOT_MUST_REMAIN_ISOLATED')
-        limits(cfg)
-        if cfg['budget_currency'] != 'USD':
-            raise Blocked('PILOT_USD_REQUIRED')
-        for key, ceiling in (('max_budget_usd_per_call', '1.00'),
-                             ('max_spend_per_execution', '12.00'), ('max_spend_total', '13.00')):
-            if units(cfg[key]) > units(ceiling):
-                raise Blocked('PILOT_AUTHORIZED_CAP_EXCEEDED')
-        return cfg
+        from .pilot_preflight import validate_config
+        return validate_config(self.store.config())
 
     def save(self, data):
         with self.store.connect() as db:
@@ -151,60 +139,34 @@ class PilotTrial:
                     raise Blocked('PILOT_ALREADY_RECORDED_NO_RETRY') from None
             try:
                 return self._start(authorization)
-            except Exception:
-                # Consume even a preflight-blocked attempt; never store free text.
+            except Exception as exc:
+                from .pilot_preflight import reason_code
+                # Consume even a preflight-blocked attempt; only closed reason codes.
                 with self.store.connect() as db:
                     if not db.execute('SELECT 1 FROM pilot_trials WHERE id=?', (self.ID,)).fetchone():
                         db.execute('INSERT INTO pilot_trials VALUES(?,?)', (self.ID, canonical({
                             'attempt': authorization['attempt'], 'status': 'BLOCKED',
-                            'reason_code': 'PILOT_PREFLIGHT_BLOCKED_NO_RETRY', 'publication_allowed': False})))
+                            'reason_code': reason_code(exc), 'publication_allowed': False})))
                 raise
 
     def _start(self, authorization):
-        import math
         import sqlite3
         import time
-        from .codex_adapter import DockerCodexBuilder, PYTHON_IMAGE, NODE_IMAGE
-        from .manual_review import CLEAR, hex_value
-        from .runner import DockerRunner, bounded_process
-        cfg = self.config()  # Before provider/credential/process boundaries.
-        context = bottle_input()
-        from .core import discover
-        discover(context['brief'])
-        expected = {'source_sha', 'context_digest', 'config_digest', 'authorized_by', 'expires_at', 'factory_review_id', 'attempt'}
-        if (not isinstance(authorization, dict) or set(authorization) != expected
-                or authorization['authorized_by'] != 'Fernando'
-                or authorization['context_digest'] != digest(context)
-                or authorization['config_digest'] != digest(cfg)
-                or not hex_value(authorization['source_sha'], 40)
-                or type(authorization['expires_at']) not in (int, float)
-                or not math.isfinite(authorization['expires_at']) or authorization['expires_at'] <= time.time()):
-            raise Blocked('PILOT_AUTHORIZATION_REQUIRED')
+        from .codex_adapter import DockerCodexBuilder, NODE_IMAGE
+        from .manual_review import hex_value
+        from .runner import DockerRunner
+        from .pilot_preflight import inspect_start
         self.store.coordinator.require_worker()
-        source = self.head(None) if self.head else clean_head(Path(__file__).resolve().parents[1])
-        if source != authorization['source_sha']:
-            raise Blocked('PILOT_FACTORY_SHA_CHANGED')
-        reviewed = self.store.manual_review(authorization['factory_review_id'])
-        if reviewed['source_sha'] != source or reviewed['conclusion'] != CLEAR:
-            raise Blocked('PILOT_FACTORY_REVIEW_REQUIRED')
-        adapter = self.builder or DockerCodexBuilder(cfg)
         if self.store.coordinator.simulation and (self.builder is None or self.tester is None
                                                  or self.snapshotter is None or self.head is None):
             raise Blocked('PILOT_SIMULATION_DOUBLES_REQUIRED')
-        # Validate the real request contract even when transport is doubled.
-        request = DockerCodexBuilder(cfg).request(context)
-        if not self.store.coordinator.simulation:
-            code, endpoint = bounded_process(['docker', 'context', 'inspect', '--format', '{{.Endpoints.docker.Host}}'])
-            if code or endpoint.strip() not in ('npipe:////./pipe/docker_engine', 'npipe:////./pipe/dockerDesktopLinuxEngine'):
-                raise Blocked('LOCAL_DOCKER_ENDPOINT_REQUIRED')
-            for image in (PYTHON_IMAGE, NODE_IMAGE):
-                code, info = bounded_process(['docker', 'image', 'inspect', image, '--format', '{{.Os}}/{{.Architecture}}'])
-                if code or info.strip() != 'linux/amd64':
-                    raise Blocked('PILOT_PINNED_IMAGES_REQUIRED')
+        cfg, context, source, request, candidate = inspect_start(
+            self.config(), authorization,
+            source_reader=lambda: self.head(None) if self.head else clean_head(Path(__file__).resolve().parents[1]),
+            review_reader=self.store.manual_review, work_root=self.root,
+            simulation=self.store.coordinator.simulation)
+        adapter = self.builder or DockerCodexBuilder(cfg)
         self.root.mkdir(parents=True, exist_ok=True)
-        candidate = contained(self.root, self.ID)
-        if candidate.exists():
-            raise Blocked('PILOT_CANDIDATE_ALREADY_EXISTS')
         data = {'status': 'PREPARED', 'attempt': authorization['attempt'], 'factory_source_sha': source,
             'config_digest': digest(cfg), 'factory_digest': digest({'source': source, 'config': digest(cfg)}),
             'disarmed_config_digest': digest({**cfg, 'external_calls_enabled': False}),

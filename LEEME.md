@@ -26,8 +26,9 @@ estar autenticados: la verificacion de personas y de GitHub no se simula como re
 ## Que se puede comprobar localmente
 
 El bloque 10 prepara UN ensayo futuro de las botellas con modelo Codex por API.
-No se ha ejecutado: el interruptor sigue apagado y los tres importes de gasto,
-el modelo y su revision de coste siguen null. Construccion y pruebas serian en
+No se ha ejecutado: todos los interruptores siguen apagados. En piloto/intento-1
+se prepararon el modelo, sus precios y los topes 1/12/13 USD, sin gastar.
+La guia actual es docs/pr/intento-1.md. Construccion y pruebas serian en
 Docker sin red; solo la peticion al proveedor saldria del host con autorizacion.
 Despues se detiene para Claude en el chat y las aceptaciones del producto.
 La lista de permisos y limites reales esta en docs/pr/bloque-10.md.

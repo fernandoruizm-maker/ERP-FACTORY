@@ -9,7 +9,7 @@ from unittest.mock import patch
 from factory2.core import Blocked, canonical, digest
 from factory2.manual_review import CLEAR, REVIEWER, validate_document
 from factory2.state import Store
-from tests.operation_fixtures import config, coordinator, accounting_target
+from tests.operation_fixtures import config, coordinator, accounting_target, disabled_repository_config
 
 ROOT = Path(__file__).resolve().parents[1]
 SOURCE = 'a'*40
@@ -193,17 +193,20 @@ class ManualPolicyFilesTests(unittest.TestCase):
         self.assertIs(params['require_last_push_approval'],True)
 
     def test_declared_roles_future_caps_and_parked_blockers(self):
-        cfg=json.loads((ROOT/'config.json').read_text())
+        temp = tempfile.TemporaryDirectory()
+        self.addCleanup(temp.cleanup)
+        temporary_config = disabled_repository_config(temp.name)
+        cfg=json.loads(temporary_config.read_text())
         self.assertEqual(set(cfg['human_approvers']),{'business','accounting'})
         self.assertEqual(cfg['human_approvers']['business']['id'],'342326625')
         self.assertEqual(cfg['human_approvers']['accounting']['id'],'352290329')
         for flag in ('enabled','external_calls_enabled','erp_access_enabled','publication_enabled'):
             self.assertIs(cfg[flag],False)
-        for config_path in ('config.json','ERP-FACTORY-revision/policy.json'):
-            data=json.loads((ROOT/config_path).read_text())
+        for config_path in (temporary_config, ROOT/'ERP-FACTORY-revision/policy.json'):
+            data=json.loads(config_path.read_text())
             self.assertEqual(data['automatic_review_status'],'PARKED')
             self.assertEqual(data['budget_currency'],'USD')
-            expected = (None, None, None) if config_path == 'config.json' else ('1.00', '12.00', '13.00')
+            expected = ('1.00', '12.00', '13.00')
             self.assertEqual((data['max_budget_usd_per_call'], data['max_spend_per_execution'],
                               data['max_spend_total']), expected)
         policy=json.loads((ROOT/'ERP-FACTORY-revision/policy.json').read_text())
