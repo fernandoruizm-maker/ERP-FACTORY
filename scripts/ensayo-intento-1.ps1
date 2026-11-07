@@ -1,6 +1,7 @@
 [CmdletBinding()]
 param(
     [ValidateSet('Preparar', 'Ejecutar')][string]$Modo = 'Preparar',
+    [ValidateRange(1, 1000000)][int]$Intento = 1,
     [string]$Python = "$env:USERPROFILE\.cache\codex-runtimes\codex-primary-runtime\dependencies\python\python.exe",
     [string]$Autorizacion,
     [string]$ShaRevisado,
@@ -22,7 +23,7 @@ function New-TrialProcessInfo([string]$Action) {
     $info.RedirectStandardError = $true
     # ArgumentList requires PowerShell 7/.NET; no shell command interpolation.
     if ($null -eq $info.ArgumentList) { throw 'Se requiere PowerShell 7 para la ejecucion privada.' }
-    foreach ($value in @('-B','-m','factory2.trial_command',$Action,'--authorization',$Autorizacion,'--expected-sha',$ShaRevisado)) {
+    foreach ($value in @('-B','-m','factory2.trial_command',$Action,'--attempt',"$Intento",'--authorization',$Autorizacion,'--expected-sha',$ShaRevisado)) {
         $info.ArgumentList.Add($value)
     }
     $info.Environment.Clear()
@@ -39,7 +40,7 @@ Push-Location $repo
 try {
     if ($Modo -eq 'Preparar') {
         # Pure local calculation. No key prompt, Store, Docker or provider.
-        & $Python -B -m factory2.trial_command prepare
+        & $Python -B -m factory2.trial_command prepare --attempt $Intento
         if ($LASTEXITCODE -ne 0) { throw 'Preparacion bloqueada.' }
         return
     }

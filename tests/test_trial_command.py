@@ -262,6 +262,122 @@ class PreparationTests(unittest.TestCase):
             self.assertEqual(json.loads(output.getvalue()), {'status':'BLOCKED','reason_code':expected})
             self.assertNotIn('FICTICIO_PRIVATE', output.getvalue())
 
+    def second_attempt_fixture(self):
+        auth = {**self.authorized_fixture(), 'attempt': 2}
+        store = self.reviewed_ledger(auth)
+        with store.connect() as db:
+            db.execute('CREATE TABLE pilot_trials(id TEXT PRIMARY KEY, data TEXT)')
+            db.execute('INSERT INTO pilot_trials VALUES(?,?)', ('bottles-1', canonical({
+                'attempt':1, 'status':'BLOCKED', 'reason_code':'PILOT_PREFLIGHT_BLOCKED_NO_RETRY'})))
+        return auth, store
+
+    def test_attempt_two_accepted_with_one_blocked_without_consumption(self):
+        auth, store = self.second_attempt_fixture()
+        before = store.path.read_bytes()
+        with patch('factory2.trial_command.clean_head', return_value='a'*40):
+            result = preflight(auth, 'a'*40, self.root, attempt=2)
+        self.assertEqual(result['attempt'], 2)
+        self.assertEqual(result['authorization_draft']['attempt'], 2)
+        self.assertFalse(result['attempt_consumed'])
+        self.assertEqual(store.path.read_bytes(), before)
+        self.assertEqual(store.summary()['calls'], 0)
+        self.assertEqual(store.budget.summary()['attempts'], 0)
+
+    def test_attempt_two_repeated_rejected(self):
+        auth, store = self.second_attempt_fixture()
+        with store.connect() as db:
+            db.execute('INSERT INTO pilot_trials VALUES(?,?)', ('bottles-2', canonical({'status':'BLOCKED'})))
+        before = store.path.read_bytes()
+        with patch('factory2.trial_command.clean_head', return_value='a'*40):
+            with self.assertRaisesRegex(Blocked, '^PILOT_ALREADY_RECORDED_NO_RETRY$'):
+                execute(auth, 'a'*40, self.root, attempt=2, key_reader=lambda: self.fail('key read'))
+        self.assertEqual(store.path.read_bytes(), before)
+        self.docker.assert_not_called()
+
+    def test_attempt_one_remains_rejected_after_its_block(self):
+        auth, store = self.second_attempt_fixture()
+        before = store.path.read_bytes()
+        with patch('factory2.trial_command.clean_head', return_value='a'*40):
+            with self.assertRaisesRegex(Blocked, '^PILOT_ALREADY_RECORDED_NO_RETRY$'):
+                preflight({**auth, 'attempt':1}, 'a'*40, self.root, attempt=1)
+        self.assertEqual(store.path.read_bytes(), before)
+        self.docker.assert_not_called()
+
+    def test_authorized_number_must_match_explicit_parameter(self):
+        auth, store = self.second_attempt_fixture()
+        before = store.path.read_bytes()
+        for parameter, authorized in ((1,2), (2,1), (2,True), (2,'2')):
+            with self.subTest(parameter=parameter, authorized=authorized), \
+                 patch('factory2.trial_command.clean_head', return_value='a'*40):
+                with self.assertRaisesRegex(Blocked, '^PILOT_AUTHORIZATION_REQUIRED$'):
+                    execute({**auth, 'attempt':authorized}, 'a'*40, self.root, attempt=parameter,
+                            key_reader=lambda: self.fail('key read'))
+        self.assertEqual(store.path.read_bytes(), before)
+        self.docker.assert_not_called()
+
+    def test_prior_attempt_must_exist_and_be_blocked(self):
+        auth, store = self.second_attempt_fixture()
+        for previous in (None, 'BUILDING', 'WAITING_FOR_MANUAL_REVIEW'):
+            with store.connect() as db:
+                db.execute("DELETE FROM pilot_trials WHERE id='bottles-1'")
+                if previous:
+                    db.execute('INSERT INTO pilot_trials VALUES(?,?)', ('bottles-1', canonical({'status':previous})))
+            with self.subTest(previous=previous), patch('factory2.trial_command.clean_head', return_value='a'*40):
+                with self.assertRaisesRegex(Blocked, '^PILOT_PREVIOUS_ATTEMPT_UNFINISHED$'):
+                    preflight(auth, 'a'*40, self.root, attempt=2)
+        self.docker.assert_not_called()
+
+    def test_trial_id_in_any_table_or_reference_blocks_reuse(self):
+        auth, store = self.second_attempt_fixture()
+        # Each table is otherwise empty. The double quotes also exercise schema quoting.
+        for column in ('id','task','execution'):
+            with store.connect() as db:
+                db.execute(f'CREATE TABLE "ficticio""trace" ("{column}" TEXT)')
+                db.execute(f'INSERT INTO "ficticio""trace" VALUES(?)', ('bottles-2',))
+            with self.subTest(column=column), patch('factory2.trial_command.clean_head', return_value='a'*40):
+                with self.assertRaisesRegex(Blocked, '^PILOT_ALREADY_RECORDED_NO_RETRY$'):
+                    preflight(auth, 'a'*40, self.root, attempt=2)
+            with store.connect() as db:
+                db.execute('DROP TABLE "ficticio""trace"')
+        self.docker.assert_not_called()
+
+    def test_attempt_two_execution_port_receives_two_and_preserves_first(self):
+        auth, store = self.second_attempt_fixture()
+        before = store.path.read_bytes()
+        with patch('factory2.trial_command.clean_head', return_value='a'*40), \
+             patch.dict('os.environ', {}, clear=True), patch('factory2.trial_command.PilotTrial') as trial:
+            trial.return_value.start.return_value = {'status':'WAITING_FOR_MANUAL_REVIEW',
+                'attempt':2, 'publication_allowed':False}
+            result = execute(auth, 'a'*40, self.root, attempt=2, key_reader=lambda:'FICTICIO')
+        self.assertEqual(trial.call_args.kwargs, {'attempt':2})
+        trial.return_value.start.assert_called_once_with(auth)
+        self.assertEqual(result['attempt'], 2)
+        self.assertEqual(store.path.read_bytes(), before)
+
+    def test_preparation_validates_attempt_and_preserves_costs(self):
+        first = prepare(self.root, attempt=1)
+        second = prepare(self.root, attempt=2)
+        for field in ('request','request_bytes','worst_case_cost_usd','maximum_request_cost_usd',
+                      'config_digest','context_digest'):
+            self.assertEqual(first[field], second[field])
+        for number in (None, True, '2', 0, -1, 1000001):
+            with self.subTest(number=number), self.assertRaisesRegex(Blocked, '^PILOT_ATTEMPT_INVALID$'):
+                prepare(self.root, attempt=number)
+
+    def test_cli_propagates_attempt_to_all_modes(self):
+        import contextlib
+        import io
+        from factory2.trial_command import main
+        auth_path = self.root/'authorization.json'
+        auth_path.write_text('{"attempt":2}')
+        for mode, target in (('prepare','prepare'), ('check','preflight'), ('run','execute')):
+            with self.subTest(mode=mode), patch('sys.argv', ['trial_command',mode,'--attempt','2',
+                 '--authorization',str(auth_path),'--expected-sha','a'*40]), \
+                 patch('factory2.trial_command.'+target, return_value={'status':'FICTICIO'}) as port, \
+                 contextlib.redirect_stdout(io.StringIO()):
+                self.assertEqual(main(), 0)
+                self.assertEqual(port.call_args.kwargs['attempt'], 2)
+
 
 if __name__ == '__main__':
     unittest.main()

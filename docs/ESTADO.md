@@ -1,4 +1,26 @@
-# Estado vigente: intento 1 cerrado; fase previa corregida
+# Estado vigente: numero de intento generalizado; intento 2 pendiente
+
+7-11-2026, rama piloto/intento-1, base 42c0c23. El lanzador conserva su nombre
+ensayo-intento-1.ps1 y ahora recibe -Intento N; Python recibe --attempt N.
+Autorizacion con el mismo numero, bottles-N sin registros previos y todos los
+intentos 1..N-1 existentes como BLOCKED. PilotTrial recibe attempt=N.
+El intento 1 sigue cerrado. No se elige numero automaticamente ni se reintenta.
+
+Sin cambios en configuracion, interruptores, modelo, topes o logica de gasto.
+Suites completas: raiz 242, privada 113, JS 7, TS 3 = 365 pasadas; otras 5
+pruebas ficticias del auxiliar externo. Cero fallos, errores y omitidas.
+TS sin comprobacion estatica de tipos; sin proveedor ni Docker reales.
+Ver comandos, evidencias y limites en [pr/intento-2.md](pr/intento-2.md).
+
+Fuera del repositorio quedan la plantilla de revision del SHA nuevo (PENDIENTE),
+el borrador de autorizacion attempt=2 sin firmar y gestionar-paso-3.py adaptado.
+No se importan ni firman documentos reales. El auxiliar externo necesita revision
+separada; no se atribuye a Claude la revision de este nuevo SHA ni del auxiliar.
+Registro real intacto, sin red, clave, ensayo o subida; envio DISABLED.
+
+---
+
+# Historia: intento 1 cerrado; fase previa corregida
 
 7-11-2026, rama piloto/intento-1, base 5850899. Causa reproducida:
 state/worker.lock no estaba excluido de Git; _start lo encontraba despues de

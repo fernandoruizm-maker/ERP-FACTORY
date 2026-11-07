@@ -77,6 +77,10 @@ class PreflightRegressionTests(unittest.TestCase):
         self.assertEqual(check['environment'], run['environment'])
         self.assertEqual(check['action'], 'check')
         self.assertEqual(run['action'], 'run')
+        self.assertEqual(check['attemptFlag'], '--attempt')
+        self.assertEqual(run['attemptFlag'], '--attempt')
+        self.assertEqual(check['attempt'], '2')
+        self.assertEqual(run['attempt'], '2')
         self.assertFalse(check['shell'])
         self.assertFalse(run['shell'])
 
