@@ -1,6 +1,27 @@
 # Dependencias permitidas en un candidato
 
-catalogo-aprobado.json empieza con packages vacío. La fábrica permite un conjunto
+catalogo-aprobado.json usa ahora schema_version=2, con cinco bibliotecas y una
+sección herramientas separada. El catálogo inicial autorizado por Fernando es:
+
+| Nombre | Versión | Licencia | Uso | Perfil |
+|---|---|---|---|---|
+| acorn | 8.19.0 | MIT | internal | javascript |
+| zod | 4.6.7 | MIT | product | javascript |
+| drizzle-orm | 0.45.4 | Apache-2.0 | product | javascript |
+| @playwright/test | 1.65.0 | Apache-2.0 | internal | javascript |
+| pytest | 9.2.0 | MIT | internal | python |
+| Gitleaks CLI | v8.30.1 | MIT | internal | herramienta |
+| OSV-Scanner CLI | v2.7.0 | Apache-2.0 | internal | herramienta |
+
+Vitest no está aprobado. Playwright y pytest sirven para pruebas de confianza,
+no para que el modelo cree pruebas o introduzca importaciones en src/.
+Las herramientas CLI no se consideran bibliotecas importables. Sus fuentes son
+https://github.com/gitleaks/gitleaks y https://github.com/google/osv-scanner.
+La validación exige name, version, license, use=internal y source oficial exacto;
+rechaza duplicados, campos extra, otros orígenes y versiones no fijadas.
+El esquema anterior vacío queda sustituido; no se convierte silenciosamente.
+
+La fábrica permite un conjunto
 explícito de módulos estándar de Python y Node, definido en factory2/dependencies.py.
 No considera estándar todo lo que esté instalado en este PC. Si falta un módulo
 estándar en esa lista, se bloquea hasta revisar y ampliar la lista.
@@ -23,7 +44,7 @@ Antes de la llamada se comprueba el formato del catálogo. Tras recibir la propu
 se analiza cada archivo src/ antes de materializar o ejecutar el candidato:
 
 - Python: AST para import/from; módulos relativos deben existir en la salida.
-- JavaScript: análisis léxico conservador de import, export-from y require.
+- JavaScript: por ahora análisis léxico conservador de import, export-from y require.
   Importación dinámica solo con nombre literal; módulos relativos deben existir.
 - Se rechazan cargadores dinámicos conocidos, nombres no resolubles, rutas externas
   y construcciones ambiguas. No se ejecuta el candidato para descubrir dependencias.
@@ -43,3 +64,9 @@ externos de verdad faltará preparar imágenes fijadas y comprobar versiones/lic
 con autorización separada. Las imágenes actuales no se descargan ni modifican aquí.
 Una respuesta con uso válido puede consumir presupuesto aunque su código sea
 rechazado después por dependencias; no se reembolsa ni se reintenta automáticamente.
+
+El adaptador Acorn preparado en tools/acorn/ conserva enabled=false e image=null.
+No se busca ni descarga una imagen automáticamente. Los cambios futuros y las
+descargas requieren autorización; ver [preparación de herramientas](HERRAMIENTAS-CATALOGO.md).
+Una política activada con imagen ausente, salida inválida o fallo bloquea; no vuelve
+silenciosamente al analizador anterior para aceptar ese mismo código.

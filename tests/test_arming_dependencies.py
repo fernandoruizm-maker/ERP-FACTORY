@@ -99,8 +99,13 @@ class DependencyTests(unittest.TestCase):
     def check(self, text, profile='javascript', catalog=None, extra=()):
         return validate_dependencies(proposal(text, profile, extra), profile, catalog or self.catalog)
 
-    def test_repository_catalog_has_no_external_packages(self):
-        self.assertEqual(self.catalog, {'schema_version': 1, 'packages': []})
+    def test_repository_catalog_has_only_the_approved_libraries_and_tools(self):
+        self.assertEqual({r['package']: (r['version'], r['use']) for r in self.catalog['packages']}, {
+            'acorn': ('8.19.0', 'internal'), 'zod': ('4.6.7', 'product'),
+            'drizzle-orm': ('0.45.4', 'product'), '@playwright/test': ('1.65.0', 'internal'),
+            'pytest': ('9.2.0', 'internal')})
+        self.assertEqual({r['name']: r['version'] for r in self.catalog['herramientas']}, {
+            'gitleaks': 'v8.30.1', 'osv-scanner': 'v2.7.0'})
 
     def test_node_standard_import_require_export_and_literal_dynamic(self):
         for source in ('import assert from "node:assert/strict";', 'require("fs/promises");',
@@ -152,23 +157,23 @@ class DependencyTests(unittest.TestCase):
 
     def test_product_approval_and_profile_are_required(self):
         row = {'package':'ficticio', 'version':'1.2.3', 'license':'MIT', 'use':'product', 'profile':'javascript'}
-        catalog = {'schema_version':1, 'packages':[row]}
+        catalog = {'schema_version':2, 'packages':[row], 'herramientas':[]}
         self.assertEqual(self.check('require("ficticio/sub")', catalog=catalog), ['ficticio'])
         for change in ({'use':'internal'}, {'profile':'python'}):
             with self.subTest(change=change), self.assertRaisesRegex(Blocked, 'NOT_APPROVED'):
-                self.check('require("ficticio")', catalog={'schema_version':1, 'packages':[{**row, **change}]})
+                self.check('require("ficticio")', catalog={'schema_version':2, 'packages':[{**row, **change}], 'herramientas':[]})
 
     def test_catalog_schema_exact_versions_license_and_duplicates(self):
         row = {'package':'ficticio', 'version':'1.2.3', 'license':'MIT', 'use':'product', 'profile':'python'}
         with tempfile.TemporaryDirectory() as folder:
             path = Path(folder)/'catalog.json'
-            path.write_text(canonical({'schema_version':1, 'packages':[row]}))
+            path.write_text(canonical({'schema_version':2, 'packages':[row], 'herramientas':[]}))
             self.assertEqual(load_catalog(path)['packages'][0], row)
             for change in ({'version':'latest'}, {'version':'^1.2.3'}, {'license':''}, {'use':'all'}, {'extra':True}):
-                path.write_text(canonical({'schema_version':1, 'packages':[{**row, **change}]}))
+                path.write_text(canonical({'schema_version':2, 'packages':[{**row, **change}], 'herramientas':[]}))
                 with self.subTest(change=change), self.assertRaisesRegex(Blocked, 'CATALOG_INVALID'):
                     load_catalog(path)
-            path.write_text(canonical({'schema_version':1, 'packages':[row, row]}))
+            path.write_text(canonical({'schema_version':2, 'packages':[row, row], 'herramientas':[]}))
             with self.assertRaisesRegex(Blocked, 'CATALOG_INVALID'):
                 load_catalog(path)
 
