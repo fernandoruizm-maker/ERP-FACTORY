@@ -1,4 +1,25 @@
-# Estado vigente: bloque 11 preparado localmente, ensayo concluido y desarmado
+# Estado vigente: bloque 12, liquidacion del gasto calculado
+
+7-11-2026. Rama fix/bloque-12-gasto-real desde origin/main confirmado por el
+unico fetch autorizado en f745cde657c18fb7cefcacf4e2c05ea96a5527ba.
+Las llamadas COMPLETED con uso validado liquidan el coste calculado dentro de
+la reserva. Uso ausente, invalido o resultado incierto conserva la reserva;
+un exceso bloquea nuevas llamadas para conciliacion. No equivale a factura.
+Topes USD 1/12/13 intactos; cuatro interruptores false, sin activar nada.
+
+No se migra ni reescribe el historial. Registro real con huella sin cambios.
+La correccion de bottles-2 (cargo USD 1.000000, calculado USD 0.015946) queda
+como propuesta separada pendiente de autorizacion, preservando ambos valores.
+Ver [pr/bloque-12.md](pr/bloque-12.md) para comportamiento, pruebas y propuesta.
+
+Suites finales: raiz 252, privada 113, JS 7 y TS 3: 375 pasadas, cero fallos,
+errores u omitidas. Dobles ficticios; TS sin comprobacion estatica de tipos.
+Sin llamadas, claves, Docker real ni cambios en upstream/ o el revisor privado.
+Sin subida ni PR; envio DISABLED. Facturacion e integraciones reales no verificadas.
+
+---
+
+# Historia: bloque 11 preparado localmente, ensayo concluido y desarmado
 
 7-11-2026. Rama feat/bloque-11-ensayo desde piloto/intento-1 en aa6fcb1.
 Fetch autorizado: origin/main confirmado en f7d973c. No se sube ni integra.

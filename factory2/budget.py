@@ -1,7 +1,8 @@
 """Durable reservations for future paid attempts; no provider or network client.
 
-Values use exact millionths of an explicitly selected currency. Reservations are
-conservative charges, NOT measured bills. Unknown outcomes never release money.
+Values use exact millionths of an explicitly selected currency. Validated completed
+usage settles the reservation at calculated cost, NOT verified billing. Unknown
+outcomes never release money. Opening a ledger never resettles existing records.
 """
 from contextlib import contextmanager
 from decimal import Decimal, InvalidOperation
@@ -116,23 +117,31 @@ class BudgetLedger:
             db.execute('BEGIN IMMEDIATE')
             self.reserve_in(db, *args, **kwargs)
 
-    def finish_in(self, db, call_id, status, actual_cost=None):
+    def finish_in(self, db, call_id, status, actual_cost=None, *, usage_validated=False):
         if status not in ('COMPLETED', 'UNKNOWN', 'REJECTED'):
             raise Blocked('PAID_ATTEMPT_STATUS_INVALID')
         row = db.execute('SELECT * FROM paid_attempts WHERE id=?', (call_id,)).fetchone()
         if row is None or row['status'] != 'IN_FLIGHT':
             raise Blocked('PAID_ATTEMPT_NOT_IN_FLIGHT')
         actual = None if actual_cost is None else units(actual_cost, zero=True)
-        charged = max(row['reserved_units'], actual or 0)
-        recorded_status = 'OVER_BUDGET' if actual is not None and actual > row['reserved_units'] else status
+        reserve = row['reserved_units']
+        recorded_status = status
+        charged = reserve
+        if actual is not None and actual > reserve:
+            # Do not accept an out-of-bound value as valid actual spend or silently
+            # clamp it. Keep the reservation and freeze further calls for review.
+            recorded_status = 'OVER_BUDGET'
+            actual = None
+        elif status == 'COMPLETED' and usage_validated is True and actual is not None:
+            charged = actual
         db.execute('UPDATE paid_attempts SET status=?,actual_units=?,charged_units=? WHERE id=?',
                    (recorded_status, actual, charged, call_id))
         return recorded_status
 
-    def finish(self, call_id, status, actual_cost=None):
+    def finish(self, call_id, status, actual_cost=None, *, usage_validated=False):
         with self.connect() as db:
             db.execute('BEGIN IMMEDIATE')
-            return self.finish_in(db, call_id, status, actual_cost)
+            return self.finish_in(db, call_id, status, actual_cost, usage_validated=usage_validated)
 
     def summary(self):
         with self.connect() as db:
