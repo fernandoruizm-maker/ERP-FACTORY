@@ -1,3 +1,29 @@
+# Estado vigente: bloque 14, armado local y catálogo
+
+7-11-2026. Base origin/main comprobada: 3988ce4fca1ca61d9d70a73a345b166d9b2454ea.
+Rama feat/bloque-14-armado-local, mensaje 4 PERMITIDO del buzón. Configuración
+versionada con los cuatro interruptores false, sin cambios. Armado por archivo
+local state/armado.json, con encargo/intento/huella y vigencia máxima de 24 horas.
+La autorización de Fernando y revisión exacta siguen obligatorias. No se arma ni
+se ejecuta un ensayo real. El historial de bottles-N/caja-chica-N no se modifica.
+
+Catálogo externo vacío, módulos estándar explícitos y análisis estático de salida
+antes de construir el candidato. JS conservador: puede rechazar código legítimo;
+no es un sandbox. Versiones instaladas y licencias no verificadas; sin instalaciones.
+Ver docs/ARMADO-LOCAL.md y docs/CATALOGO-DEPENDENCIAS.md.
+
+Suites completas: 300 raíz, 113 privada, 7 JS y 3 TS; 423 aprobadas, cero fallos,
+errores u omitidas. Datos temporales/dobles; no acreditan proveedor ni Docker real.
+TS sin comprobación de tipos. Detalle de comandos y ejecuciones iniciales fallidas
+en docs/pr/bloque-14.md. Auxiliares locales pendientes de adaptar/revisar.
+
+GitHub CLI: configuración predeterminada de Windows, única cuenta permitida
+fernandocodex64-sudo; auth status antes de publicar. Buzón en .git/info/exclude.
+Mensaje 5 de conciliación de gasto reservado: requiere «buzón, autorizado» de
+Fernando y NO se ejecutó. No se toca el ERP, original, upstream ni revisor privado.
+
+## Historial anterior (sus estados no sustituyen al vigente)
+
 # Estado vigente: bloque 13, encargos ficticios generales
 
 6-11-2026 (America/La_Paz). Rama feat/bloque-13-encargos desde origin/main

@@ -14,6 +14,7 @@ from factory2.orchestrator import PilotTrial
 from factory2.codex_adapter import NODE_IMAGE, PYTHON_IMAGE
 from factory2.runner import test_command, bounded_process, assess
 from tests import test_pilot_trial as trials
+from tests.operation_fixtures import arm_fixture
 
 
 class ContractTests(unittest.TestCase):
@@ -130,6 +131,7 @@ class JobTrialTests(unittest.TestCase):
     def use_job(self, name):
         self.trial.encargo = name
         self.auth.update(encargo=name, context_digest=digest(load_encargo(name)))
+        arm_fixture(self.root, self.cfg, encargo=name)
 
     def test_python_job_flows_through_pinned_image_and_exact_fixed_tests(self):
         self.use_job('caja-chica')
@@ -214,6 +216,7 @@ class JobTrialTests(unittest.TestCase):
             self.assertEqual(result['status'], 'BLOCKED')
             self.assertNotIn('docker-build-double', self.seen)
             self.auth['attempt'] += 1
+            arm_fixture(self.root, self.cfg, attempt=self.auth['attempt'])
         self.assertEqual(self.store.budget.summary()['conservative_charge_units'], 2000000)
 
     def test_builder_double_cannot_mutate_the_trusted_context(self):
@@ -254,6 +257,7 @@ class JobTrialTests(unittest.TestCase):
         with self.store.connect() as db:
             db.execute('INSERT INTO pilot_trials VALUES(?,?)', ('bottles-1', canonical({'status':'BLOCKED'})))
         with self.assertRaisesRegex(Blocked, 'NO_RETRY'): self.trial.start(self.auth)
+        arm_fixture(self.root, self.cfg, attempt=2)
         self.assertEqual(self.trial.start({**self.auth, 'attempt':2})['status'], 'WAITING_FOR_MANUAL_REVIEW')
         self.assertEqual(self.trial.ID, 'botellas-2')
 

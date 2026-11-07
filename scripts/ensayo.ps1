@@ -50,7 +50,7 @@ try {
         throw 'Falta autorizacion expresa, SHA revisado o expediente. No se pide la clave.'
     }
     if ($PSVersionTable.PSVersion.Major -lt 7) { throw 'Se requiere PowerShell 7; no se pide la clave.' }
-    # Still offline. False switch, missing ledger/review, wrong SHA or reused
+    # Still offline. Missing/expired local state/armado.json, ledger/review, wrong SHA or reused
     # attempt stop BEFORE displaying any private credential prompt.
     $check = [System.Diagnostics.Process]::Start((New-TrialProcessInfo 'check'))
     try {

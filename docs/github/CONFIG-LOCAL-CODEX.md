@@ -1,5 +1,23 @@
 # Configuracion local: resultado e instrucciones para Codex
 
+## Modelo vigente (bloque 14, 2026-11-07)
+
+GitHub CLI usa la configuracion por defecto del usuario de Windows. Fernando
+autorizo esta via: la unica cuenta conectada y activa debe ser
+**fernandocodex64-sudo**. No se usa un GH_CONFIG_DIR alternativo.
+Antes de cada publicacion, ejecutar `gh auth status` sin mostrar tokens; detenerse
+si aparece otra cuenta, una cuenta inactiva o un error. No usar `gh auth token`,
+`--show-token`, leer hosts.yml ni cambiar sesiones o credenciales.
+El buzon se excluye solo mediante `.git/info/exclude` con `buzon/`; nunca se
+versiona ni se incluye en .gitignore. Verificar `git check-ignore buzon/para-codex.md`.
+Con la instruccion permitida del buzon, Codex puede subir la rama de trabajo y
+abrir su PR con gh; nunca aprobar ni integrar. El envio vuelve a DISABLED al acabar.
+La identidad Git local sigue siendo la cuenta de maquina, sin cambiar lo global.
+Los pasos y resultados de 2026-11-05 siguientes son historicos: su via web y
+su propuesta de GH_CONFIG_DIR separado quedan sustituidas por este apartado.
+
+## Registro historico (no repetir la configuracion)
+
 **Pasos 1 a 10: ajustes locales aplicados y verificados, sin red ni token.**
 Usuario/correo confirmados por Fernando. La verificacion de Claude sigue pendiente.
 Los pasos 11 en adelante requieren otra autorizacion. Envio actual: DISABLED.
@@ -143,53 +161,20 @@ No retirar valores globales ni cambiar DISABLED. La reversion requiere autorizac
 Claude aun no verifico esta aplicacion. Git reconoce los ajustes; esto no acredita
 que Windows almacene/aisle una credencial como se espera ni que GitHub autentique.
 
-## Etapa futura de gh: documentada, NO autorizada ni ejecutada
+## Uso actual de gh y reversion
 
-La via actual para ambas PR es la web, con Fernando como operador de fernandocodex64-sudo.
-No instalar, autenticar ni usar gh ahora. Si se autoriza mas adelante:
+1. Usar la instalacion existente, sin instalar ni autenticar de nuevo.
+2. No heredar variables GH_TOKEN/GITHUB_TOKEN como alternativa a la sesion
+   autorizada; no consultar ni imprimir sus valores. No ejecutar auth setup-git.
+3. Antes de publicar comprobar con gh auth status que SOLO figura la cuenta
+   fernandocodex64-sudo, activa. Cualquier otra identidad o fallo bloquea el envio.
+4. Limitar cada operacion al repositorio y rama autorizados; comprobar el SHA,
+   restaurar DISABLED y registrar numero de PR y autor. No aprobar ni integrar.
+5. Reversion, solo con autorizacion expresa: Fernando revoca el token desde la
+   web de su cuenta de maquina. Cerrar la sesion local de esa cuenta requiere
+   permiso separado. No borrar ni sustituir credenciales de otras personas.
 
-1. Comprobar instalacion/version y ayuda local de gh. Instalarlo, si hace falta,
-   requiere permiso separado. Su compatibilidad con public_repo NO esta verificada.
-2. Preparar un directorio de configuracion exclusivo fuera del repositorio, por
-   ejemplo C:\Users\ferna\AppData\Local\ERP-FACTORY-Codex\gh. No crearlo ahora.
-   En cada proceso autorizado de gh establecer GH_CONFIG_DIR a esa ruta, solo
-   para ese proceso o terminal, nunca como variable global persistente. No usar
-   el directorio habitual de gh de Fernando ni ejecutar cambios globales de Git.
-3. No heredar GH_TOKEN, GITHUB_TOKEN, GH_ENTERPRISE_TOKEN ni GITHUB_ENTERPRISE_TOKEN
-   al proceso reservado: omitirlas sin consultar ni imprimir sus valores. No
-   ejecutar auth setup-git: el gestor Git del clon se configura por separado.
-4. Fernando abre su propia terminal para autenticar fernandocodex64-sudo, fuera de la
-   captura/control de los asistentes, sin transcripcion ni trazas. Un procedimiento
-   revisado para la version instalada debe pedir el token con entrada OCULTA
-   (por ejemplo Read-Host -AsSecureString) y pasarlo a gh auth login --with-token
-   solo por entrada estandar; nunca como argumento, variable persistente, archivo
-   temporal, historial o texto visible. El valor en memoria solo vive el tiempo
-   imprescindible y se libera al terminar. No construir ni ejecutar ese proceso
-   ahora; Codex no lo introduce ni recibe el token.
-5. El token sigue siendo clasico con SOLO public_repo. gh puede exigir otros
-   permisos durante su validacion de inicio de sesion (por ejemplo repo/read:org/gist).
-   No afirmar que lo acepta: comprobarlo en esa etapa autorizada. Si lo rechaza,
-   pide mas permisos o usa otro flujo de autorizacion mas amplio, DETENERSE y
-   conservar la via web. No ampliar scopes, cambiar token ni eludir la validacion.
-6. Verificar antes que gh puede almacenar de forma segura sin caer en texto plano;
-   no usar --insecure-storage. GH_CONFIG_DIR separa archivos de configuracion,
-   pero no garantiza por si solo que el almacen de credenciales del sistema quede
-   separado. Si reutiliza o afecta una identidad personal, cancelar; no borrarla.
-   No inspeccionar hosts.yml ni otros archivos que pudieran contener el token.
-7. Tras una autenticacion autorizada, comprobar solo la identidad de la cuenta y
-   el repositorio mediante una consulta no secreta autorizada. Un estado local
-   no demuestra autenticacion real. Claude verifica la cuenta autora de la PR.
-   Nunca usar **gh auth token**, auth status --show-token, volcados, logs de
-   depuracion ni cualquier comando que muestre el token. Codex tampoco extrae
-   el token del almacen para pasarlo a otra herramienta.
-8. Reversion: Fernando revoca el token en Tokens (classic) de fernandocodex64-sudo.
-   Con autorizacion, cerrar solo la sesion de esa cuenta en el GH_CONFIG_DIR
-   exclusivo y retirar solo sus datos identificados, sin tocar la sesion de
-   Fernando. Salir de gh no revoca el token en GitHub: la revocacion se hace alli.
-   Eliminar la variable de esa terminal/cerrarla; no cambiar variables globales.
-   Mantener las subidas detenidas; no reactivar autenticacion automaticamente.
-
-NO VERIFICADO: instalacion/autenticacion de gh, aceptacion de public_repo, entrada
-oculta del flujo futuro, aislamiento real de su almacen, comportamiento del gestor
-al autenticar, conexion Git y PR de prueba. No se consulto
-red ni se probaron credenciales. Los avances remotos proceden de Fernando.
+La configuracion por defecto de gh NO constituye un aislamiento por carpeta.
+Si Fernando conecta otra cuenta mas adelante, detenerse antes de publicar.
+No se cambia ninguna configuracion de credenciales en este bloque. El uso previo
+real de gh fue autorizado por Fernando; no acredita permisos futuros ilimitados.

@@ -15,6 +15,7 @@ from .encargos import load_encargo, assert_new_attempt
 from .manual_review import metadata, CLEAR
 from .pilot_preflight import inspect_start, reason_code
 from .operations import Coordinator
+from .arming import validate_arm, FLAGS
 
 ROOT = Path(__file__).resolve().parents[1]
 
@@ -23,7 +24,7 @@ def prepare(root=ROOT, *, attempt=1, encargo='botellas'):
     if type(attempt) is not int or not 1 <= attempt <= 1000000:
         raise Blocked('PILOT_ATTEMPT_INVALID')
     cfg = json.loads((root / 'config.json').read_text(encoding='utf-8-sig'))
-    if any(cfg.get(k) is not False for k in ('enabled', 'erp_access_enabled', 'publication_enabled')):
+    if any(cfg.get(k) is not False for k in FLAGS):
         raise Blocked('PILOT_MUST_REMAIN_ISOLATED')
     if cfg.get('pilot_model') != 'gpt-6.1-sol':
         raise Blocked('ATTEMPT_1_MODEL_MISMATCH')
@@ -43,7 +44,8 @@ def prepare(root=ROOT, *, attempt=1, encargo='botellas'):
     request = DockerCodexBuilder({**cfg, 'external_calls_enabled': True}).request(context)
     size = len(request_bytes(request))
     return {'status': 'PREPARED_NOT_EXECUTED', 'attempt': attempt, 'encargo': encargo,
-            'execution_enabled': cfg.get('external_calls_enabled') is True,
+            'execution_enabled': False,
+            'arming_required': True,
             'attempt_consumed': False, 'publication_allowed': False,
             'config_digest': digest(cfg), 'context_digest': digest(context),
             'request_sha256': digest(request), 'request_bytes': size,
@@ -54,13 +56,16 @@ def prepare(root=ROOT, *, attempt=1, encargo='botellas'):
                 'config_digest': digest(cfg), 'context_digest': digest(context),
                 'authorized_by': None, 'expires_at': None, 'factory_review_id': None},
             'ledger_relative_path': 'state/factory2.sqlite3',
+            'arming_relative_path': 'state/armado.json',
+            'arming_draft': {'encargo': encargo, 'attempt': attempt, 'issued_at': None,
+                            'expires_at': None, 'config_digest': digest(cfg)},
             'ledger_present': (root / 'state/factory2.sqlite3').is_file()}
 
 
 def preflight(authorization, expected_sha, root=ROOT, *, attempt=1, encargo='botellas'):
     prepared = prepare(root, attempt=attempt, encargo=encargo)
-    if not prepared['execution_enabled']:
-        raise Blocked('PILOT_SWITCH_OFF')
+    validate_arm(root / 'state/armado.json',
+                 json.loads((root / 'config.json').read_text(encoding='utf-8-sig')), encargo, attempt)
     if (not isinstance(expected_sha, str) or len(expected_sha) != 40
             or clean_head(root) != expected_sha):
         raise Blocked('SOURCE_SHA_OR_CLEAN_CHECK_FAILED')
@@ -114,7 +119,7 @@ def preflight(authorization, expected_sha, root=ROOT, *, attempt=1, encargo='bot
             inspect_start(json.loads((root / 'config.json').read_text(encoding='utf-8-sig')),
                           authorization, source_reader=lambda: clean_head(root),
                           review_reader=read_review, work_root=root / 'work/ensayo-real',
-                          encargo=encargo, encargos_root=root / 'encargos')
+                          encargo=encargo, encargos_root=root / 'encargos', arm_path=root / 'state/armado.json')
     finally:
         db.close()
     return prepared
