@@ -154,10 +154,10 @@ def audit_security_workflow(text):
 
 class PreparedWorkflowTests(unittest.TestCase):
     def test_offline_static_policy(self):
-        audit_security_workflow((ROOT/'.github/workflows/security-catalog.yml').read_text())
+        audit_security_workflow((ROOT/'docs/propuestas/security-catalog.yml.txt').read_text())
 
     def test_mutations_block_activation_secrets_unpinned_downloads_and_actions(self):
-        source = (ROOT/'.github/workflows/security-catalog.yml').read_text()
+        source = (ROOT/'docs/propuestas/security-catalog.yml.txt').read_text()
         mutations = [('if: ${{ false }}', 'if: ${{ true }}'), ('contents: read', 'contents: write'),
                      ('persist-credentials: false', 'persist-credentials: true'),
                      ('--offline', '--offline-vulnerabilities'), ('--redact=100', '--redact=0'),

@@ -14,7 +14,7 @@ el analizador conservador actual. Un fallo del adaptador activado bloquea, sin
 fallback silencioso. El parser no evalúa el código. Se documentan las limitaciones
 del análisis estático y las futuras descargas verificadas.
 
-Se prepara security-catalog.yml: solo manual, job con condición false, binarios
+Se conserva como propuesta docs/propuestas/security-catalog.yml.txt (fuera de .github): solo manual, job con condición false, binarios
 Gitleaks/OSV por versión y SHA-256, sin Action de Gitleaks ni secretos añadidos,
 sin ejecución del proyecto ni publicación de hallazgos. Las bases OSV futuras
 son datos actualizables, con huella registrada al descargarlas. El escaneo usa
@@ -82,3 +82,14 @@ todo requiere «buzón, autorizado» con alcance concreto. Comandos y fuentes ex
 en [HERRAMIENTAS-CATALOGO.md](../HERRAMIENTAS-CATALOGO.md). No se hace aquí.
 No se modifican config.json, state/, upstream/, ERP ni la fábrica original.
 La rama se publica para revisión; nadie aprueba ni integra en esta tarea.
+
+## Ajuste del mensaje 14
+
+El push anterior fue rechazado por el permiso workflow. Se conserva el contenido
+exacto del YAML como propuesta de texto, sin ampliar permisos ni cambiar credenciales.
+Las pruebas estáticas leen la propuesta; no se añade ningún workflow a GitHub.
+No cambia ningún archivo bajo .github/ frente a origin/main. Su futura instalación
+en .github/workflows/ y su activación necesitan autorización expresa y revisión.
+Se crea un commit adicional: no se reescribe a36c617 ni el historial.
+
+Verificación repetida después del traslado (mensaje 14): 312 raíz + 113 privada + 16 JS + 3 TS = 444, cero fallos/errores/omitidas/canceladas; mismos comandos completos documentados en docs/pr/bloque-15.md. Logs Python locales fuera de Git: bloque-15-m14-raiz.log y bloque-15-m14-privada.log. TS sin comprobación estática de tipos; ninguna integración de herramientas reales ni Actions. git diff origin/main -- .github vacío y git diff --check correcto.

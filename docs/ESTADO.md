@@ -1,10 +1,18 @@
+## Bloque 15: propuesta de escaneo fuera de GitHub Actions
+
+Mensaje 14: security-catalog.yml se mueve, sin cambiar sus bytes, a
+`docs/propuestas/security-catalog.yml.txt`. No se añade ni modifica ningún archivo
+en `.github/` frente a origin/main. Sin ampliación de permisos ni cambio de
+credenciales. La propuesta conserva los bloqueos y requiere autorización futura
+para convertirse en workflow o ejecutarse. Las pruebas estáticas usan la nueva ruta.
+
 # Estado vigente: bloque 15, catálogo aprobado inicial
 
 7-11-2026. Rama feat/bloque-15-catalogo desde
 108e78fff958cd87083d7ceed7343881cf62d7f2, comprobado con fetch autorizado.
 Cinco bibliotecas y dos CLI registrados, sin instalación. Esquema 2 con separación
 product/internal/herramientas. Vitest no aprobado. Acorn preparado pero apagado,
-image=null; continúa el analizador conservador. Workflow security-catalog.yml
+image=null; continúa el analizador conservador. Propuesta docs/propuestas/security-catalog.yml.txt
 solo manual y condición false, sin ejecución ni secretos añadidos.
 
 444 pruebas completas aprobadas: 312 raíz, 113 privada, 16 JS y 3 TS; cero fallos,
@@ -731,3 +739,5 @@ La guia exige detenerse si no se puede cumplir el alcance exacto del token.
 Sin red, cuentas nuevas, tokens, cambios de configuracion, credenciales o remotos.
 No se rehabilito el envio DISABLED. Sin publicacion ni activacion; upstream/,
 la fabrica original y factoria-2 intactos.
+
+Verificación repetida después del traslado (mensaje 14): 312 raíz + 113 privada + 16 JS + 3 TS = 444, cero fallos/errores/omitidas/canceladas; mismos comandos completos documentados en docs/pr/bloque-15.md. Logs Python locales fuera de Git: bloque-15-m14-raiz.log y bloque-15-m14-privada.log. TS sin comprobación estática de tipos; ninguna integración de herramientas reales ni Actions. git diff origin/main -- .github vacío y git diff --check correcto.

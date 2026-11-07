@@ -60,7 +60,7 @@ Hoy se probaron dobles de proceso y AST hechos a mano: NO el paquete Acorn real.
 
 ## Gitleaks y OSV: workflow manual apagado
 
-.github/workflows/security-catalog.yml solo tiene workflow_dispatch y condición
+docs/propuestas/security-catalog.yml.txt solo tiene workflow_dispatch y condición
 literal false. No se ejecuta al subir esta rama ni al abrir su PR. No contiene
 secretos de repositorio, no usa la Action de Gitleaks, no instala el proyecto ni
 ejecuta sus pruebas. Checkout usa el permiso mínimo contents:read, token efímero
