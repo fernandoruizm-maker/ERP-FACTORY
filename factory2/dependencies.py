@@ -31,9 +31,10 @@ def load_catalog(path=CATALOG):
     try:
         _plain_path(Path(path).absolute())
         value = _json(Path(path))
-        if (not isinstance(value, dict) or set(value) != {'schema_version', 'packages'}
-                or type(value['schema_version']) is not int or value['schema_version'] != 1
-                or not isinstance(value['packages'], list) or len(value['packages']) > 1000):
+        if (not isinstance(value, dict) or set(value) != {'schema_version', 'packages', 'herramientas'}
+                or type(value['schema_version']) is not int or value['schema_version'] != 2
+                or not isinstance(value['packages'], list) or len(value['packages']) > 1000
+                or not isinstance(value['herramientas'], list) or len(value['herramientas']) > 100):
             raise ValueError
         seen = set()
         for row in value['packages']:
@@ -51,6 +52,20 @@ def load_catalog(path=CATALOG):
             if key in seen:
                 raise ValueError
             seen.add(key)
+        sources = {'gitleaks': 'https://github.com/gitleaks/gitleaks',
+                   'osv-scanner': 'https://github.com/google/osv-scanner'}
+        seen_tools = set()
+        for row in value['herramientas']:
+            if (not isinstance(row, dict)
+                    or set(row) != {'name', 'version', 'license', 'use', 'source'}
+                    or not isinstance(row['name'], str) or row['name'] not in sources
+                    or row['source'] != sources[row['name']] or row['use'] != 'internal'
+                    or not isinstance(row['version'], str)
+                    or not re.fullmatch(r'v\d+\.\d+\.\d+', row['version'])
+                    or row['license'] != ('MIT' if row['name'] == 'gitleaks' else 'Apache-2.0')
+                    or row['name'] in seen_tools):
+                raise ValueError
+            seen_tools.add(row['name'])
         return value
     except (Blocked, ValueError, TypeError, OSError):
         raise Blocked('DEPENDENCY_CATALOG_INVALID') from None
@@ -160,7 +175,11 @@ def validate_dependencies(proposal, profile, catalog):
         if profile not in ('javascript', 'python'):
             raise ValueError
         for edit in proposal['edits']:
-            modules = _js_imports(edit['content']) if profile == 'javascript' else _python_imports(edit['content'])
+            if profile == 'javascript':
+                from .js_analysis import javascript_imports
+                modules = javascript_imports(edit['content'], conservative=_js_imports)
+            else:
+                modules = _python_imports(edit['content'])
             for module in modules:
                 if not module or '\\' in module or '\0' in module:
                     raise ValueError

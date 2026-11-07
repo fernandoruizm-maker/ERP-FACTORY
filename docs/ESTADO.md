@@ -1,4 +1,27 @@
-# Estado vigente: bloque 14, armado local y catálogo
+# Estado vigente: bloque 15, catálogo aprobado inicial
+
+7-11-2026. Rama feat/bloque-15-catalogo desde
+108e78fff958cd87083d7ceed7343881cf62d7f2, comprobado con fetch autorizado.
+Cinco bibliotecas y dos CLI registrados, sin instalación. Esquema 2 con separación
+product/internal/herramientas. Vitest no aprobado. Acorn preparado pero apagado,
+image=null; continúa el analizador conservador. Workflow security-catalog.yml
+solo manual y condición false, sin ejecución ni secretos añadidos.
+
+444 pruebas completas aprobadas: 312 raíz, 113 privada, 16 JS y 3 TS; cero fallos,
+errores u omitidas. JS incluye 9 casos con AST ficticio; Docker es un doble, no
+una integración. TS sin comprobación de tipos. Fuentes oficiales públicas para
+metadatos/hashes; no tarballs, ejecutables ni imágenes descargados.
+
+NO VERIFICADOS: Acorn y analizadores reales, binarios y licencias transitivas,
+workflow en GitHub, cobertura efectiva OSV, coste/duración, Docker con el parser,
+ausencia absoluta de secretos y revisión de Claude de este bloque. Ver
+docs/pr/bloque-15.md y docs/HERRAMIENTAS-CATALOGO.md para comandos y autorizaciones
+RESERVADAS pendientes. Configuración con cuatro interruptores false, registro
+real, upstream/, ERP y revisor privado intactos. No hay activación ni integración.
+
+## Historial anterior (sus estados no sustituyen al vigente)
+
+# Estado del bloque 14, armado local y catálogo
 
 7-11-2026. Base origin/main comprobada: 3988ce4fca1ca61d9d70a73a345b166d9b2454ea.
 Rama feat/bloque-14-armado-local, mensaje 4 PERMITIDO del buzón. Configuración

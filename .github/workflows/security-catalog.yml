@@ -1,0 +1,50 @@
+name: Catalogo - analisis preparado y DESACTIVADO
+
+on:
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  scan:
+    if: ${{ false }}
+    runs-on: ubuntu-24.04
+    timeout-minutes: 15
+    steps:
+      - name: Leer codigo sin persistir credenciales
+        uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262
+        with:
+          persist-credentials: false
+          fetch-depth: 0
+      - name: Preparar binarios verificados y bases publicas (requiere autorizacion futura)
+        shell: bash
+        run: |
+          set -euo pipefail
+          mkdir -p "$RUNNER_TEMP/catalog-tools" "$RUNNER_TEMP/osv-db/osv-scanner/npm" "$RUNNER_TEMP/osv-db/osv-scanner/PyPI"
+          cd "$RUNNER_TEMP/catalog-tools"
+          curl --fail --silent --show-error --location --proto '=https' --proto-redir '=https' --max-time 120 --output gitleaks.tgz https://github.com/gitleaks/gitleaks/releases/download/v8.30.1/gitleaks_8.30.1_linux_x64.tar.gz
+          echo '551f6fc83ea457d62a0d98237cbad105af8d557003051f41f3e7ca7b3f2470eb  gitleaks.tgz' | sha256sum --check --status
+          tar -xzf gitleaks.tgz gitleaks
+          curl --fail --silent --show-error --location --proto '=https' --proto-redir '=https' --max-time 120 --output osv-scanner https://github.com/google/osv-scanner/releases/download/v2.7.0/osv-scanner_linux_amd64
+          echo '160c6253e2922e9e0a6a9771c5c4c40a4b3c6090b34a3cdd5e80c96cc2e4218b  osv-scanner' | sha256sum --check --status
+          chmod 700 gitleaks osv-scanner
+          for ecosystem in npm PyPI; do
+            curl --fail --silent --show-error --location --proto '=https' --proto-redir '=https' --max-time 120 --output "$RUNNER_TEMP/osv-db/osv-scanner/$ecosystem/all.zip" "https://osv-vulnerabilities.storage.googleapis.com/$ecosystem/all.zip"
+          done
+          sha256sum "$RUNNER_TEMP/osv-db/osv-scanner/"*/all.zip
+      - name: Analizar sin publicar hallazgos ni ejecutar el proyecto
+        shell: bash
+        env:
+          OSV_SCANNER_LOCAL_DB_CACHE_DIRECTORY: ${{ runner.temp }}/osv-db
+        run: |
+          set -euo pipefail
+          printf '[extend]\nuseDefault = true\n' > "$RUNNER_TEMP/catalog-tools/gitleaks.toml"
+          touch "$RUNNER_TEMP/catalog-tools/empty.ignore"
+          if ! "$RUNNER_TEMP/catalog-tools/gitleaks" git "$GITHUB_WORKSPACE" --config "$RUNNER_TEMP/catalog-tools/gitleaks.toml" --gitleaks-ignore-path "$RUNNER_TEMP/catalog-tools/empty.ignore" --ignore-gitleaks-allow --redact=100 --no-banner --timeout=180 > /dev/null 2>&1; then
+            echo 'SECRET_SCAN_BLOCKED'; exit 1
+          fi
+          if ! timeout 180 "$RUNNER_TEMP/catalog-tools/osv-scanner" scan source --offline --no-call-analysis=go --no-call-analysis=rust --recursive "$GITHUB_WORKSPACE" > /dev/null 2>&1; then
+            echo 'VULNERABILITY_SCAN_BLOCKED'; exit 1
+          fi
+          echo 'SCANS_COMPLETED_REVIEW_REQUIRED'
