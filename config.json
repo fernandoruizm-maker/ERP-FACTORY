@@ -1,7 +1,7 @@
 {
   "installation": "rdc-factoria-2-local",
   "enabled": false,
-  "external_calls_enabled": true,
+  "external_calls_enabled": false,
   "erp_access_enabled": false,
   "publication_enabled": false,
   "builder": "codex",
