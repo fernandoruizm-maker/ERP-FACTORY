@@ -16,12 +16,15 @@ $repo = 'FICTICIO'
 $Autorizacion = 'FICTICIO.json'
 $ShaRevisado = 'aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa'
 $Intento = 2
+$Encargo = 'caja-chica'
 $observed = foreach ($action in @('check','run')) {
     $info = New-TrialProcessInfo $action
     [pscustomobject]@{
         action = $info.ArgumentList[3]
         attemptFlag = $info.ArgumentList[4]
         attempt = $info.ArgumentList[5]
+        encargoFlag = $info.ArgumentList[6]
+        encargo = $info.ArgumentList[7]
         environment = @($info.Environment.Keys | Sort-Object)
         shell = $info.UseShellExecute
     }

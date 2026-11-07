@@ -77,7 +77,7 @@ class TrialTests(unittest.TestCase):
                                head=lambda directory: SOURCE if directory is None else CANDIDATE)
         factory_path = self.review('factory', SOURCE, ['factory2/orchestrator.py'])
         factory = self.store.import_manual_review(factory_path)
-        self.auth = {'attempt': 1, 'source_sha': SOURCE, 'context_digest': digest(bottle_input()),
+        self.auth = {'attempt': 1, 'encargo': 'botellas', 'source_sha': SOURCE, 'context_digest': digest(bottle_input()),
                      'config_digest': digest(self.cfg), 'authorized_by': 'Fernando',
                      'expires_at': time.time()+600, 'factory_review_id': factory['review_id']}
 
@@ -147,7 +147,7 @@ class TrialTests(unittest.TestCase):
         self.assertEqual(self.seen.count('provider'), 2)
         self.assertEqual(self.store.budget.summary()['conservative_charge_units'], 280)
         with self.store.connect() as db:
-            self.assertEqual(json.loads(db.execute("SELECT data FROM pilot_trials WHERE id='bottles-1'").fetchone()[0]), first)
+            self.assertEqual(json.loads(db.execute("SELECT data FROM pilot_trials WHERE id='botellas-1'").fetchone()[0]), first)
         with self.assertRaisesRegex(Blocked, 'UNFINISHED'):
             self.trial.start({**self.auth, 'attempt': 3})
 
@@ -317,7 +317,7 @@ class TrialTests(unittest.TestCase):
     def test_candidate_mutation_and_config_mutation_block_resume(self):
         data = self.trial.start(self.auth)
         path = self.review('product', CANDIDATE, list(data['files']))
-        (self.root/'work/bottles-1/src/bottles.mjs').write_text('ALTERADO')
+        (self.root/'work/botellas-1/src/bottles.mjs').write_text('ALTERADO')
         with self.assertRaisesRegex(Blocked, 'CANDIDATE_CHANGED'): self.trial.attach_review(path)
         self.store.config_path.write_text(canonical({**self.cfg, 'max_spend_total': '12'}))
         with self.assertRaisesRegex(Blocked, 'CONFIG_CHANGED'): self.trial.attach_review(path)

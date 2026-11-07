@@ -1,7 +1,8 @@
 # Guia de la fabrica local
 
-La segunda fabrica sigue desactivada. La original se conserva sin cambios y no
-se operan ambas a la vez. Las pruebas usan ejemplos ficticios, no el ERP real.
+La segunda fabrica sigue desactivada. La original fue retirada por Fernando;
+su declaracion consta en docs/RETIRADA-ORIGINAL.md. Este bloque no la modifica.
+Las pruebas usan ejemplos ficticios, no el ERP real.
 
 ## Como trabajaremos
 
@@ -25,13 +26,13 @@ estar autenticados: la verificacion de personas y de GitHub no se simula como re
 
 ## Que se puede comprobar localmente
 
-El bloque 10 prepara UN ensayo futuro de las botellas con modelo Codex por API.
-No se ha ejecutado: todos los interruptores siguen apagados. En piloto/intento-1
-se prepararon el modelo, sus precios y los topes 1/12/13 USD, sin gastar.
-La guia actual es docs/pr/intento-1.md. Construccion y pruebas serian en
-Docker sin red; solo la peticion al proveedor saldria del host con autorizacion.
-Despues se detiene para Claude en el chat y las aceptaciones del producto.
-La lista de permisos y limites reales esta en docs/pr/bloque-10.md.
+El ensayo de botellas ya termino; su resultado historico esta en docs/pr/bloque-11.md.
+Los interruptores volvieron a false. El bloque 13 permite preparar encargos
+ficticios: botellas y caja chica, cada uno con requisitos y pruebas fijas.
+La guia actual es docs/ENCARGOS.md; el lanzador es scripts/ensayo.ps1 y requiere
+-Encargo y -Intento. Preparar no ejecuta ni gasta. Caja chica no se ha enviado
+a ningun proveedor. El coste acumulado sigue siendo comun a todos los encargos.
+Una ejecucion real futura requiere revision y nueva autorizacion expresa.
 
 Con Python y Node ya disponibles, Codex puede ejecutar las suites y el piloto
 ficticio autorizado. No instala programas ni llama a proveedores para hacerlo.

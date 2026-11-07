@@ -1,0 +1,46 @@
+{
+  "schema_version": 1,
+  "synthetic": true,
+  "brief": {
+    "client": "Cliente ficticio del piloto",
+    "objective": "Entregar diez botellas solo después de autorización independiente del área y emitir comprobante.",
+    "users": [
+      "operador",
+      "gerente",
+      "subgerente"
+    ],
+    "areas": [
+      "bodega"
+    ],
+    "exclusions": [
+      "ERP real",
+      "facturación fiscal",
+      "producción",
+      "GitHub",
+      "datos de clientes"
+    ],
+    "requirements": [
+      {
+        "id": "BOT-01",
+        "goal": "Solicitar una salida de diez botellas",
+        "acceptance": "Con saldo 10, solicitar 10 conserva el saldo hasta ejecutar la salida.",
+        "document": "Solicitud de ensayo"
+      },
+      {
+        "id": "BOT-02",
+        "goal": "Aprobar por gerente o subgerente del área",
+        "acceptance": "Otra área y quien solicitó no pueden aprobar; un responsable independiente de bodega sí.",
+        "document": "Autorización incluida en comprobante"
+      },
+      {
+        "id": "BOT-03",
+        "goal": "Descontar sin duplicar",
+        "acceptance": "Una salida autorizada de 10 deja saldo 0; repetir la misma solicitud no descuenta otra vez.",
+        "document": "Comprobante interno ficticio sin validez fiscal"
+      }
+    ],
+    "assumptions": [
+      "Gerente o subgerente: basta uno distinto de quien solicita. Regla solo del piloto, pendiente de confirmar para clientes reales."
+    ]
+  }
+}

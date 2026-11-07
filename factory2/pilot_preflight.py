@@ -10,6 +10,7 @@ from .budget import limits, units
 from .manual_review import CLEAR, hex_value
 from .codex_adapter import DockerCodexBuilder, PYTHON_IMAGE, NODE_IMAGE
 from .runner import bounded_process
+from .encargos import ROOT as ENCARGOS_ROOT, load_encargo, attempt_ids
 
 
 REASON_CODES = frozenset('''
@@ -36,6 +37,9 @@ EXECUTION_CALL_LIMIT OPERATION_CONFIG_INVALID PILOT_MODEL_AND_COST_REVIEW_REQUIR
 CODEX_INPUT_REJECTED CODEX_WORST_CASE_EXCEEDS_CAP
 PILOT_PREFLIGHT_LEDGER_ERROR PILOT_PREFLIGHT_PROCESS_TIMEOUT
 PILOT_PREFLIGHT_IO_ERROR PILOT_PREFLIGHT_UNEXPECTED_NO_RETRY
+ENCARGO_NAME_INVALID ENCARGO_PATH_UNSAFE ENCARGO_JSON_INVALID ENCARGO_MISSING
+ENCARGO_SCOPE_INVALID ENCARGO_REQUIREMENTS_INVALID ENCARGO_OUTPUT_INVALID
+ENCARGO_TESTS_INVALID ENCARGO_CONTENT_REJECTED PILOT_LEGACY_ID_CONFLICT
 '''.split())
 
 
@@ -75,16 +79,17 @@ def docker_query(command):
         raise Blocked('PILOT_DOCKER_QUERY_FAILED') from None
 
 
-def inspect_start(cfg, authorization, *, source_reader, review_reader, work_root, simulation=False):
+def inspect_start(cfg, authorization, *, source_reader, review_reader, work_root, simulation=False,
+                  encargo='botellas', encargos_root=ENCARGOS_ROOT):
     """Called under the worker lock by both check and start. Reads only."""
-    from .orchestrator import bottle_input
     cfg = validate_config(cfg)
-    context = bottle_input()
+    context = load_encargo(encargo, encargos_root)
     discover(context['brief'])
     expected = {'source_sha', 'context_digest', 'config_digest', 'authorized_by',
-                'expires_at', 'factory_review_id', 'attempt'}
+                'expires_at', 'factory_review_id', 'attempt', 'encargo'}
     if (not isinstance(authorization, dict) or set(authorization) != expected
             or type(authorization['attempt']) is not int or not 1 <= authorization['attempt'] <= 1000000
+            or authorization['encargo'] != encargo
             or authorization['authorized_by'] != 'Fernando'
             or authorization['context_digest'] != digest(context)
             or authorization['config_digest'] != digest(cfg)
@@ -112,7 +117,9 @@ def inspect_start(cfg, authorization, *, source_reader, review_reader, work_root
     for path in (work_root, *work_root.parents):
         if path.is_symlink() or (hasattr(path, 'is_junction') and path.is_junction()):
             raise Blocked('PILOT_WORK_ROOT_UNSAFE')
-    candidate = contained(work_root, f"bottles-{authorization['attempt']}")
-    if candidate.exists():
-        raise Blocked('PILOT_CANDIDATE_ALREADY_EXISTS')
+    identifiers = attempt_ids(encargo, authorization['attempt'])
+    for ident in identifiers:
+        if contained(work_root, ident).exists():
+            raise Blocked('PILOT_CANDIDATE_ALREADY_EXISTS')
+    candidate = contained(work_root, identifiers[0])
     return cfg, context, source, request, candidate

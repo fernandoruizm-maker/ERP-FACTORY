@@ -1,4 +1,32 @@
-# Estado vigente: bloque 12, liquidacion del gasto calculado
+# Estado vigente: bloque 13, encargos ficticios generales
+
+6-11-2026 (America/La_Paz). Rama feat/bloque-13-encargos desde origin/main
+confirmado en 5bf2add46f6c22009875c6fe9f825cd8c02ab267, unico fetch autorizado.
+Encargos estrictos: requisitos, pruebas fijas y salida cerrada. Botellas usa JS
+y siete pruebas; caja chica usa Python y ocho pruebas, pendientes de revision
+humana del contrato nuevo. El constructor nunca modifica esas pruebas.
+
+PilotTrial y trial_command reciben el encargo. Lanzador scripts/ensayo.ps1 con
+-Encargo y -Intento. IDs nuevos <nombre>-N; botellas conserva bottles-N como alias
+historico, sin migrar filas ni carpetas ni permitir repetir un numero usado.
+Revisiones, aceptaciones y puerta del historial probadas con datos temporales.
+Presupuesto comun y candado intactos. Cuatro interruptores false; no hay activacion.
+
+Suites: raiz 278, privada 113, JS 7, TS 3 = 401 pasadas; cero fallos, errores u
+omitidas. Caja chica: ocho pruebas sobre doble local y prueba negativa que detecta
+omitir el tope diario. API y Docker no verificados; TS sin comprobacion de tipos.
+Lanzador real probado solo en Preparar para ambos encargos, sin gastar ni consumir
+intentos. No hubo llamadas, claves, cambios al registro real, upstream o revisor privado.
+La huella del registro real no cambio; correccion de bottles-2 sigue pendiente.
+
+Envio DISABLED, sin subida ni PR. Decision futura registrada: al autorizar Fernando
+la publicacion, Codex subira y abrira PR con gh como fernandocodex64-sudo; nunca
+aprobara ni integrara. gh no se usa ni configura aqui.
+Detalles: [guia de encargos](ENCARGOS.md) y [entrega del bloque 13](pr/bloque-13.md).
+
+---
+
+# Historia: bloque 12, liquidacion del gasto calculado
 
 7-11-2026. Rama fix/bloque-12-gasto-real desde origin/main confirmado por el
 unico fetch autorizado en f745cde657c18fb7cefcacf4e2c05ea96a5527ba.
