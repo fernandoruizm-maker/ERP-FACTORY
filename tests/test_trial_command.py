@@ -30,10 +30,9 @@ class PreparationTests(unittest.TestCase):
     def write_config(self):
         (self.root / 'config.json').write_text(canonical(self.cfg))
 
-    def test_attempt_repository_config_enables_only_external_calls(self):
+    def test_repository_config_is_disarmed_after_trial(self):
         cfg = json.loads((ROOT / 'config.json').read_text(encoding='utf-8'))
-        self.assertIs(cfg['external_calls_enabled'], True)
-        for flag in ('enabled', 'erp_access_enabled', 'publication_enabled'):
+        for flag in ('enabled', 'external_calls_enabled', 'erp_access_enabled', 'publication_enabled'):
             self.assertIs(cfg[flag], False)
 
     def test_prepare_without_transport_credential_docker_state_or_attempt(self):

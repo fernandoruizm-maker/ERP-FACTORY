@@ -1,4 +1,26 @@
-# Estado vigente: numero de intento generalizado; intento 2 pendiente
+# Estado vigente: bloque 11 preparado localmente, ensayo concluido y desarmado
+
+7-11-2026. Rama feat/bloque-11-ensayo desde piloto/intento-1 en aa6fcb1.
+Fetch autorizado: origin/main confirmado en f7d973c. No se sube ni integra.
+El intento 1 quedo bloqueado por el candado antes del proveedor, sin gasto.
+El intento 2 completo el piloto ficticio con gpt-6.1-sol: 1153 tokens de entrada,
+1364 de salida, USD 0.015946 calculados y 7/7 pruebas del candidato aprobadas.
+Claude declaro SIN OBJECIONES TECNICAS, con un hallazgo minimo sobre decidir
+la separacion de aprobacion y despacho antes de usarlo con clientes reales.
+Fernando y FERRUMTJA declararon sus aceptaciones locales no autenticadas.
+La puerta devolvio READY_FOR_MANUAL_REVIEW, sin bloqueos; publicacion desactivada.
+
+Los cuatro interruptores estan false. Se ajusta la prueba de configuracion
+real para exigir este estado final. Suites del bloque: raiz 242, privada 113,
+JS 7 y TS 3: 365 pasadas, cero fallos, errores u omitidas. TS sin comprobar tipos.
+Las suites locales no repiten el ensayo real. Sin proveedor, clave, Docker real
+ni cambios al registro durante este bloque. state/, work/, entregas-locales/ y
+revisiones *.local.md no se incorporan a Git. Envio DISABLED.
+Resultado publico, comandos y limites: [pr/bloque-11.md](pr/bloque-11.md).
+
+---
+
+# Historia: numero de intento generalizado; intento 2 pendiente
 
 7-11-2026, rama piloto/intento-1, base 42c0c23. El lanzador conserva su nombre
 ensayo-intento-1.ps1 y ahora recibe -Intento N; Python recibe --attempt N.
