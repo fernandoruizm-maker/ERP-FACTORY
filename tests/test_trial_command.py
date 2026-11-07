@@ -22,6 +22,10 @@ class PreparationTests(unittest.TestCase):
         self.root = Path(temp.name)
         self.cfg = json.loads(disabled_repository_config(self.root).read_text())
         self.write_config()
+        # Explicit local Docker query double; never contact an engine in this suite.
+        self.docker = self.enterContext(patch('factory2.pilot_preflight.bounded_process',
+            side_effect=lambda command: (0, 'npipe:////./pipe/docker_engine\n')
+            if command[1] == 'context' else (0, 'linux/amd64\n')))
 
     def write_config(self):
         (self.root / 'config.json').write_text(canonical(self.cfg))
@@ -151,6 +155,112 @@ class PreparationTests(unittest.TestCase):
             self.assertNotIn('private_text', result)
             import os
             self.assertNotIn('OPENAI_API_KEY', os.environ)
+
+    def test_check_inspects_context_and_both_images_without_ledger_changes(self):
+        from factory2.codex_adapter import PYTHON_IMAGE, NODE_IMAGE
+        auth = self.authorized_fixture()
+        store = self.reviewed_ledger(auth)
+        before = store.path.read_bytes()
+        with patch('factory2.trial_command.clean_head', return_value='a'*40), \
+             patch('factory2.state.Store', side_effect=AssertionError('no ledger initialization')):
+            preflight(auth, 'a'*40, self.root)
+        self.assertEqual([c.args[0] for c in self.docker.call_args_list], [
+            ['docker', 'context', 'inspect', '--format', '{{.Endpoints.docker.Host}}'],
+            ['docker', 'image', 'inspect', PYTHON_IMAGE, '--format', '{{.Os}}/{{.Architecture}}'],
+            ['docker', 'image', 'inspect', NODE_IMAGE, '--format', '{{.Os}}/{{.Architecture}}']])
+        self.assertEqual(store.path.read_bytes(), before)
+        self.assertFalse((self.root/'work').exists())
+
+    def test_check_and_start_share_docker_failure_code_without_a_call(self):
+        from factory2.orchestrator import PilotTrial
+        auth = self.authorized_fixture()
+        store = self.reviewed_ledger(auth)
+        self.docker.side_effect = [(0, 'npipe:////./pipe/docker_engine'), (1, 'FICTICIO_PRIVATE_ERROR')]*2
+        with patch('factory2.trial_command.clean_head', return_value='a'*40), \
+             patch('factory2.orchestrator.clean_head', return_value='a'*40):
+            with self.assertRaisesRegex(Blocked, '^PILOT_PINNED_IMAGES_REQUIRED$'):
+                preflight(auth, 'a'*40, self.root)
+            trial = PilotTrial(store, self.root/'work/ensayo-real')
+            with self.assertRaisesRegex(Blocked, '^PILOT_PINNED_IMAGES_REQUIRED$'):
+                trial.start(auth)
+        self.assertEqual(trial.load()['reason_code'], 'PILOT_PINNED_IMAGES_REQUIRED')
+        self.assertNotIn('FICTICIO_PRIVATE_ERROR', canonical(trial.load()))
+        self.assertEqual(store.summary()['calls'], 0)
+        self.assertEqual(store.budget.summary()['attempts'], 0)
+
+    def test_bad_context_blocks_before_images_key_or_store(self):
+        auth = self.authorized_fixture()
+        store = self.reviewed_ledger(auth)
+        before = store.path.read_bytes()
+        self.docker.side_effect = None
+        self.docker.return_value = (0, 'tcp://ficticio.invalid:2375')
+        with patch('factory2.trial_command.clean_head', return_value='a'*40), \
+             patch('factory2.state.Store', side_effect=AssertionError('no writes')):
+            with self.assertRaisesRegex(Blocked, '^LOCAL_DOCKER_ENDPOINT_REQUIRED$'):
+                execute(auth, 'a'*40, self.root, key_reader=lambda: self.fail('key read'))
+        self.docker.assert_called_once()
+        self.assertEqual(store.path.read_bytes(), before)
+
+    def test_dirty_git_reason_is_persisted_without_docker_or_payment(self):
+        from factory2.orchestrator import PilotTrial
+        auth = self.authorized_fixture()
+        store = self.reviewed_ledger(auth)
+        trial = PilotTrial(store, self.root/'work/ensayo-real')
+        with patch('factory2.orchestrator.clean_head', side_effect=Blocked('SOURCE_OR_CANDIDATE_NOT_CLEAN')):
+            with self.assertRaisesRegex(Blocked, '^SOURCE_OR_CANDIDATE_NOT_CLEAN$'):
+                trial.start(auth)
+        self.assertEqual(trial.load()['reason_code'], 'SOURCE_OR_CANDIDATE_NOT_CLEAN')
+        self.assertEqual(store.summary()['calls'], 0)
+        self.assertEqual(store.budget.summary()['attempts'], 0)
+        self.docker.assert_not_called()
+        with self.assertRaisesRegex(Blocked, '^PILOT_ALREADY_RECORDED_NO_RETRY$'):
+            trial.start(auth)
+
+    def test_check_detects_candidate_before_key_or_attempt(self):
+        auth = self.authorized_fixture()
+        store = self.reviewed_ledger(auth)
+        (self.root/'work/ensayo-real/bottles-1').mkdir(parents=True)
+        before = store.path.read_bytes()
+        with patch('factory2.trial_command.clean_head', return_value='a'*40):
+            with self.assertRaisesRegex(Blocked, '^PILOT_CANDIDATE_ALREADY_EXISTS$'):
+                execute(auth, 'a'*40, self.root, key_reader=lambda: self.fail('key read'))
+        self.assertEqual(store.path.read_bytes(), before)
+
+    def test_check_uses_worker_lock_without_consuming_attempt(self):
+        auth = self.authorized_fixture()
+        store = self.reviewed_ledger(auth)
+        before = store.path.read_bytes()
+        with store.worker(), patch('factory2.trial_command.clean_head', return_value='a'*40):
+            with self.assertRaisesRegex(Blocked, '^WORKER_ALREADY_ACTIVE$'):
+                preflight(auth, 'a'*40, self.root)
+        self.docker.assert_not_called()
+        self.assertEqual(store.path.read_bytes(), before)
+
+    def test_check_rejects_other_unfinished_attempt(self):
+        auth = self.authorized_fixture()
+        store = self.reviewed_ledger(auth)
+        with store.connect() as db:
+            db.execute('CREATE TABLE pilot_trials(id TEXT PRIMARY KEY, data TEXT)')
+            db.execute('INSERT INTO pilot_trials VALUES(?,?)', ('bottles-0', canonical({'status':'BUILDING'})))
+        with patch('factory2.trial_command.clean_head', return_value='a'*40):
+            with self.assertRaisesRegex(Blocked, '^PILOT_PREVIOUS_ATTEMPT_UNFINISHED$'):
+                preflight(auth, 'a'*40, self.root)
+        self.docker.assert_not_called()
+
+    def test_cli_check_reports_closed_code_and_never_exception_text(self):
+        import contextlib
+        import io
+        from factory2.trial_command import main
+        auth_path = self.root/'authorization.json'
+        auth_path.write_text('{}')
+        for error, expected in ((Blocked('SOURCE_OR_CANDIDATE_NOT_CLEAN'), 'SOURCE_OR_CANDIDATE_NOT_CLEAN'),
+                                (RuntimeError('FICTICIO_PRIVATE'), 'PILOT_PREFLIGHT_UNEXPECTED_NO_RETRY')):
+            output = io.StringIO()
+            with patch('sys.argv', ['trial_command', 'check', '--authorization', str(auth_path)]), \
+                 patch('factory2.trial_command.preflight', side_effect=error), contextlib.redirect_stdout(output):
+                self.assertEqual(main(), 2)
+            self.assertEqual(json.loads(output.getvalue()), {'status':'BLOCKED','reason_code':expected})
+            self.assertNotIn('FICTICIO_PRIVATE', output.getvalue())
 
 
 if __name__ == '__main__':

@@ -126,6 +126,7 @@ class TrialTests(unittest.TestCase):
                 self.trial.start({**self.auth, 'attempt': bad})
         self.change_config(external_calls_enabled=False)
         with self.assertRaisesRegex(Blocked, 'SWITCH_OFF'): self.trial.start(self.auth)
+        self.assertEqual(self.trial.load()['reason_code'], 'PILOT_SWITCH_OFF')
         self.change_config(external_calls_enabled=True)
         with self.assertRaisesRegex(Blocked, 'NO_RETRY'): self.trial.start(self.auth)
         self.assertEqual(self.seen, [])
@@ -194,6 +195,16 @@ class TrialTests(unittest.TestCase):
     def test_switch_off_never_reaches_ports(self):
         self.change_config(external_calls_enabled=False)
         with self.assertRaisesRegex(Blocked, 'PILOT_SWITCH_OFF'): self.trial.start(self.auth)
+        self.assertEqual(self.seen, [])
+        self.assertEqual(self.store.budget.summary()['attempts'], 0)
+
+    def test_unrecognized_preflight_error_is_recorded_without_free_text(self):
+        with patch.object(self.trial, '_start', side_effect=RuntimeError('FICTICIO_PRIVATE')):
+            with self.assertRaises(RuntimeError):
+                self.trial.start(self.auth)
+        data = self.trial.load()
+        self.assertEqual(data['reason_code'], 'PILOT_PREFLIGHT_UNEXPECTED_NO_RETRY')
+        self.assertNotIn('FICTICIO_PRIVATE', canonical(data))
         self.assertEqual(self.seen, [])
         self.assertEqual(self.store.budget.summary()['attempts'], 0)
 

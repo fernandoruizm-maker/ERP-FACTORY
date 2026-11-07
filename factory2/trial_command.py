@@ -12,6 +12,8 @@ from .core import Blocked, digest, canonical
 from .codex_adapter import DockerCodexBuilder, request_bytes, token_cost
 from .orchestrator import bottle_input, clean_head, PilotTrial
 from .manual_review import metadata, CLEAR
+from .pilot_preflight import inspect_start, reason_code
+from .operations import Coordinator
 
 ROOT = Path(__file__).resolve().parents[1]
 
@@ -92,10 +94,29 @@ def preflight(authorization, expected_sha, root=ROOT):
         total = db.execute('SELECT coalesce(sum(charged_units),0) FROM paid_attempts').fetchone()[0]
         if total + 1000000 > 13000000:
             raise Blocked('SPEND_LIMIT')
+        if db.execute("SELECT 1 FROM paid_executions WHERE currency<>'USD'").fetchone():
+            raise Blocked('BUDGET_CURRENCY_CHANGED')
         tables = {row[0] for row in db.execute("SELECT name FROM sqlite_master WHERE type='table'")}
         for table in ('calls', 'pilot_trials', 'pilot_authorizations', 'paid_executions'):
             if table in tables and db.execute(f'SELECT 1 FROM {table} WHERE id=?', ('bottles-1',)).fetchone():
                 raise Blocked('PILOT_ALREADY_RECORDED_NO_RETRY')
+        if 'pilot_trials' in tables:
+            for row in db.execute('SELECT data FROM pilot_trials'):
+                if json.loads(row[0])['status'] != 'BLOCKED':
+                    raise Blocked('PILOT_PREVIOUS_ATTEMPT_UNFINISHED')
+        # Same locked, read-only checks as PilotTrial._start. No Store construction,
+        # table creation, reservation, credential read or attempt consumption here.
+        coordinator = Coordinator(ledger.parent)
+        def read_review(review_id):
+            row = db.execute('SELECT document FROM manual_reviews WHERE id=?', (review_id,)).fetchone()
+            if row is None:
+                raise Blocked('FACTORY_REVIEW_REQUIRED')
+            return metadata(row[0])
+        with coordinator.worker():
+            coordinator.require_worker()
+            inspect_start(json.loads((root / 'config.json').read_text(encoding='utf-8-sig')),
+                          authorization, source_reader=lambda: clean_head(root),
+                          review_reader=read_review, work_root=root / 'work/ensayo-real')
     finally:
         db.close()
     return prepared
@@ -143,9 +164,9 @@ def main():
                 result = execute(authorization, args.expected_sha)
         print(canonical(result))
         return 2 if result.get('status') == 'BLOCKED' else 0
-    except Exception:
+    except Exception as exc:
         # No exception text, authorization contents, provider output or environment.
-        print('{"status":"BLOCKED","reason_code":"ATTEMPT_1_CHECK_FAILED"}')
+        print(canonical({'status': 'BLOCKED', 'reason_code': reason_code(exc)}))
         return 2
 
 

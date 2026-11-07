@@ -1,4 +1,31 @@
-# Estado vigente: correccion de pruebas tras def4b58, sin ejecutar
+# Estado vigente: intento 1 cerrado; fase previa corregida
+
+7-11-2026, rama piloto/intento-1, base 5850899. Causa reproducida:
+state/worker.lock no estaba excluido de Git; _start lo encontraba despues de
+tomar el candado. Docker y ambas imagenes responden correctamente bajo el
+entorno reducido, mediante consultas locales de lectura autorizadas.
+
+Se excluye solo ese candado; check y _start comparten las comprobaciones de
+configuracion/autorizacion/Git/revision/Docker/candidato. PowerShell usa el
+mismo constructor de entorno reducido para check y run. Fallos concretos de
+lista cerrada, sin texto libre ni reintentos. Un OK no garantiza estados futuros:
+las comprobaciones se repiten antes de la llamada y bajo el candado.
+
+Suites: raiz 233 + privada 113 + JS 7 + TS 3 = 356 pasadas, cero fallos,
+errores u omitidas. TS sin comprobacion estatica de tipos. Sin proveedor real,
+red ni contenedores. Ver evidencia, comandos y limites en
+[pr/intento-1-preflight.md](pr/intento-1-preflight.md).
+
+El registro real no se modifica: SHA-256 intacto, 0 llamadas, 0 intentos
+pagados. bottles-1 conserva BLOCKED/PILOT_PREFLIGHT_BLOCKED_NO_RETRY.
+El siguiente sera attempt 2, con nuevo expediente/autorizacion y revision de
+Claude; no se prepara ni ejecuta aqui. El lanzador del intento 1 no se reutiliza.
+Config.json y sus interruptores intactos; no se pide clave, firma, importa
+revision ni publica. Envio DISABLED. upstream/ y fabrica original intactos.
+
+---
+
+# Historia: correccion de pruebas tras def4b58, sin ejecutar
 
 7-11-2026, rama piloto/intento-1. Se corrigen seis pruebas para usar una copia
 temporal de config.json con external_calls_enabled=false. Se conservan todas

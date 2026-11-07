@@ -9,6 +9,32 @@ param(
 $ErrorActionPreference = 'Stop'
 $repo = Split-Path -Parent $PSScriptRoot
 if (-not (Test-Path -LiteralPath $Python -PathType Leaf)) { throw 'Python local no encontrado. No se instala nada.' }
+
+# Both phases use this exact process and environment allowlist. No profile/key additions.
+function New-TrialProcessInfo([string]$Action) {
+    $info = [System.Diagnostics.ProcessStartInfo]::new()
+    $info.FileName = $Python
+    $info.WorkingDirectory = $repo
+    $info.UseShellExecute = $false
+    $info.CreateNoWindow = $true
+    $info.RedirectStandardInput = $true
+    $info.RedirectStandardOutput = $true
+    $info.RedirectStandardError = $true
+    # ArgumentList requires PowerShell 7/.NET; no shell command interpolation.
+    if ($null -eq $info.ArgumentList) { throw 'Se requiere PowerShell 7 para la ejecucion privada.' }
+    foreach ($value in @('-B','-m','factory2.trial_command',$Action,'--authorization',$Autorizacion,'--expected-sha',$ShaRevisado)) {
+        $info.ArgumentList.Add($value)
+    }
+    $info.Environment.Clear()
+    foreach ($name in @('PATH','SYSTEMROOT','WINDIR','TEMP','TMP','PATHEXT','COMSPEC')) {
+        $value = [Environment]::GetEnvironmentVariable($name, 'Process')
+        if ($null -ne $value) { $info.Environment[$name] = $value }
+    }
+    $info.Environment['PYTHONDONTWRITEBYTECODE'] = '1'
+    $info.Environment['PYTHONIOENCODING'] = 'utf-8'
+    return $info
+}
+
 Push-Location $repo
 try {
     if ($Modo -eq 'Preparar') {
@@ -24,34 +50,28 @@ try {
     if ($PSVersionTable.PSVersion.Major -lt 7) { throw 'Se requiere PowerShell 7; no se pide la clave.' }
     # Still offline. False switch, missing ledger/review, wrong SHA or reused
     # attempt stop BEFORE displaying any private credential prompt.
-    & $Python -B -m factory2.trial_command check --authorization $Autorizacion --expected-sha $ShaRevisado
-    if ($LASTEXITCODE -ne 0) { throw 'Comprobacion bloqueada; no se pide la clave ni se consume el intento.' }
+    $check = [System.Diagnostics.Process]::Start((New-TrialProcessInfo 'check'))
+    try {
+        $check.StandardInput.Close()
+        $checkOutput = $check.StandardOutput.ReadToEndAsync()
+        $checkErrors = $check.StandardError.ReadToEndAsync()
+        $check.WaitForExit()
+        $checked = $checkOutput.GetAwaiter().GetResult() | ConvertFrom-Json
+        if ($check.ExitCode -ne 0 -or $checked.status -ne 'PREFLIGHT_OK_NOT_EXECUTED') {
+            $code = 'PILOT_PREFLIGHT_UNEXPECTED_NO_RETRY'
+            if ($checked.reason_code -cmatch '^[A-Z0-9_]{1,80}$') { $code = $checked.reason_code }
+            throw "Comprobacion bloqueada: $code. No se pide la clave ni se consume el intento."
+        }
+    } finally {
+        $check.Dispose()
+    }
     # Future authorized use only, in a terminal Fernando opens privately.
     $secret = Read-Host 'Clave restringida de Responses (entrada oculta; no compartir pantalla)' -AsSecureString
     $pointer = [IntPtr]::Zero
     $plain = $null
     $child = $null
     try {
-        $info = [System.Diagnostics.ProcessStartInfo]::new()
-        $info.FileName = $Python
-        $info.WorkingDirectory = $repo
-        $info.UseShellExecute = $false
-        $info.CreateNoWindow = $true
-        $info.RedirectStandardInput = $true
-        $info.RedirectStandardOutput = $true
-        $info.RedirectStandardError = $true
-        # ArgumentList requires PowerShell 7/.NET; no shell command interpolation.
-        if ($null -eq $info.ArgumentList) { throw 'Se requiere PowerShell 7 para la ejecucion privada.' }
-        foreach ($value in @('-B','-m','factory2.trial_command','run','--authorization',$Autorizacion,'--expected-sha',$ShaRevisado)) {
-            $info.ArgumentList.Add($value)
-        }
-        $info.Environment.Clear()
-        foreach ($name in @('PATH','SYSTEMROOT','WINDIR','TEMP','TMP','PATHEXT','COMSPEC')) {
-            $value = [Environment]::GetEnvironmentVariable($name, 'Process')
-            if ($null -ne $value) { $info.Environment[$name] = $value }
-        }
-        $info.Environment['PYTHONDONTWRITEBYTECODE'] = '1'
-        $info.Environment['PYTHONIOENCODING'] = 'utf-8'
+        $info = New-TrialProcessInfo 'run'
         $child = [System.Diagnostics.Process]::Start($info)
         $output = $child.StandardOutput.ReadToEndAsync()
         $errors = $child.StandardError.ReadToEndAsync()
@@ -62,8 +82,12 @@ try {
         $child.WaitForExit()
         # The Python entrypoint emits only a small allowlisted result. Never echo stderr.
         $result = $output.GetAwaiter().GetResult() | ConvertFrom-Json
-        if ($child.ExitCode -ne 0) { throw 'Ensayo bloqueado; sin reintento automatico. Revisar registro local.' }
-        $result | Select-Object status,attempt,usage,calculated_cost_usd,publication_allowed | ConvertTo-Json -Depth 4
+        if ($child.ExitCode -ne 0) {
+            $code = 'PILOT_PREFLIGHT_UNEXPECTED_NO_RETRY'
+            if ($result.reason_code -cmatch '^[A-Z0-9_]{1,80}$') { $code = $result.reason_code }
+            throw "Ensayo bloqueado: $code. Sin reintento automatico."
+        }
+        $result | Select-Object status,attempt,reason_code,usage,calculated_cost_usd,publication_allowed | ConvertTo-Json -Depth 4
     } finally {
         if ($pointer -ne [IntPtr]::Zero) { [Runtime.InteropServices.Marshal]::ZeroFreeBSTR($pointer) }
         $plain = $null
