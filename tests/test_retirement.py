@@ -12,6 +12,7 @@ from factory2.operations import Coordinator
 from factory2.providers import ClaudeReviewer, CodexBuilder
 from factory2.retirement import MAX_RECORD_BYTES, RECORD_PATH, read_retirement
 from factory2.state import Store
+from tests.operation_fixtures import disabled_repository_config
 
 
 ROOT = Path(__file__).resolve().parent.parent
@@ -32,7 +33,7 @@ class RetirementTests(unittest.TestCase):
         self.path.write_text(json.dumps(record), encoding='utf-8')
 
     def store(self):
-        return Store(self.root / 'fixture.sqlite3', config_path=ROOT / 'config.json',
+        return Store(self.root / 'fixture.sqlite3', config_path=disabled_repository_config(self.root),
                      coordinator=self.coordinator)
 
     def test_valid_record_is_declared_not_authenticated_or_approved(self):

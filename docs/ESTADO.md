@@ -1,4 +1,28 @@
-# Estado vigente: intento 1 con gpt-6.1-sol, sin ejecutar
+# Estado vigente: correccion de pruebas tras def4b58, sin ejecutar
+
+7-11-2026, rama piloto/intento-1. Se corrigen seis pruebas para usar una copia
+temporal de config.json con external_calls_enabled=false. Se conservan todas
+las aserciones anteriores. Una nueva prueba comprueba la configuracion real:
+external_calls_enabled=true; enabled, erp_access_enabled y publication_enabled=false.
+No se cambia config.json ni codigo de produccion en esta correccion.
+
+Suites completas: raiz 220, privada 113, JavaScript 7 y TypeScript 3:
+343 pasadas, 0 fallos, 0 errores, 0 omitidas. Python se ejecuto con el auxiliar
+externo ejecutar-suite-sin-red.py, que bloquea conexiones y procesos externos
+reales y elimina credenciales heredadas del entorno. Comandos y logs en
+docs/pr/intento-1.md. TS ejecuta pruebas sin comprobacion estatica de tipos.
+
+El registro permanente ya existe: 1 declaracion de Fernando (6-11-2026),
+0 llamadas, 0 intentos pagados, 0 ejecuciones pagadas y 0 revisiones importadas.
+No se reinicializa. PowerShell 7.6.9 ya estaba instalado: Codex solo consulto
+pwsh --version; no instalo nada. Revision del nuevo SHA y autorizacion concreta
+siguen pendientes. Sin red, proveedor real, Docker real, clave, ejecucion del
+ensayo ni publicacion. El envio sigue DISABLED. Los auxiliares de entregas-locales
+estan fuera del commit y requieren revision separada antes de usarlos.
+
+---
+
+# Historia: intento 1 con gpt-6.1-sol antes del paso 3
 
 Cambio autorizado el 6-11-2026 sobre 8f69fe9, misma rama piloto/intento-1.
 Compatibilidad documental confirmada para Responses, json_schema strict,

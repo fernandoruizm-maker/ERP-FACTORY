@@ -9,7 +9,7 @@ from unittest.mock import patch
 from factory2.core import Blocked, canonical, digest
 from factory2.manual_review import CLEAR, REVIEWER
 from factory2.state import Store
-from tests.operation_fixtures import config, coordinator, accounting_target, artifacts
+from tests.operation_fixtures import config, coordinator, accounting_target, artifacts, disabled_repository_config
 
 
 SOURCE = 'a' * 40
@@ -158,7 +158,7 @@ class ApprovalLevelTests(unittest.TestCase):
         self.assertIn('PRIVATE_REVIEW_AUTHENTICATION_PENDING', outcome['reasons'])
 
     def test_repository_config_preserves_disabled_flags_and_named_levels(self):
-        cfg = json.loads((Path(__file__).resolve().parents[1] / 'config.json').read_text())
+        cfg = json.loads(disabled_repository_config(self.root).read_text())
         self.assertEqual(cfg['human_approvals_required'], 1)
         self.assertEqual(cfg['human_approval_roles'], ['business'])
         self.assertEqual(cfg['accounting_product_approvals'],

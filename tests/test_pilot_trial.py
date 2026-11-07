@@ -15,7 +15,7 @@ from factory2.state import Store
 from factory2.orchestrator import PilotTrial, bottle_input
 from factory2.codex_adapter import DockerCodexBuilder, ResponsesAPI, PYTHON_IMAGE, usage_record, token_cost, request_bytes
 from factory2.docker_materialize import materialize
-from tests.operation_fixtures import config, coordinator
+from tests.operation_fixtures import config, coordinator, disabled_repository_config
 
 SOURCE, CANDIDATE = 'a'*40, 'c'*40
 PROPOSAL = {'summary_es': 'FICTICIO', 'edits': [{'path': 'src/bottles.mjs', 'content': 'export class Bottles {}\n'}]}
@@ -427,7 +427,7 @@ class APIAdapterTests(unittest.TestCase):
             self.assertEqual(opener.return_value.open.call_count, 1)
 
     def test_prepared_config_keeps_execution_disabled(self):
-        cfg = json.loads((Path(__file__).resolve().parents[1]/'config.json').read_text())
+        cfg = json.loads(disabled_repository_config(self.root).read_text())
         for key in ('enabled', 'external_calls_enabled', 'erp_access_enabled', 'publication_enabled'):
             self.assertIs(cfg[key], False)
         self.assertEqual(cfg['pilot_model'], 'gpt-6.1-sol')

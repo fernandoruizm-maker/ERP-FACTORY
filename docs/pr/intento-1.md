@@ -1,4 +1,46 @@
-# Paso 2: intento 1 preparado, NO ejecutado
+# Paso 3: correccion de seis pruebas sobre def4b58
+
+7-11-2026. Misma rama piloto/intento-1. Solo pruebas y documentacion.
+El helper disabled_repository_config copia la configuracion a un temporal y
+cambia exclusivamente external_calls_enabled a false; no toca el original.
+Las seis pruebas conservan sus aserciones, comprobadas tambien por comparacion
+AST de las llamadas assert con def4b58. La nueva prueba
+test_attempt_repository_config_enables_only_external_calls lee la configuracion
+real y exige external_calls_enabled=true y los otros tres interruptores false.
+
+Pruebas anteriormente fallidas (ahora pasan):
+- test_approval_levels.ApprovalLevelTests.test_repository_config_preserves_disabled_flags_and_named_levels
+- test_manual_review.ManualPolicyFilesTests.test_declared_roles_future_caps_and_parked_blockers
+- test_pilot_trial.APIAdapterTests.test_prepared_config_keeps_execution_disabled
+- test_retirement.RetirementTests.test_valid_record_with_disabled_config_prevents_both_real_providers
+- test_trial_command.PreparationTests.test_prepare_without_transport_credential_docker_state_or_attempt
+- test_trial_command.PreparationTests.test_real_entry_stops_at_false_switch_before_key_or_store
+
+Comandos completos ejecutados desde la raiz (privada desde su subcarpeta):
+
+```powershell
+& "$env:USERPROFILE\.cache\codex-runtimes\codex-primary-runtime\dependencies\python\python.exe" -B ..\entregas-locales\ejecutar-suite-sin-red.py
+# Directorio ERP-FACTORY-revision:
+& "$env:USERPROFILE\.cache\codex-runtimes\codex-primary-runtime\dependencies\python\python.exe" -B ..\..\entregas-locales\ejecutar-suite-sin-red.py
+# Directorio raiz:
+node --test --test-reporter=tap pilot-js/tests/bottles.test.mjs
+node --experimental-strip-types --test --test-reporter=tap pilot-js/tests/bottles.test.ts
+```
+
+Resultados: raiz 220, privada 113, JS 7, TS 3; 343 pasadas; 0 fallos, errores
+y omitidas. Las cuatro salidas son 0. Logs externos: paso-3-correccion-root.log,
+paso-3-correccion-private.log, paso-3-correccion-js.log y paso-3-correccion-ts.log.
+El envoltorio Python externo descubre la suite completa; bloquea red/procesos
+externos reales y elimina credenciales heredadas del entorno, sin omitir pruebas.
+NO VERIFICADO: API/proveedores reales, Docker real, autenticacion y facturacion.
+TS no comprueba tipos. Ninguna prueba simulada acredita una integracion real.
+PowerShell 7.6.9 ya estaba instalado; solo se consulto su version.
+La revision manual, autorizacion y comandos externos se actualizaran al SHA
+del commit; permaneceran pendientes, sin firma, importacion ni ejecucion.
+
+---
+
+# Historia: Paso 2: intento 1 preparado, NO ejecutado
 
 Rama `piloto/intento-1`, desde `5dc2a61fb8794439fa706f535e1d8e7e5ef96199`.
 Fecha de consulta: 6 de noviembre de 2026. Solo documentacion publica oficial,

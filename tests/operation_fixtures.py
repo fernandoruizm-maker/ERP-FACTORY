@@ -10,6 +10,18 @@ from factory2.review_import import PRIVATE_REPOSITORY, private_contract
 from factory2.state import Store
 
 
+def disabled_repository_config(root):
+    """Copy the repository config into a test temporary directory; only disarm calls."""
+    source = Path(__file__).resolve().parents[1] / 'config.json'
+    path = Path(root) / 'config.json'
+    if path.resolve() == source.resolve():
+        raise ValueError('TEST_CONFIG_MUST_BE_TEMPORARY')
+    data = json.loads(source.read_text(encoding='utf-8'))
+    data['external_calls_enabled'] = False
+    path.write_text(canonical(data), encoding='utf-8')
+    return path
+
+
 def coordinator(root):
     root = Path(root) / 'coordination'
     root.mkdir(exist_ok=True)

@@ -12,6 +12,7 @@ from factory2.codex_adapter import token_cost, request_bytes
 from factory2.trial_command import prepare, preflight, execute, ROOT
 from factory2.state import Store
 from factory2.manual_review import CLEAR, REVIEWER
+from tests.operation_fixtures import disabled_repository_config
 
 
 class PreparationTests(unittest.TestCase):
@@ -19,11 +20,17 @@ class PreparationTests(unittest.TestCase):
         temp = tempfile.TemporaryDirectory()
         self.addCleanup(temp.cleanup)
         self.root = Path(temp.name)
-        self.cfg = json.loads((ROOT / 'config.json').read_text())
+        self.cfg = json.loads(disabled_repository_config(self.root).read_text())
         self.write_config()
 
     def write_config(self):
         (self.root / 'config.json').write_text(canonical(self.cfg))
+
+    def test_attempt_repository_config_enables_only_external_calls(self):
+        cfg = json.loads((ROOT / 'config.json').read_text(encoding='utf-8'))
+        self.assertIs(cfg['external_calls_enabled'], True)
+        for flag in ('enabled', 'erp_access_enabled', 'publication_enabled'):
+            self.assertIs(cfg[flag], False)
 
     def test_prepare_without_transport_credential_docker_state_or_attempt(self):
         original = (self.root / 'config.json').read_bytes()
