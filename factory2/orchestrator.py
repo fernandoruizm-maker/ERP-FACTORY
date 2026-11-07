@@ -212,11 +212,13 @@ class PilotTrial:
             validate_edits(proposal)
             if [e['path'] for e in proposal['edits']] != ['src/bottles.mjs']:
                 raise Blocked('PILOT_OUTPUT_SCOPE_INVALID')
-            paid_status = self.store.finish_call(self.ID, 'COMPLETED', data['calculated_cost_usd'])
-            reserved = False
-            if (paid_status == 'OVER_BUDGET'
-                    or data['usage']['input_tokens'] > len(request_bytes(request))
+            if (data['usage']['input_tokens'] > len(request_bytes(request))
                     or data['usage']['output_tokens'] > request['max_output_tokens']):
+                raise Blocked('CODEX_USAGE_EXCEEDS_AUTHORIZED_BOUND')
+            paid_status = self.store.finish_call(self.ID, 'COMPLETED', data['calculated_cost_usd'],
+                                                usage_validated=True)
+            reserved = False
+            if paid_status == 'OVER_BUDGET':
                 raise Blocked('CODEX_USAGE_EXCEEDS_AUTHORIZED_BOUND')
             self.store.coordinator.require_worker()
             if digest(self.config()) != data['config_digest']:

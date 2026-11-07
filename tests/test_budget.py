@@ -84,7 +84,7 @@ class BudgetTests(unittest.TestCase):
         with self.assertRaises(Blocked):
             self.reserve('c1')
 
-    def test_actual_below_reserve_does_not_release_and_is_not_verified_billing(self):
+    def test_unvalidated_actual_keeps_reserve_and_is_not_verified_billing(self):
         self.ledger.begin('e1', SOURCE, self.config)
         self.reserve('c1')
         self.ledger.finish('c1', 'COMPLETED', actual_cost='0.25')
@@ -93,13 +93,91 @@ class BudgetTests(unittest.TestCase):
         self.assertFalse(summary['billing_verified'])
         self.assertEqual(summary['currency'], 'TST')
 
+    def test_completed_valid_usage_charges_exact_cost_and_preserves_reserve(self):
+        self.ledger.begin('e1', SOURCE, self.config)
+        self.reserve('c1')
+        self.ledger.finish('c1', 'COMPLETED', '0.015946', usage_validated=True)
+        with self.ledger.connect() as db:
+            row = db.execute('SELECT * FROM paid_attempts').fetchone()
+        self.assertEqual(row['reserved_units'], 1000000)
+        self.assertEqual(row['actual_units'], 15946)
+        self.assertEqual(row['charged_units'], 15946)
+        self.assertEqual(row['status'], 'COMPLETED')
+        self.assertFalse(self.ledger.summary()['billing_verified'])
+
+    def test_valid_zero_and_exact_reservation_costs(self):
+        self.ledger.begin('e1', SOURCE, self.config)
+        for call, cost, expected in (('zero', '0', 0), ('full', '1', 1000000)):
+            self.reserve(call)
+            self.ledger.finish(call, 'COMPLETED', cost, usage_validated=True)
+            with self.ledger.connect() as db:
+                row = db.execute('SELECT * FROM paid_attempts WHERE id=?', (call,)).fetchone()
+            self.assertEqual(row['charged_units'], expected)
+            self.assertEqual(row['actual_units'], expected)
+            self.assertLessEqual(row['actual_units'], row['reserved_units'])
+
+    def test_missing_usage_keeps_full_reserve_even_with_validation_flag(self):
+        self.ledger.begin('e1', SOURCE, self.config)
+        self.reserve('c1')
+        self.ledger.finish('c1', 'COMPLETED', usage_validated=True)
+        self.assertEqual(self.ledger.summary()['conservative_charge_units'], 1000000)
+
+    def test_invalid_cost_cannot_release_reservation(self):
+        self.ledger.begin('e1', SOURCE, self.config)
+        self.reserve('c1')
+        for bad in ('NaN', '-1', '0.0000001', True, 0.25):
+            with self.subTest(cost=bad), self.assertRaises(Blocked):
+                self.ledger.finish('c1', 'COMPLETED', bad, usage_validated=True)
+            with self.ledger.connect() as db:
+                row = db.execute('SELECT * FROM paid_attempts').fetchone()
+            self.assertEqual(row['status'], 'IN_FLIGHT')
+            self.assertEqual(row['charged_units'], 1000000)
+            self.assertIsNone(row['actual_units'])
+
+    def test_uncertain_and_rejected_costs_never_release_reserve(self):
+        self.ledger.begin('e1', SOURCE, self.config)
+        for call, status in (('c1', 'UNKNOWN'), ('c2', 'REJECTED')):
+            self.reserve(call)
+            self.ledger.finish(call, status, '0.015946', usage_validated=True)
+        self.assertEqual(self.ledger.summary()['conservative_charge_units'], 2000000)
+
+    def test_existing_completed_history_is_not_resettled(self):
+        self.ledger.begin('e1', SOURCE, self.config)
+        self.reserve('historic')
+        self.ledger.finish('historic', 'COMPLETED', '0.015946')
+        with self.ledger.connect() as db:
+            before = dict(db.execute('SELECT * FROM paid_attempts').fetchone())
+        reopened = BudgetLedger(self.path)
+        with self.assertRaisesRegex(Blocked, 'NOT_IN_FLIGHT'):
+            reopened.finish('historic', 'COMPLETED', '0.015946', usage_validated=True)
+        with reopened.connect() as db:
+            self.assertEqual(dict(db.execute('SELECT * FROM paid_attempts').fetchone()), before)
+        self.assertEqual(reopened.summary()['conservative_charge_units'], 1000000)
+
+    def test_settled_costs_plus_pending_reserves_obey_run_and_total_caps(self):
+        self.ledger.begin('e1', SOURCE, self.config)
+        for call in ('c1', 'c2', 'c3'):
+            self.reserve(call)
+            self.ledger.finish(call, 'COMPLETED', '0.5', usage_validated=True)
+        with self.assertRaisesRegex(Blocked, 'SPEND_LIMIT'):
+            self.reserve('run-overrun')
+        self.ledger.begin('e2', SOURCE, self.config)
+        self.reserve('c4', run='e2')
+        self.ledger.finish('c4', 'COMPLETED', '0.5', usage_validated=True)
+        self.reserve('pending', run='e2')
+        with self.assertRaisesRegex(Blocked, 'SPEND_LIMIT'):
+            self.reserve('total-overrun', run='e2', amount='0.000001')
+        self.assertEqual(self.ledger.summary()['conservative_charge_units'], 3000000)
+
     def test_reported_overrun_freezes_future_attempts_for_reconciliation(self):
         self.ledger.begin('e1', SOURCE, self.config)
         self.reserve('c1')
         self.assertEqual(self.ledger.finish('c1', 'COMPLETED', actual_cost='1.5'), 'OVER_BUDGET')
         with self.assertRaisesRegex(Blocked, 'RECONCILIATION'):
             self.reserve('c2', amount='0.1')
-        self.assertEqual(self.ledger.summary()['conservative_charge_units'], 1500000)
+        self.assertEqual(self.ledger.summary()['conservative_charge_units'], 1000000)
+        with self.ledger.connect() as db:
+            self.assertIsNone(db.execute('SELECT actual_units FROM paid_attempts').fetchone()[0])
 
     def test_execution_source_and_currency_cannot_change(self):
         self.ledger.begin('e1', SOURCE, self.config)

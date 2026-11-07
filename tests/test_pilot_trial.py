@@ -50,6 +50,7 @@ class TrialTests(unittest.TestCase):
         self.store = Store(self.root/'state.sqlite3', config_path=config(self.root),
                            coordinator=coordinator(self.root), reviews_directory=self.reviews)
         self.cfg = enabled_fixture(self.store)
+        self.usage_response = response()
         self.seen = []
         self.generate = lambda context: copy.deepcopy(PROPOSAL)
         owner = self
@@ -57,7 +58,7 @@ class TrialTests(unittest.TestCase):
         class Builder:
             def generate(self, context):
                 owner.seen.append('provider')
-                self.last_usage = usage_record(response(), owner.cfg['pilot_cost_review'])
+                self.last_usage = usage_record(owner.usage_response, owner.cfg['pilot_cost_review'])
                 return owner.generate(context)
 
             def materialize(self, proposal, directory):
@@ -108,7 +109,7 @@ class TrialTests(unittest.TestCase):
         self.assertEqual(gate['status'], 'READY_FOR_MANUAL_REVIEW')
         self.assertFalse(gate['publication_allowed'])
         self.assertFalse(gate['provenance_authenticated'])
-        self.assertEqual(self.store.budget.summary()['conservative_charge_units'], 1000000)
+        self.assertEqual(self.store.budget.summary()['conservative_charge_units'], 140)
         with self.assertRaises(Blocked): self.trial.start(self.auth)
         self.assertEqual(self.seen.count('provider'), 1)
 
@@ -144,20 +145,24 @@ class TrialTests(unittest.TestCase):
         second = self.trial.start({**self.auth, 'attempt': 2})
         self.assertEqual(second['status'], 'WAITING_FOR_MANUAL_REVIEW')
         self.assertEqual(self.seen.count('provider'), 2)
-        self.assertEqual(self.store.budget.summary()['conservative_charge_units'], 2000000)
+        self.assertEqual(self.store.budget.summary()['conservative_charge_units'], 280)
         with self.store.connect() as db:
             self.assertEqual(json.loads(db.execute("SELECT data FROM pilot_trials WHERE id='bottles-1'").fetchone()[0]), first)
         with self.assertRaisesRegex(Blocked, 'UNFINISHED'):
             self.trial.start({**self.auth, 'attempt': 3})
 
     def test_thirteen_dollars_remains_shared_across_authorized_attempts(self):
+        self.change_config(pilot_cost_review={**self.cfg['pilot_cost_review'], 'output_usd_per_million':'750.00'})
+        self.usage_response['usage'].update(input_tokens=0, output_tokens=1000)
         self.tester = lambda *_: {'status': 'FAIL', 'exit_code': 1}
-        for attempt in range(1, 14):
+        # Each completed valid response costs 0.75. The next full 1.00 reservation
+        # after 17 calls would exceed 13.00; failed product tests do not undo usage.
+        for attempt in range(1, 18):
             self.assertEqual(self.trial.start({**self.auth, 'attempt': attempt})['status'], 'BLOCKED')
-        blocked = self.trial.start({**self.auth, 'attempt': 14})
+        blocked = self.trial.start({**self.auth, 'attempt': 18})
         self.assertEqual(blocked['reason_code'], 'SPEND_LIMIT')
-        self.assertEqual(self.seen.count('provider'), 13)
-        self.assertEqual(self.store.budget.summary()['conservative_charge_units'], 13000000)
+        self.assertEqual(self.seen.count('provider'), 17)
+        self.assertEqual(self.store.budget.summary()['conservative_charge_units'], 12750000)
 
     def test_usage_is_saved_in_trial_and_paid_ledger(self):
         self.change_config(pilot_cost_review={**self.cfg['pilot_cost_review'], 'max_output_tokens': 32000})
@@ -167,6 +172,8 @@ class TrialTests(unittest.TestCase):
         self.assertEqual(result['usage']['reasoning_tokens'], 5)
         with self.store.connect() as db:
             self.assertEqual(db.execute('SELECT actual_units FROM paid_attempts').fetchone()[0], 140)
+            self.assertEqual(db.execute('SELECT charged_units FROM paid_attempts').fetchone()[0], 140)
+            self.assertEqual(db.execute('SELECT reserved_units FROM paid_attempts').fetchone()[0], 1000000)
             self.assertEqual(db.execute('SELECT output_limit FROM calls').fetchone()[0], 32000)
 
     def test_over_budget_usage_stops_before_docker_and_blocks_later_attempts(self):
@@ -191,12 +198,45 @@ class TrialTests(unittest.TestCase):
         self.assertEqual(data['calculated_cost_usd'], '0.000140')
         self.assertNotIn('FICTICIO_NO_GUARDAR', canonical(data))
         self.assertEqual(self.store.budget.summary()['unknown'], 1)
+        self.assertEqual(self.store.budget.summary()['conservative_charge_units'], 1000000)
 
     def test_switch_off_never_reaches_ports(self):
         self.change_config(external_calls_enabled=False)
         with self.assertRaisesRegex(Blocked, 'PILOT_SWITCH_OFF'): self.trial.start(self.auth)
         self.assertEqual(self.seen, [])
         self.assertEqual(self.store.budget.summary()['attempts'], 0)
+
+    def test_missing_provider_usage_keeps_full_reserve(self):
+        item = response()
+        del item['usage']
+        self.trial.builder = DockerCodexBuilder(self.cfg, transport=lambda _: item)
+        data = self.trial.start(self.auth)
+        self.assertEqual(data['status'], 'BLOCKED')
+        self.assertEqual(data['reason_code'], 'CODEX_RESPONSE_INVALID_OR_UNCERTAIN')
+        self.assertEqual(self.store.budget.summary()['unknown'], 1)
+        self.assertEqual(self.store.budget.summary()['conservative_charge_units'], 1000000)
+        self.assertEqual(self.seen, [])
+
+    def test_invalid_provider_usage_keeps_full_reserve(self):
+        item = response()
+        item['usage']['input_tokens'] = -1
+        self.trial.builder = DockerCodexBuilder(self.cfg, transport=lambda _: item)
+        data = self.trial.start(self.auth)
+        self.assertEqual(data['status'], 'BLOCKED')
+        self.assertEqual(data['reason_code'], 'CODEX_RESPONSE_INVALID_OR_UNCERTAIN')
+        self.assertEqual(self.store.budget.summary()['unknown'], 1)
+        self.assertEqual(self.store.budget.summary()['conservative_charge_units'], 1000000)
+        self.assertEqual(self.seen, [])
+
+    def test_token_bound_failure_does_not_settle_even_when_cost_is_below_reserve(self):
+        self.usage_response['usage']['output_tokens'] = 1025
+        data = self.trial.start(self.auth)
+        self.assertEqual(data['status'], 'BLOCKED')
+        self.assertEqual(data['reason_code'], 'CODEX_USAGE_EXCEEDS_AUTHORIZED_BOUND')
+        self.assertEqual(data['calculated_cost_usd'], '0.002150')
+        self.assertEqual(self.store.budget.summary()['unknown'], 1)
+        self.assertEqual(self.store.budget.summary()['conservative_charge_units'], 1000000)
+        self.assertEqual(self.seen, ['provider'])
 
     def test_unrecognized_preflight_error_is_recorded_without_free_text(self):
         with patch.object(self.trial, '_start', side_effect=RuntimeError('FICTICIO_PRIVATE')):
