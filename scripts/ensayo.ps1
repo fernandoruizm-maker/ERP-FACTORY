@@ -1,6 +1,7 @@
 [CmdletBinding()]
 param(
     [ValidateSet('Preparar', 'Ejecutar')][string]$Modo = 'Preparar',
+    [Parameter(Mandatory=$true)][ValidatePattern('^[a-z][a-z0-9]*(?:-[a-z0-9]+)*$')][string]$Encargo,
     [ValidateRange(1, 1000000)][int]$Intento = 1,
     [string]$Python = "$env:USERPROFILE\.cache\codex-runtimes\codex-primary-runtime\dependencies\python\python.exe",
     [string]$Autorizacion,
@@ -23,7 +24,7 @@ function New-TrialProcessInfo([string]$Action) {
     $info.RedirectStandardError = $true
     # ArgumentList requires PowerShell 7/.NET; no shell command interpolation.
     if ($null -eq $info.ArgumentList) { throw 'Se requiere PowerShell 7 para la ejecucion privada.' }
-    foreach ($value in @('-B','-m','factory2.trial_command',$Action,'--attempt',"$Intento",'--authorization',$Autorizacion,'--expected-sha',$ShaRevisado)) {
+    foreach ($value in @('-B','-m','factory2.trial_command',$Action,'--attempt',"$Intento",'--encargo',$Encargo,'--authorization',$Autorizacion,'--expected-sha',$ShaRevisado)) {
         $info.ArgumentList.Add($value)
     }
     $info.Environment.Clear()
@@ -40,7 +41,7 @@ Push-Location $repo
 try {
     if ($Modo -eq 'Preparar') {
         # Pure local calculation. No key prompt, Store, Docker or provider.
-        & $Python -B -m factory2.trial_command prepare --attempt $Intento
+        & $Python -B -m factory2.trial_command prepare --attempt $Intento --encargo $Encargo
         if ($LASTEXITCODE -ne 0) { throw 'Preparacion bloqueada.' }
         return
     }
@@ -88,7 +89,7 @@ try {
             if ($result.reason_code -cmatch '^[A-Z0-9_]{1,80}$') { $code = $result.reason_code }
             throw "Ensayo bloqueado: $code. Sin reintento automatico."
         }
-        $result | Select-Object status,attempt,reason_code,usage,calculated_cost_usd,publication_allowed | ConvertTo-Json -Depth 4
+        $result | Select-Object status,encargo,attempt,reason_code,usage,calculated_cost_usd,publication_allowed | ConvertTo-Json -Depth 4
     } finally {
         if ($pointer -ne [IntPtr]::Zero) { [Runtime.InteropServices.Marshal]::ZeroFreeBSTR($pointer) }
         $plain = $null

@@ -66,7 +66,7 @@ class PreflightRegressionTests(unittest.TestCase):
             env.update(USERPROFILE=folder, APPDATA=folder, LOCALAPPDATA=folder)
             result = subprocess.run(['pwsh','-NoProfile','-NonInteractive','-File',
                                      str(ROOT/'tests/inspect_trial_launcher.ps1'),
-                                     str(ROOT/'scripts/ensayo-intento-1.ps1')],
+                                     str(ROOT/'scripts/ensayo.ps1')],
                                     env=env, cwd=folder, capture_output=True, timeout=20)
         self.assertEqual(result.returncode, 0, result.stderr.decode(errors='replace'))
         check, run = json.loads(result.stdout)
@@ -81,6 +81,10 @@ class PreflightRegressionTests(unittest.TestCase):
         self.assertEqual(run['attemptFlag'], '--attempt')
         self.assertEqual(check['attempt'], '2')
         self.assertEqual(run['attempt'], '2')
+        self.assertEqual(check['encargoFlag'], '--encargo')
+        self.assertEqual(run['encargoFlag'], '--encargo')
+        self.assertEqual(check['encargo'], 'caja-chica')
+        self.assertEqual(run['encargo'], 'caja-chica')
         self.assertFalse(check['shell'])
         self.assertFalse(run['shell'])
 

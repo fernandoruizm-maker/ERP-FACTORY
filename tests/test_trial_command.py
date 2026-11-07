@@ -1,5 +1,6 @@
 """Preparation is offline; execution boundaries use explicit fictional doubles."""
 import copy
+import shutil
 import json
 from pathlib import Path
 import tempfile
@@ -20,6 +21,7 @@ class PreparationTests(unittest.TestCase):
         temp = tempfile.TemporaryDirectory()
         self.addCleanup(temp.cleanup)
         self.root = Path(temp.name)
+        shutil.copytree(ROOT / 'encargos', self.root / 'encargos')
         self.cfg = json.loads(disabled_repository_config(self.root).read_text())
         self.write_config()
         # Explicit local Docker query double; never contact an engine in this suite.
@@ -50,7 +52,7 @@ class PreparationTests(unittest.TestCase):
         self.assertIsNone(result['authorization_draft']['authorized_by'])
         self.assertIsNone(result['authorization_draft']['source_sha'])
         self.assertEqual((self.root / 'config.json').read_bytes(), original)
-        self.assertEqual({p.name for p in self.root.iterdir()}, {'config.json'})
+        self.assertEqual({p.name for p in self.root.iterdir()}, {'config.json', 'encargos'})
 
     def test_exact_requested_contract_and_standard_cost(self):
         data = prepare(self.root)
@@ -255,7 +257,7 @@ class PreparationTests(unittest.TestCase):
         for error, expected in ((Blocked('SOURCE_OR_CANDIDATE_NOT_CLEAN'), 'SOURCE_OR_CANDIDATE_NOT_CLEAN'),
                                 (RuntimeError('FICTICIO_PRIVATE'), 'PILOT_PREFLIGHT_UNEXPECTED_NO_RETRY')):
             output = io.StringIO()
-            with patch('sys.argv', ['trial_command', 'check', '--authorization', str(auth_path)]), \
+            with patch('sys.argv', ['trial_command', 'check', '--encargo', 'botellas', '--authorization', str(auth_path)]), \
                  patch('factory2.trial_command.preflight', side_effect=error), contextlib.redirect_stdout(output):
                 self.assertEqual(main(), 2)
             self.assertEqual(json.loads(output.getvalue()), {'status':'BLOCKED','reason_code':expected})
@@ -348,7 +350,7 @@ class PreparationTests(unittest.TestCase):
             trial.return_value.start.return_value = {'status':'WAITING_FOR_MANUAL_REVIEW',
                 'attempt':2, 'publication_allowed':False}
             result = execute(auth, 'a'*40, self.root, attempt=2, key_reader=lambda:'FICTICIO')
-        self.assertEqual(trial.call_args.kwargs, {'attempt':2})
+        self.assertEqual(trial.call_args.kwargs, {'attempt':2, 'encargo':'botellas', 'encargos_root':self.root/'encargos'})
         trial.return_value.start.assert_called_once_with(auth)
         self.assertEqual(result['attempt'], 2)
         self.assertEqual(store.path.read_bytes(), before)
@@ -370,12 +372,49 @@ class PreparationTests(unittest.TestCase):
         auth_path = self.root/'authorization.json'
         auth_path.write_text('{"attempt":2}')
         for mode, target in (('prepare','prepare'), ('check','preflight'), ('run','execute')):
-            with self.subTest(mode=mode), patch('sys.argv', ['trial_command',mode,'--attempt','2',
+            with self.subTest(mode=mode), patch('sys.argv', ['trial_command',mode,'--encargo','botellas','--attempt','2',
                  '--authorization',str(auth_path),'--expected-sha','a'*40]), \
                  patch('factory2.trial_command.'+target, return_value={'status':'FICTICIO'}) as port, \
                  contextlib.redirect_stdout(io.StringIO()):
                 self.assertEqual(main(), 0)
                 self.assertEqual(port.call_args.kwargs['attempt'], 2)
+                self.assertEqual(port.call_args.kwargs['encargo'], 'botellas')
+
+    def test_prepare_selected_job_binds_authorization_without_execution(self):
+        bottles = prepare(self.root, encargo='botellas')
+        caja = prepare(self.root, encargo='caja-chica')
+        self.assertEqual(caja['authorization_draft']['encargo'], 'caja-chica')
+        self.assertEqual(json.loads(caja['request']['input'])['profile'], 'python')
+        self.assertNotEqual(bottles['context_digest'], caja['context_digest'])
+        self.assertFalse(caja['execution_enabled'])
+        self.assertFalse((self.root/'state').exists())
+
+    def test_different_job_authorization_rejected_before_key(self):
+        auth = self.authorized_fixture()
+        store = self.reviewed_ledger(auth)
+        before = store.path.read_bytes()
+        with patch('factory2.trial_command.clean_head', return_value='a'*40):
+            with self.assertRaisesRegex(Blocked, 'AUTHORIZATION_REQUIRED'):
+                execute(auth, 'a'*40, self.root, encargo='caja-chica', key_reader=lambda: self.fail('key read'))
+        self.assertEqual(store.path.read_bytes(), before)
+        self.docker.assert_not_called()
+
+    def test_new_job_preflight_ignores_other_job_history_but_keeps_budget(self):
+        self.authorized_fixture()
+        auth = {**prepare(self.root, encargo='caja-chica')['authorization_draft'],
+                'source_sha':'a'*40, 'authorized_by':'Fernando', 'expires_at':time.time()+600}
+        store = self.reviewed_ledger(auth)
+        with store.connect() as db:
+            db.execute('CREATE TABLE pilot_trials(id TEXT PRIMARY KEY, data TEXT)')
+            db.execute('INSERT INTO pilot_trials VALUES(?,?)', ('bottles-2', canonical({'status':'WAITING_FOR_ACCEPTANCES'})))
+        store.budget.begin('hist', 'a'*40, self.cfg)
+        store.budget.reserve('hist', 'hist', 'ficticio', 'hash', 'a'*40, '1', self.cfg)
+        store.budget.finish('hist', 'COMPLETED')
+        before = store.path.read_bytes()
+        with patch('factory2.trial_command.clean_head', return_value='a'*40):
+            self.assertEqual(preflight(auth, 'a'*40, self.root, encargo='caja-chica')['encargo'], 'caja-chica')
+        self.assertEqual(store.path.read_bytes(), before)
+        self.assertEqual(store.budget.summary()['conservative_charge_units'], 1000000)
 
 
 if __name__ == '__main__':

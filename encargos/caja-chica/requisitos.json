@@ -1,0 +1,18 @@
+{
+  "schema_version": 1,
+  "synthetic": true,
+  "brief": {
+    "client": "Oficina ficticia del ensayo",
+    "objective": "Registrar gastos ficticios de caja chica respetando un tope diario por persona y la aprobacion independiente del responsable.",
+    "users": ["solicitante ficticio", "responsable ficticio"],
+    "areas": ["administracion ficticia"],
+    "exclusions": ["ERP", "datos reales", "bancos", "asientos reales", "publicacion"],
+    "requirements": [
+      {"id": "CAJ-01", "goal": "Solicitar un gasto en centavos enteros positivos", "acceptance": "Rechazar importes cero, negativos, fraccionarios o booleanos e identificadores repetidos.", "document": "Solicitud ficticia"},
+      {"id": "CAJ-02", "goal": "Exigir aprobacion independiente", "acceptance": "Solo responsable_id puede aprobar y nunca si es la misma persona solicitante. Sin aprobacion no se paga.", "document": "Autorizacion ficticia"},
+      {"id": "CAJ-03", "goal": "Respetar el limite diario por persona", "acceptance": "Revalidar al pagar: sumar lo ya pagado a esa persona ese dia, sin superar el limite, aunque se hubieran aprobado varias solicitudes.", "document": "Saldo diario ficticio"},
+      {"id": "CAJ-04", "goal": "No pagar dos veces", "acceptance": "Repetir pagar devuelve el mismo comprobante y no duplica el consumo. Personas y dias distintos tienen limites independientes.", "document": "Comprobante interno sin validez fiscal"}
+    ],
+    "assumptions": ["Importes en centavos de moneda ficticia; fechas ISO de ensayo; sin persistencia, autenticacion ni conexion externa. Reglas pendientes de confirmar para clientes reales."]
+  }
+}

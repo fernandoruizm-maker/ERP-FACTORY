@@ -11,17 +11,12 @@ from pathlib import Path
 from .core import Blocked, canonical, contained, digest, file_digest, validate_review
 from .runner import test_command
 from .workflow import stage
+from .encargos import ROOT as ENCARGOS_ROOT, load_encargo, job_name, attempt_ids, assert_new_attempt
 
 
 def bottle_input():
-    """Fixed fictional requirements and trusted JS tests, not an ERP/catalog input."""
-    root = Path(__file__).resolve().parents[1]
-    brief = json.loads((root / 'fixtures/cliente.json').read_text(encoding='utf-8'))
-    tests = (root / 'pilot-js/tests/bottles.test.mjs').read_bytes()
-    return {'brief': brief, 'synthetic': True,
-            'required_output': ['src/bottles.mjs'],
-            'interface': 'ES module exporting Bottles. Implement the methods exercised by the fixed tests.',
-            'trusted_tests': {'tests/bottles.test.mjs': tests.decode('utf-8')}}
+    """Compatibility helper; new execution loads the selected job explicitly."""
+    return load_encargo('botellas')
 
 
 def git_call(directory, *args):
@@ -60,12 +55,15 @@ class PilotTrial:
     Explicit doubles are permitted only with a simulated Coordinator. No scheduler,
     CLI command, automatic approval, publication or retry is installed by this class.
     """
-    ID = 'bottles-1'
+    ID = 'botellas-1'
 
-    def __init__(self, store, work_root, *, builder=None, tester=None, snapshotter=None, head=None, attempt=1):
+    def __init__(self, store, work_root, *, builder=None, tester=None, snapshotter=None, head=None,
+                 attempt=1, encargo='botellas', encargos_root=ENCARGOS_ROOT):
         if type(attempt) is not int or not 1 <= attempt <= 1000000:
             raise Blocked('PILOT_ATTEMPT_INVALID')
-        self.ID = f'bottles-{attempt}'
+        self.encargo, self.encargos_root = job_name(encargo), Path(encargos_root)
+        self.attempt = attempt
+        self.ID = attempt_ids(encargo, attempt)[0]
         self.store, self.root = store, Path(work_root).absolute()
         for part in (self.root, *self.root.parents):
             if part.is_symlink() or (hasattr(part, 'is_junction') and part.is_junction()):
@@ -88,9 +86,14 @@ class PilotTrial:
 
     def load(self):
         with self.store.connect() as db:
-            row = db.execute('SELECT data FROM pilot_trials WHERE id=?', (self.ID,)).fetchone()
-        if row is None:
+            rows = [(ident, db.execute('SELECT data FROM pilot_trials WHERE id=?', (ident,)).fetchone())
+                    for ident in attempt_ids(self.encargo, self.attempt)]
+        rows = [(ident, row) for ident, row in rows if row is not None]
+        if len(rows) > 1:
+            raise Blocked('PILOT_LEGACY_ID_CONFLICT')
+        if not rows:
             raise Blocked('PILOT_NOT_FOUND')
+        self.ID, row = rows[0]
         return json.loads(row[0])
 
     def unchanged(self, data):
@@ -124,15 +127,13 @@ class PilotTrial:
         if (not isinstance(authorization, dict) or type(authorization.get('attempt')) is not int
                 or not 1 <= authorization['attempt'] <= 1000000):
             raise Blocked('PILOT_ATTEMPT_INVALID')
+        if authorization.get('encargo') != self.encargo:
+            raise Blocked('PILOT_AUTHORIZATION_REQUIRED')
         with self.store.worker():
-            self.ID = f"bottles-{authorization['attempt']}"
+            self.attempt = authorization['attempt']
+            self.ID = attempt_ids(self.encargo, self.attempt)[0]
             with self.store.connect() as db:
-                # Also honor trials recorded before numbered authorizations existed.
-                if db.execute('SELECT 1 FROM pilot_trials WHERE id=?', (self.ID,)).fetchone():
-                    raise Blocked('PILOT_ALREADY_RECORDED_NO_RETRY')
-                for row in db.execute('SELECT data FROM pilot_trials'):
-                    if json.loads(row[0])['status'] != 'BLOCKED':
-                        raise Blocked('PILOT_PREVIOUS_ATTEMPT_UNFINISHED')
+                assert_new_attempt(db, self.encargo, self.attempt)
                 try:
                     db.execute('INSERT INTO pilot_authorizations VALUES(?,?)', (self.ID, digest(authorization)))
                 except sqlite3.IntegrityError:
@@ -145,14 +146,14 @@ class PilotTrial:
                 with self.store.connect() as db:
                     if not db.execute('SELECT 1 FROM pilot_trials WHERE id=?', (self.ID,)).fetchone():
                         db.execute('INSERT INTO pilot_trials VALUES(?,?)', (self.ID, canonical({
-                            'attempt': authorization['attempt'], 'status': 'BLOCKED',
+                            'attempt': authorization['attempt'], 'encargo': self.encargo, 'status': 'BLOCKED',
                             'reason_code': reason_code(exc), 'publication_allowed': False})))
                 raise
 
     def _start(self, authorization):
         import sqlite3
         import time
-        from .codex_adapter import DockerCodexBuilder, NODE_IMAGE
+        from .codex_adapter import DockerCodexBuilder, NODE_IMAGE, PYTHON_IMAGE
         from .manual_review import hex_value
         from .runner import DockerRunner
         from .pilot_preflight import inspect_start
@@ -164,10 +165,11 @@ class PilotTrial:
             self.config(), authorization,
             source_reader=lambda: self.head(None) if self.head else clean_head(Path(__file__).resolve().parents[1]),
             review_reader=self.store.manual_review, work_root=self.root,
-            simulation=self.store.coordinator.simulation)
+            simulation=self.store.coordinator.simulation, encargo=self.encargo, encargos_root=self.encargos_root)
         adapter = self.builder or DockerCodexBuilder(cfg)
         self.root.mkdir(parents=True, exist_ok=True)
-        data = {'status': 'PREPARED', 'attempt': authorization['attempt'], 'factory_source_sha': source,
+        data = {'status': 'PREPARED', 'attempt': authorization['attempt'], 'encargo': self.encargo,
+            'context_digest': digest(context), 'factory_source_sha': source,
             'config_digest': digest(cfg), 'factory_digest': digest({'source': source, 'config': digest(cfg)}),
             'disarmed_config_digest': digest({**cfg, 'external_calls_enabled': False}),
             'tests': [], 'files': {}, 'publication_allowed': False,
@@ -196,7 +198,7 @@ class PilotTrial:
                 ('input_usd_per_million', 'output_usd_per_million', 'max_call_usd')}
             data['worst_case_cost_usd'] = token_cost(review, len(request_bytes(request)), request['max_output_tokens'])
             try:
-                proposal = adapter.generate(context)
+                proposal = adapter.generate(deepcopy(context))
             finally:
                 evidence = getattr(adapter, 'last_usage', None)
                 if evidence is not None:
@@ -210,7 +212,7 @@ class PilotTrial:
                 raise Blocked('CODEX_USAGE_INVALID')
             from .core import validate_edits
             validate_edits(proposal)
-            if [e['path'] for e in proposal['edits']] != ['src/bottles.mjs']:
+            if sorted(e['path'] for e in proposal['edits']) != sorted(context['required_output']):
                 raise Blocked('PILOT_OUTPUT_SCOPE_INVALID')
             if (data['usage']['input_tokens'] > len(request_bytes(request))
                     or data['usage']['output_tokens'] > request['max_output_tokens']):
@@ -224,11 +226,12 @@ class PilotTrial:
             if digest(self.config()) != data['config_digest']:
                 raise Blocked('PILOT_CONFIG_CHANGED')
             adapter.materialize(proposal, candidate)
-            expected_source = {'src/bottles.mjs': hashlib.sha256(proposal['edits'][0]['content'].encode()).hexdigest()}
+            expected_source = {e['path']: hashlib.sha256(e['content'].encode()).hexdigest() for e in proposal['edits']}
             (candidate / 'tests').mkdir(exist_ok=False)
             for name, content in context['trusted_tests'].items():
                 target = contained(candidate, name)
-                target.write_bytes(content.encode('utf-8'))
+                with target.open('xb') as stream:
+                    stream.write(content.encode('utf-8'))
                 expected_source[name] = file_digest(target)
             data['files'] = expected_source
             data['artifact_digest'] = digest(expected_source)
@@ -237,12 +240,14 @@ class PilotTrial:
             self.unchanged(data)
             self.store.coordinator.require_worker()
             tester = self.tester or DockerRunner().run
-            outcome = tester(candidate, NODE_IMAGE, 'javascript', ['tests/bottles.test.mjs'], data['artifact_digest'])
+            profile = context['profile']
+            image = NODE_IMAGE if profile == 'javascript' else PYTHON_IMAGE
+            outcome = tester(candidate, image, profile, list(context['trusted_tests']), data['artifact_digest'])
             self.unchanged(data)
             if (not isinstance(outcome, dict) or outcome.get('status') != 'PASS'
-                    or outcome.get('exit_code') != 0 or outcome.get('profile') != 'javascript'
+                    or outcome.get('exit_code') != 0 or outcome.get('profile') != profile
                     or outcome.get('artifact_digest') != data['artifact_digest']
-                    or type(outcome.get('test_count')) is not int or outcome['test_count'] != 7):
+                    or type(outcome.get('test_count')) is not int or outcome['test_count'] != context['expected_tests']):
                 raise Blocked('PILOT_TESTS_FAILED')
             data['tests'] = [outcome]
             data['candidate_sha'] = (self.snapshotter or snapshot_candidate)(candidate)
@@ -250,7 +255,7 @@ class PilotTrial:
                 raise Blocked('PILOT_SNAPSHOT_INVALID')
             self.unchanged(data)
             data['version'] = self.store.put_task(self.ID, {'artifact_digest': data['artifact_digest'],
-                'approval_target': {'kind': 'accounting_product', 'repository': 'ficticio/botellas'},
+                'approval_target': {'kind': 'accounting_product', 'repository': 'ficticio/' + self.encargo},
                 'factory_source_sha': source, 'synthetic': True})
             data['status'] = 'WAITING_FOR_MANUAL_REVIEW'
             data['next'] = 'Fernando adjunta src/tests y evidencia a Claude; registrar revision del SHA candidato. No enviar automaticamente.'

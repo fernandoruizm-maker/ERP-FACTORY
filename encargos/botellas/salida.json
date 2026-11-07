@@ -1,0 +1,9 @@
+{
+  "schema_version": 1,
+  "files": [
+    "src/bottles.mjs"
+  ],
+  "profile": "javascript",
+  "expected_tests": 7,
+  "interface": "ES module exporting Bottles. Implement the methods exercised by the fixed tests."
+}

@@ -18,7 +18,11 @@ Reglas que siguen vigentes:
 2. Nadie integra sin decision expresa de Fernando tras revision de Claude del
    SHA vigente y aprobaciones de su nivel. No integracion automatica ni bypass.
 3. Cada subida requiere autorizacion expresa; destino unico ERP-FACTORY y envio
-   de vuelta a DISABLED. Codex prepara enlace, titulo y texto; no abre PR aqui.
+   de vuelta a DISABLED. Desde la decision del bloque 13, cuando Fernando autorice
+   publicar una rama y su SHA, Codex la subira y abrira su PR con gh autenticado
+   como fernandocodex64-sudo. Nunca aprobara ni integrara. Antes de publicar se
+   comprobara la cuenta; si gh no esta preparado o la identidad difiere, detenerse.
+   Esta decision no autoriza instalar, configurar credenciales ni publicar ahora.
 4. Si cambia el contenido, destino o SHA: renovar revision, aceptaciones y decision.
 5. Nunca publicar credenciales, datos de clientes o informacion del ERP. Activar
    fabrica/workflows, conectar ERP, cambiar permisos o gastar dinero requiere

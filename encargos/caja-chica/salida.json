@@ -1,0 +1,7 @@
+{
+  "schema_version": 1,
+  "files": ["src/caja_chica.py"],
+  "profile": "python",
+  "expected_tests": 8,
+  "interface": "Exportar CajaChica(limite_diario_centavos, responsable_id). Metodos solicitar(id, persona, dia, monto_centavos), aprobar(id, responsable), pagar(id), consumo(persona, dia). Los identificadores y fechas son strings. Rechazar errores con ValueError. pagar devuelve dict con id, persona, dia, monto_centavos y aprobador. Los importes son centavos enteros positivos, sin booleanos. No alterar las pruebas fijas."
+}

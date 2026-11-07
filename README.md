@@ -1,5 +1,11 @@
 # ERP-FACTORY — revision manual, fabrica desactivada
 
+Bloque 13: encargos ficticios en `encargos/<nombre>/`, con requisitos, pruebas
+fijas y una lista cerrada de salida. Ejemplos: botellas (JavaScript) y caja chica
+(Python). Preparacion local: `scripts/ensayo.ps1 -Encargo botellas -Intento 1`.
+Esto no llama al proveedor ni consume un intento. Ver [guia de encargos](docs/ENCARGOS.md).
+Todos los interruptores permanecen false; no se altera el historial del ensayo.
+
 Claude revisa en el chat los cambios de cada PR. Antes de una entrega importante,
 revisa toda la fabrica en una conversacion nueva. Sus informes se registran en
 `docs/revisiones/`, como revision tecnica **no autenticada y nunca aprobacion humana**.
